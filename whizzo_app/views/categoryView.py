@@ -48,3 +48,18 @@ class ConvertPdfToExcelView(APIView):
     def post(self, request):
         result = category_obj.convert_pdf_to_excel(request)
         return Response(result, status = result["status"])
+    
+class ConvertExcelToPdfView(APIView):
+    def post(self, request):
+        result = category_obj.excel_to_pdf(request)
+        return Response(result, status = result["status"])
+
+class ConvertPdfToImageView(APIView):
+    def post(self, request):
+        result = category_obj.convert_pdf_to_image(request)
+        return Response(result, status = result["status"])
+
+class ConvertImageToPdfView(APIView):
+    def post(self, request):
+        result = category_obj.image_to_pdf(request)
+        return Response(result, status = result["status"])    

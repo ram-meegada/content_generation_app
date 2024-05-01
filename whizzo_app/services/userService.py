@@ -1,3 +1,4 @@
+from rest_framework import status
 from whizzo_app.models.userModel import UserModel
 from whizzo_app.utils import messages
 from whizzo_app.serializers import userSerializer
@@ -53,6 +54,10 @@ class UserService:
         else:
             return {"data": None, "message": messages.PASSWORD_WRONG, "status": 400}
 
+    def logout(self, request):
+        return {"data": "", "message": "Logged out successfully", "status": 200}
+
+
     def verify_otp(self, request):
         GIVE_LOGIN_TOKEN = False
         try:
@@ -80,22 +85,99 @@ class UserService:
         return {"data": user_serializer.data, "message":  "OTP_VERIFIED", "status": 200}
     
     def resend_otp(self, request):
-        email=request.data["email"]
+        otp = sendMail.generate_otp()
         try:
             if "email" in request.data:
-                user = UserModel.objects.get(email=email)
+                user = UserModel.objects.get(email=request.data["email"])
+                Thread(target=sendMail.send_otp_to_mail, args=[request.data["email"], otp]).start()
             elif "phone_number" in request.data:
                 user = UserModel.objects.get(phone_no=request.data["phone_number"])
             else:
                 return {"data": None, "message": "Email or phone number not provided", "status": 400}
         except UserModel.DoesNotExist:
             return {"data": None, "message":  'USER_NOT_FOUND', "status": 400}
-        
-        if "email" in request.data:
-            Thread(target=sendMail.send_otp_to_mail, args=[email, otp]).start()
-    
         user.otp = otp
-        user.otp_sent_time = datetime.now(tz=pytz.UTC)
         user.save()
-        
         return {"data": None, "message":  "OTP_SENT", "status": 200}
+    
+    def change_password(self, request):
+        try:
+            user = UserModel.objects.get(id=request.user.id)
+        except UserModel.DoesNotExist:
+            return {
+                "data": None,
+                "message":  'User not found',
+                "status": status.HTTP_404_NOT_FOUND
+            }
+        old_password = request.data.get("old_password")
+        new_password = request.data.get("new_password")
+        verify_password = check_password(old_password, user.password)
+        if verify_password:
+            user.set_password(new_password)
+            user.save()
+            return {
+                "data": None,
+                "message": "Password reset successfully.",
+                "status": status.HTTP_200_OK
+            }
+        else:
+            return {
+                "data": None,
+                "message": "Old password is incorrect",
+                "status": status.HTTP_200_OK
+            }
+        
+    def forgot_password(self, request):
+        otp = sendMail.generate_otp()
+        try:
+            if "email" in request.data:
+                user = UserModel.objects.get(email=request.data["email"])
+            else:
+                return {"data": None, "message": "Email not provided", "status": 400}
+        except UserModel.DoesNotExist:
+            return {"data": None, "message":  'USER_NOT_FOUND', "status": 400}
+        Thread(target=sendMail.send_otp_to_mail, args=[request.data["email"], otp]).start()
+        user.otp = otp
+        user.save()
+        return {"data": None, "message":  "Otp sent successfully", "status": status.HTTP_200_OK}    
+    
+    def reset_password(self, request):
+        try:
+            user = UserModel.objects.get(email=request.data["email"])
+        except UserModel.DoesNotExist:
+            return {
+                "data": None,
+                "message":  'USER_NOT_FOUND',
+                "status": status.HTTP_404_NOT_FOUND
+            }
+        new_password = request.data.get("new_password")
+        user.set_password(new_password)
+        user.save()
+        return {
+            "data": None,
+            "message": "Password reset successfully.",
+            "status": status.HTTP_200_OK
+        }
+    
+    def update_profile(self, request):
+        try:
+            email = request.data.get("email")
+            phone_no = request.data.get("phone_no")
+
+            user = UserModel.objects.get(email = email)
+            user.first_name = request.data["first_name"]
+            user.last_name = request.data["last_name"]
+            user.profile_picture_id = request.data["profile_picture"]
+            if phone_no:    
+                user.phone_no = request.data["phone_no"]
+            if email:
+                user.email = request.data["email"]
+            user.save()
+            return {"data": None, "message": "Profile updated successfully", "status": 200}
+        except Exception as error:
+            return {"data": None, "message": "Something went wrong", "status": 400}
+        
+    def user_details_by_token(self, request):
+        user = UserModel.objects.get(id = request.user.id)
+        serializer = userSerializer.GetUserSerializer(user)
+        return {"data": serializer.data, "message": "USER_DETAILS", "status": 200}    

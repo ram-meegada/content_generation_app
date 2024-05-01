@@ -10,7 +10,8 @@ class GetUserSerializer(serializers.ModelSerializer):
     token = serializers.SerializerMethodField()
     class Meta:
         model = UserModel
-        fields = ["id", "email", "token"]
+        fields = ['id', 'email', 'name', 'phone_no',  'country_code', \
+                  'email_verification', 'profile_status', 'token']
 
     def get_token(self, obj):
         give_login_token = self.context.get("give_login_token", False)

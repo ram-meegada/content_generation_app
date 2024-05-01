@@ -17,8 +17,46 @@ class UserLogInView(APIView):
         result = user_obj.login_user(request)
         return Response(result, status=result["status"])
 
+class UserLogOutView(APIView):
+    def post(self, request):
+        result = user_obj.logout(request)
+        return Response(result, status=result["status"])
+
 class VerifyOtpView(APIView):
     permission_classes = [AllowAny]
     def post(self, request):
         result = user_obj.verify_otp(request)
+        return Response(result, status=result["status"])
+
+class ResendOtpView(APIView):
+    permission_classes = [AllowAny]
+    def post(self, request):
+        result = user_obj.resend_otp(request)
+        return Response(result, status=result["status"])
+
+class ChangePasswordView(APIView):
+    def post(self, request):
+        result = user_obj.change_password(request)
+        return Response(result, status=result["status"])
+
+class ForgotPasswordView(APIView):
+    permission_classes = [AllowAny]
+    def post(self, request):
+        result = user_obj.forgot_password(request)
+        return Response(result, status=result["status"])
+
+class ResetPasswordView(APIView):
+    permission_classes = [AllowAny]
+    def post(self, request):
+        result = user_obj.reset_password(request)
+        return Response(result, status=result["status"])
+
+class UpdateProfileView(APIView):
+    def post(self, request):
+        result = user_obj.update_profile(request)
+        return Response(result, status=result["status"])
+
+class UserDetailsByTokenView(APIView):
+    def post(self, request):
+        result = user_obj.user_details_by_token(request)
         return Response(result, status=result["status"])

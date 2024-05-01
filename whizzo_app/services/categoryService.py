@@ -24,6 +24,11 @@ from whizzo_app.serializers.uploadMediaSerializer import CreateUpdateUploadMedia
 import os
 import tabula
 import pandas as pd
+from reportlab.lib.pagesizes import letter,A3
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle,Image
+from reportlab.lib import colors
+from pdf2image import convert_from_path
+from django.core.files.storage import FileSystemStorage
 
 load_dotenv()
 google_api_key = settings.GOOGLE_API_KEY
@@ -251,16 +256,21 @@ class CategoryService:
     
     def pdf_to_word(self , request):
         pdf_file = request.FILES.get("pdf_file")
-        print(pdf_file.content_type, '---------------------')
-        input_pdf_file = str(pdf_file)
+        
         file_name = "".join((pdf_file.name).split(" "))
         file_name = f"{file_name}_{random.randint(10000, 99999)}"
         output_word_file = f"{file_name}.docx"
-
-        cv = Converter(pdf_file)
+        input_name = f"{file_name}_{random.randint(10000, 99999)}"
+        input_pdf_file = f"{input_name}.pdf"
+        delete_files = [input_pdf_file, output_word_file]
+        
+        fs = FileSystemStorage()
+        fs.save(input_pdf_file, pdf_file)
+        cv = Converter(input_pdf_file)
+        # cv = Converter(BytesIO(pdf_content))
         cv.convert(output_word_file, start=0, end=None)
         cv.close()
-        SAVED_FILE_RESPONSE = save_file_conversion(output_word_file, f"{file_name}.docx", "word")
+        SAVED_FILE_RESPONSE = save_file_conversion(output_word_file, output_word_file, "word")
         data = {
                     "media_url": SAVED_FILE_RESPONSE[0],
                     "media_type": "word",
@@ -269,15 +279,19 @@ class CategoryService:
         serializer = CreateUpdateUploadMediaSerializer(data = data)
         if serializer.is_valid():
             serializer.save()
-        if os.path.exists(output_word_file):
-            os.remove(output_word_file)
+        for file in delete_files:
+            if os.path.exists(file):
+                os.remove(file)
         return {"data": data, "message": messages.PDF_TO_WORD, "status": 200}
 
     def convert_pdf_to_excel(self , request):
         excel_file = request.FILES.get("pdf_file")
-        print(excel_file)
-        
         file_name = f"output_{random.randint(10000, 99999)}"
+
+        pdf_content = excel_file.read()
+
+        # Convert the PDF content to a byte stream
+        pdf_byte_stream = BytesIO(pdf_content)
 
         # excel_path = str(excel_file)
         output_path = f"{file_name}.xlsx"
@@ -298,10 +312,18 @@ class CategoryService:
     
     def pdf_to_excel(self, pdf_path, excel_path):
         tables = tabula.read_pdf(pdf_path, pages='all', multiple_tables=True)
-        with pd.ExcelWriter(excel_path) as writer:
+
+        # Create an Excel writer object
+        with pd.ExcelWriter(excel_path, engine='xlsxwriter') as writer:
+            # Iterate through each table and write it to a separate sheet
             for i, table in enumerate(tables):
+                # Write the table to the Excel sheet
                 table.to_excel(writer, sheet_name=f"Sheet {i+1}", index=False)
+
+                # Access the worksheet object
                 worksheet = writer.sheets[f"Sheet {i+1}"]
+
+                # Iterate through each column and set its width
                 for idx, col in enumerate(table.columns):
                     series = table[col]
                     max_len = max((
@@ -309,3 +331,99 @@ class CategoryService:
                         len(str(series.name))
                     )) + 1
                     worksheet.set_column(idx, idx, max_len)
+
+    def excel_to_pdf(self , request):
+        excel_file  = request.FILES.get("excel_file")
+        file_name = excel_file.name
+
+        # excel_path = str(excel_file)
+        file_save_path= f"{file_name}_{random.randint(10000, 99999)}.pdf"
+
+        self.Excel_To_Pdf(excel_file, file_save_path)
+        SAVED_FILE_RESPONSE = save_file_conversion(file_save_path, file_save_path, "application/pdf")
+        data = {
+                    "media_url": SAVED_FILE_RESPONSE[0],
+                    "media_type": "excel",
+                    "media_name": SAVED_FILE_RESPONSE[1]
+                }
+        serializer = CreateUpdateUploadMediaSerializer(data = data)
+        if serializer.is_valid():
+            serializer.save()
+        if os.path.exists(file_save_path):
+            os.remove(file_save_path)
+        return {"data": serializer.data, "message": "conversion is done", "status": 200}                
+    
+    def Excel_To_Pdf(self, excel_file, pdf_file):
+        # Read Excel file into pandas DataFrame
+        df = pd.read_excel(excel_file)
+        # Convert DataFrame to list of lists (2D array)
+        data = [df.columns.tolist()] + df.values.tolist()
+        # Create PDF
+        doc = SimpleDocTemplate(pdf_file, pagesize=A3)
+        table = Table(data)
+        # Style the table
+        style = TableStyle([('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                            ('GRID', (0, 0), (-1, -1), 1, colors.black)])
+
+        table.setStyle(style)
+        # Add table to PDF
+        doc.build([table])
+
+    def convert_pdf_to_image(self, request):
+        pdf_file = request.FILES.get("pdf_file")
+        file_name = "".join(str(pdf_file).split(" "))
+        # file_save_path= f"image_{random.randint(10000, 99999)}.jpg"
+        file_name = f"{random.randint(10000, 99999)}_{file_name}"
+        input_pdf_file = f"{random.randint(10000, 99999)}_{file_name}"
+        # input_pdf_file = f"{input_name}"
+        
+        fs = FileSystemStorage()
+        fs.save(input_pdf_file, pdf_file)
+        image_path_prefix = file_name.replace("pdf", "jpg")
+        saved_files = self.pdf_to_image(input_pdf_file, image_path_prefix)
+        if os.path.exists(input_pdf_file):
+            os.remove(input_pdf_file)
+        return {"data": saved_files, "message": "conversion is done", "status": 200}
+
+    def pdf_to_image(self, pdf_path, image_path_prefix):
+        # Convert PDF to a list of PIL Image objects
+        images = convert_from_path(pdf_path)
+        images_data = []
+        # Save each page as an image
+        for i, image in enumerate(images):
+            image_path = f"{random.randint(10000, 99999)}_{image_path_prefix}"  # Change the extension as needed
+            image.save(image_path, 'JPEG')  # Change the format as needed
+            SAVED_FILE_RESPONSE = save_file_conversion(image_path, image_path, "jpg")
+            data = {
+                        "media_url": SAVED_FILE_RESPONSE[0],
+                        "media_type": "image",
+                        "media_name": SAVED_FILE_RESPONSE[1]
+                    }
+            serializer = CreateUpdateUploadMediaSerializer(data = data)
+            if serializer.is_valid():
+                serializer.save()
+                images_data.append(serializer.data)
+            if os.path.exists(image_path):
+                os.remove(image_path)
+        return images_data    
+    
+    def image_to_pdf(self , request):
+        try:
+            image_file = request.FILES.get("image")
+            file_name = image_file.name
+
+            doc = aw.Document()
+            builder = aw.DocumentBuilder(doc)
+
+            builder.insert_image(str(image_file))
+
+            doc.save(f"{file_name}.pdf")
+
+            return {"message":"convert image to pdf successfully", "status": 200}
+        except Exception as e:
+            return {"message": str(e), "status": 400}

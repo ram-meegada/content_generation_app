@@ -17,4 +17,8 @@ urlpatterns = [
     path("conversion/pdf-to-word/", categoryView.PdfToWordView.as_view()),
     path("conversion/pdf-to-excel/", categoryView.ConvertPdfToExcelView.as_view()),
 
+    path("conversion/excel-to-pdf/", categoryView.ConvertExcelToPdfView.as_view()),
+    path("conversion/pdf-to-image/", categoryView.ConvertPdfToImageView.as_view()),
+    path("conversion/image-to-pdf/", categoryView.ConvertImageToPdfView.as_view()),
+
 ]
