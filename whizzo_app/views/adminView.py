@@ -29,6 +29,23 @@ class VerifyAdminOtpView(APIView):
         result = admin_obj.verify_admin_otp(request)
         return Response(result, status=result["status"])
 
+class GetAllManageUserView(APIView):
+    permission_classes = [AllowAny]
+    def post(self, request):
+        result = admin_obj.get_all_user_admin(request)
+        return Response(result, status=result["status"])
+    
+class UpdateManageUserView(APIView):
+    permission_classes = [AllowAny]
+    def put(self, request,id):
+        result = admin_obj.update_manage_user_by_id(request, id)
+        return Response(result, status=result["status"])
+    
+class DeleteManageUserView(APIView):
+    permission_classes = [AllowAny]
+    def delete(self, request,id):
+        result = admin_obj.delete_manage_users_by_id(request, id)
+        return Response(result, status=result["status"])
 
 class CreateAbilityView(APIView):
     permission_classes = [AllowAny]
@@ -157,6 +174,7 @@ class DeleteSubAdminView(APIView):
         return Response(result, status=result["status"])
     
 
+
 class AddPurposeView(APIView):
     permission_classes = [AllowAny]
     def post(self, request):
@@ -187,6 +205,7 @@ class GetAllPurposeView(APIView):
         result = admin_obj.get_all_purpose(request)
         return Response(result, status=result["status"])
     
+
 
 class AddFeaturesView(APIView):
     permission_classes = [AllowAny]

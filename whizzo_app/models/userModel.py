@@ -12,13 +12,14 @@ from whizzo_app.utils.choiceFields import PROFILE_STATUS_OPTIONS,USER_ROLE_CHOIC
 class UserModel(AbstractUser, BaseModel):
 
     profile_picture = models.ForeignKey(UploadMediaModel, on_delete=models.SET_NULL, null=True)
-
+    username= models.CharField(max_length=255, blank=True, null=True, unique=True)
+    name = models.CharField(max_length=255, default="")
     phone_no = models.CharField(max_length=100, default="")
     country_code = models.CharField(max_length=17, default="")
     otp = models.CharField(max_length=100, default="")
 
     profile_status = models.IntegerField(choices=PROFILE_STATUS_OPTIONS, default=0)
-
+    email_verification = models.BooleanField(default=False)
     otp_sent_time = models.DateTimeField(blank=True, null=True)
     role = models.IntegerField(choices = USER_ROLE_CHOICES, default=0) 
     sub_role = models.ForeignKey(SubRoleModel, on_delete=models.CASCADE, null=True)
