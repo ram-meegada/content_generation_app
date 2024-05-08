@@ -7,7 +7,8 @@ from whizzo_app.utils.otp import generate_password
 from whizzo_app.utils.sendMail import SendOtpToMail
 from django.contrib.auth.hashers import check_password
 from django.utils import timezone
-
+import pytz
+from datetime import datetime
 
 class AdminService:
 # onboarding
@@ -43,7 +44,35 @@ class AdminService:
             return {"data": serializer.data, "message":"Profile updated successfully", "status": 200}
         return {"data": None, "message": serializer.errors, "status": 400}
 
-
+    def verify_admin_otp(self, request):
+        GIVE_LOGIN_TOKEN = False
+        try:
+            if "email" in request.data:
+                user = UserModel.objects.get(email=request.data["email"])
+            elif "phone_number" in request.data:
+                user = UserModel.objects.get(phone_no=request.data["phone_number"])
+            else:
+                return {"data": None, "message": "Email or phone number not provided", "status": 400}
+        except UserModel.DoesNotExist:
+            return {"data": None, "message": 'USER_NOT_FOUND', "status": 400}
+        
+        now = datetime.now(tz=pytz.UTC)
+        otp_sent_time = user.otp_sent_time
+        if otp_sent_time is not None:
+            otp_duration = (now - otp_sent_time).seconds
+            if otp_duration > 60:
+                return {"data": None, "message": messages.OTP_EXPIRED, "status": 400}
+        else:
+            return {"data": None, "message": "OTP not sent yet", "status": 400}
+        
+        if user.otp != request.data["otp"]:
+            return {"data": None, "message":  messages.WRONG_OTP, "status": 400}
+        else:
+            GIVE_LOGIN_TOKEN=True
+        
+        user.save()
+        user_serializer = adminSerializer.AddAdminSerializer(user, context={"give_login_token": GIVE_LOGIN_TOKEN})    
+        return {"data": user_serializer.data, "message":  "OTP_VERIFIED", "status": 200}
 # dashboard
 
     def dashboard_data(self, request):

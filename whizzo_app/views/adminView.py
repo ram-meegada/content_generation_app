@@ -23,6 +23,12 @@ class UpdateAdminProfileView(APIView):
         result = admin_obj.edit_admin_profile(request)
         return Response(result, status=result["status"])
 
+class VerifyAdminOtpView(APIView):
+    permission_classes = [AllowAny]
+    def post(self, request):
+        result = admin_obj.verify_admin_otp(request)
+        return Response(result, status=result["status"])
+
 
 class CreateAbilityView(APIView):
     permission_classes = [AllowAny]

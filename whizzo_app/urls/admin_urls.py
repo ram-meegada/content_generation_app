@@ -6,6 +6,7 @@ urlpatterns = [
     path("admin-login/", adminView.LoginAdminView.as_view()),
     path("get-admin-detail/", adminView.GetAdminDetailByTokenView.as_view()),
     path("update-admin-profile/", adminView.UpdateAdminProfileView.as_view()),
+    path("verify-admin-otp/", adminView.VerifyAdminOtpView.as_view()),
 
     path("add-ability/", adminView.CreateAbilityView.as_view()),
     path("update-ability/<int:id>/", adminView.UpdateAbilityView.as_view()),

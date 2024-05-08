@@ -98,6 +98,7 @@ class UserService:
                 return {"data": None, "message": "Email or phone number not provided", "status": 400}
         except UserModel.DoesNotExist:
             return {"data": None, "message":  'USER_NOT_FOUND', "status": 400}
+        user.otp_sent_time = datetime.now(tz=pytz.UTC)
         user.otp = otp
         user.save()
         return {"data": None, "message":  "OTP_SENT", "status": 200}
@@ -139,6 +140,7 @@ class UserService:
         except UserModel.DoesNotExist:
             return {"data": None, "message":  'USER_NOT_FOUND', "status": 400}
         Thread(target=sendMail.send_otp_to_mail, args=[request.data["email"], otp]).start()
+        user.otp_sent_time= datetime.now(tz=pytz.UTC)
         user.otp = otp
         user.save()
         return {"data": None, "message":  "Otp sent successfully", "status": status.HTTP_200_OK}    
