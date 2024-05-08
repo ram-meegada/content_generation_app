@@ -21,6 +21,7 @@ class UserService:
             elif check_user.exists() and check_user.first().profile_status == 1:
                 check_user.first().delete()
             user = UserModel(email=email)
+            user.role = 2
             user.otp = otp
             user.otp_sent_time = datetime.now(tz=pytz.UTC)
             user.profile_status = 1
@@ -32,6 +33,7 @@ class UserService:
             if user:
                 return {"data": None, "message": messages.PHONE_ALREADY_EXISTS, "status": 400}
             user = UserModel(phone_no=phone_no)
+            user.role = 2
             user.otp = otp
             user.otp_sent_time = datetime.now(tz=pytz.UTC)
             user.profile_status = 1
@@ -42,7 +44,7 @@ class UserService:
         email = request.data["email"]
         password = request.data["password"]
         try:
-            user = UserModel.objects.get(email = email)
+            user = UserModel.objects.get(email = email, role=2)
         except UserModel.DoesNotExist:
             return {"data": None, "message": messages.EMAIL_NOT_FOUND, "status": 400}
         

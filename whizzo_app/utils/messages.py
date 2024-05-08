@@ -29,3 +29,27 @@ SUMMARY_FETCHED = "File summary fetched successfully"
 
 PDF_TO_WORD = "Pdf file converted to word successfully"
 PDF_TO_EXCEL = "Pdf file converted to excel successfully"
+
+
+########### admin ###########
+ABILITY_ADDED="Abilty added successfully"
+FETCH="Fetch successfully"
+ABILITY_UPDATED="Abilty updated successfully"
+ABILITY_DELETED="Abilty deleted successfully"
+
+ACHIEVEMENT_ADDED="Achievement added successfully"
+ACHIEVEMENT_UPDATED="Achievement updated successfully"
+ACHIEVEMENT_DELETED="Achievement deleted successfully"
+
+SUBJECT_ADDED="Subject added successfully"
+SUBJECT_UPDATED="Subject updated successfully"
+SUBJECT_DELETED="Subject deleted successfully"
+
+ROLE_ADDED= "Role added successfully"
+MODULE_ADDED= "Module added successfully"
+
+INTERNAL_SERVER_ERROR= "Internal server error"
+
+SUB_ADMIN_CREATED= "Sub admin added successfully"
+SUB_ADMIN_UPDATED= "Sub admin updated successfully"
+SUB_ADMIN_DELETED= "Sub admin deleted successfully"

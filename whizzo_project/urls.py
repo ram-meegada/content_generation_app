@@ -21,4 +21,6 @@ urlpatterns = [
     path("user/", include("whizzo_app.urls.onboarding_urls")),
     path("media/", include("whizzo_app.urls.upload_media_urls")),
     path("category/", include("whizzo_app.urls.category_urls")),
+    path("admin/", include("whizzo_app.urls.admin_urls")),
+
 ]

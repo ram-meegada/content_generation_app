@@ -22,3 +22,16 @@ SUB_CATEGORY_CHOICES = [
     (5, "UPLOAD FILES OR BOOKS"),
 
 ]
+
+USER_ROLE_CHOICES = [
+      (1, "admin"),
+      (2, "user"),
+      (3, "subadmin")
+]
+
+
+PLAN_CHOICES = [
+      (1, "basic"),
+      (2, "intermediate"),
+      (3, "advanced")
+]
