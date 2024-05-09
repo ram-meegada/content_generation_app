@@ -127,7 +127,7 @@ class UserService:
             return {
                 "data": None,
                 "message": "Old password is incorrect",
-                "status": status.HTTP_200_OK
+                "status": status.HTTP_400_BAD_REQUEST
             }
         
     def forgot_password(self, request):

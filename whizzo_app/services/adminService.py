@@ -13,6 +13,7 @@ from datetime import datetime
 class AdminService:
 # onboarding
     def login_admin(self, request):
+        print(request.data,"22222222222222222222222222")
         email = request.data["email"]
         password = request.data["password"]
         try:

@@ -18,16 +18,19 @@ class DecryptionMiddleware:
         self.get_response = get_response
     def __call__(self, request):
         try:
+            print("wwwwwwwwwwwwwwwwwwwwwwww")
             if not request.headers.get('Sek'):
                 if request.method == "POST" or request.method == "PUT":
                     data = json.loads(request.body)
                     updated_data = payload_decrypt(data)
+                    print(updated_data,"44444444444444444444444444444444444")
                     request._body = json.dumps(updated_data).encode('utf-8')
                     data = self.get_response(request)
                     return data
             # print(request.META,'request.headers')
             sek = request.headers['Sek']
             hash_value = request.headers['Hash']
+            print("came here11111111111111111111111111111111111111111")
             hash_bytes = bytes.fromhex(hash_value)
             sek_bytes = bytes.fromhex(sek)
             iv = b'D904363DB8DACEB8'
@@ -51,10 +54,12 @@ class DecryptionMiddleware:
             if request.method == "POST" or request.method == "PUT":
                 data = json.loads(request.body)
                 updated_data = payload_decrypt(data)
+                print(updated_data,"1111111111111111111111111111111111111")
                 request._body = json.dumps(updated_data).encode('utf-8')
             data = self.get_response(request)
             return data
         except Exception as e:
+            print(str(e),"hhhhhhhhhhhhhhhhhhhhhhhhh")
             data = {"data": str(e),  "code": status.HTTP_400_BAD_REQUEST, 'message':'You are not Authenticated'}
             response = Response(data, status=status.HTTP_400_BAD_REQUEST)
             response.accepted_renderer = JSONRenderer()
