@@ -270,7 +270,14 @@ class DecryptionMiddleware:
                         updated_data = payload_decrypt(data)
                         request._body = json.dumps(updated_data).encode('utf-8')
                     except:
-                        pass    
+                        pass
+            elif request.method in ["POST", "PUT"]:
+                try:
+                    data = json.loads(request.body)
+                    updated_data = payload_decrypt(data)
+                    request._body = json.dumps(updated_data).encode('utf-8')
+                except:
+                    pass            
 
             return self.get_response(request)
 
