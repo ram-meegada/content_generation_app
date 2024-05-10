@@ -225,8 +225,10 @@ class DecryptionMiddleware:
 
     def __call__(self, request):
         try:
+            
             # Check if Sek and Hash headers are present
             if 'Sek' in request.headers and 'Hash' in request.headers:
+                
                 sek = request.headers['Sek']
                 hash_value = request.headers['Hash']
 
@@ -263,9 +265,12 @@ class DecryptionMiddleware:
                 code_time_stamp = int(appkey_datetime.timestamp())
 
                 if request.method in ["POST", "PUT"]:
-                    data = json.loads(request.body)
-                    updated_data = payload_decrypt(data)
-                    request._body = json.dumps(updated_data).encode('utf-8')
+                    try:
+                        data = json.loads(request.body)
+                        updated_data = payload_decrypt(data)
+                        request._body = json.dumps(updated_data).encode('utf-8')
+                    except:
+                        pass    
 
             return self.get_response(request)
 
