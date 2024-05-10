@@ -21,4 +21,22 @@ urlpatterns = [
     path("conversion/pdf-to-image/", categoryView.ConvertPdfToImageView.as_view()),
     path("conversion/image-to-pdf/", categoryView.ConvertImageToPdfView.as_view()),
 
+    #### Notes ####
+    path("convert-voice-to-text/", categoryView.ConvertVoiceToTextView.as_view()),
+    path("create-notes/", categoryView.CreateNotesView.as_view()),
+    path("get-ai-explanation/", categoryView.GetAiExplanation.as_view()),
+    path("change-language/", categoryView.ChangeLanguageNoteView.as_view()),
+    path("get-all-listing-notes/", categoryView.ChangeLanguageNoteView.as_view()),
+
+    #### research ####
+    path("get-research-answer/", categoryView.GetResearchAnswerView.as_view()),
+
+    #### assignment ####
+    path("get-research-answer/", categoryView.GetAssignmentSolutionView.as_view()),
+
+
 ]
+
+
+
+

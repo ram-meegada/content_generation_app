@@ -1,12 +1,14 @@
 from django.db import models
 from whizzo_app.models.baseModel import BaseModel
 from whizzo_app.models.userModel import UserModel
+from whizzo_app.models.uploadMediaModel import UploadMediaModel
 from whizzo_app.utils.choiceFields import CATEGORY_CHOICES, SUB_CATEGORY_CHOICES
 
 class CategoryModel(BaseModel):
 
     #foreinkey fields
     user = models.ForeignKey(UserModel, on_delete=models.CASCADE)
+    media = models.ForeignKey(UploadMediaModel, on_delete=models.CASCADE, null=True)
 
     #integer fields
     category = models.IntegerField(choices=CATEGORY_CHOICES, default=0)

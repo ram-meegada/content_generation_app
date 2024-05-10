@@ -1,6 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from whizzo_app.services.categoryService import CategoryService
+from rest_framework.permissions import AllowAny
 
 category_obj = CategoryService()
 
@@ -63,3 +64,48 @@ class ConvertImageToPdfView(APIView):
     def post(self, request):
         result = category_obj.image_to_pdf(request)
         return Response(result, status = result["status"])    
+    
+
+
+# note
+class ConvertVoiceToTextView(APIView):
+    def post(self, request):
+        result = category_obj.voice_to_text(request)
+        return Response(result, status = result["status"])
+    
+class CreateNotesView(APIView):
+    def post(self, request):
+        result = category_obj.add_notes_audio_to_text(request)
+        return Response(result, status = result["status"])
+
+class GetAiExplanation(APIView):
+    def post(self, request):
+        result = category_obj.ai_explanation(request)
+        return Response(result, status = result["status"])
+
+class ChangeLanguageNoteView(APIView):
+    def post(self, request):
+        result = category_obj.change_language_note(request)
+        return Response(result, status = result["status"])   
+    
+class GetAllListingNotesView(APIView):
+    def post(self, request):
+        result = category_obj.get_all_listing_notes(request)
+        return Response(result, status = result["status"])   
+    
+
+# research
+class GetResearchAnswerView(APIView):
+    permission_classes = [AllowAny]
+    def post(self, request):
+        result = category_obj.get_research_answer(request)
+        return Response(result, status = result["status"])
+    
+
+
+# assignment
+class GetAssignmentSolutionView(APIView):
+    def post(self, request):
+        result = category_obj.get_assignment_solution(request)
+        return Response(result, status = result["status"])
+     

@@ -7,7 +7,16 @@ urlpatterns = [
     path("get-admin-detail/", adminView.GetAdminDetailByTokenView.as_view()),
     path("update-admin-profile/", adminView.UpdateAdminProfileView.as_view()),
     path("verify-admin-otp/", adminView.VerifyAdminOtpView.as_view()),
+    
+    path("get-dashboard-data/", adminView.GetDashboardDataView.as_view()),
+    path("get-dashboard-user-graph-data/", adminView.GetDashboardUserGraphDataView.as_view()),
 
+    path("get-all-manage-user/", adminView.GetAllManageUserView.as_view()),
+    path("get-manage-user/<int:id>/", adminView.GetManageUserByIdView.as_view()),
+    path("update-manage-user/<int:id>/", adminView.UpdateManageUserView.as_view()),
+    path("update-manage-user-status/<int:id>/", adminView.UpdateManageUserStatusView.as_view()),
+    path("delete-manage-user/<int:id>/", adminView.DeleteManageUserView.as_view()),
+    
     path("add-ability/", adminView.CreateAbilityView.as_view()),
     path("update-ability/<int:id>/", adminView.UpdateAbilityView.as_view()),
     path("delete-ability/<int:id>/", adminView.DeleteAbilityView.as_view()),
@@ -34,8 +43,8 @@ urlpatterns = [
     path("update-subadmin-status-by-id/<int:id>/", adminView.UpdateSubAdminStatusView.as_view()),
     path("delete-subadmin/<int:id>/", adminView.DeleteSubAdminView.as_view()),
 
-    path("features/add/",adminView.AddFeaturesView.as_view()),
-    path("features/get-all/",adminView.GetAllFeaturesView.as_view()),
+    path("add-features/",adminView.AddFeaturesView.as_view()),
+    path("get-all-features/",adminView.GetAllFeaturesView.as_view()),
 
     path('add-subscription/', adminView.AddSubscriptionView.as_view()),
     path('get-subscription/<int:subscription_id>/', adminView.GetSubscriptionView.as_view()),
@@ -46,13 +55,19 @@ urlpatterns = [
     path('add-purpose/', adminView.AddPurposeView.as_view()),
     path('get-purpose/<int:purpose_id>/', adminView.GetPurposeView.as_view()),
     path('update-purpose/<int:purpose_id>/', adminView.UpdatePurposeView.as_view()),
+    path("update-purpose-status-by-id/<int:id>/", adminView.UpdatePurposeStatusView.as_view()),
     path('delete-purpose/<int:purpose_id>/', adminView.DeletePurposeView.as_view()),
     path('get-all-purpose/', adminView.GetAllPurposeView.as_view()),
 
-    path("add/faq/",adminView.AddFaqView.as_view()),
-    path("get/all-faq/",adminView.GetAllFaqView.as_view()),
-    path("faq/detail/<int:faq_id>/",adminView.FaqDetailView.as_view()),
-    path("faq/update/<int:faq_id>/",adminView.UpdateFaqView.as_view()),
-    path("faq/delete/<int:faq_id>/",adminView.DeleteFaqView.as_view()),
+    path("add-faq/",adminView.AddFaqView.as_view()),
+    path("get-all-faq/",adminView.GetAllFaqView.as_view()),
+    path("faq-detail/<int:faq_id>/",adminView.FaqDetailView.as_view()),
+    path("faq-update/<int:faq_id>/",adminView.UpdateFaqView.as_view()),
+    path("faq-delete/<int:faq_id>/",adminView.DeleteFaqView.as_view()),
+
+    path("add-contact-suport/",adminView.AddContactSupportView.as_view()),
+    path("add-privacy-policy/",adminView.AddPrivacyPolicyView.as_view()),
+    path("add-terms-condition/",adminView.AddTermsConditionView.as_view()),
+    path("add-about-us/",adminView.AddAboutUsView.as_view()),
 
 ]

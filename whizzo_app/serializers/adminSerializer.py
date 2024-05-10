@@ -94,6 +94,10 @@ class PurposeSerializer(serializers.ModelSerializer):
         model = PurposeModel
         fields = ['id', 'name', 'detail', 'is_active']
 
+class GeteditpurposeStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PurposeModel
+        fields = ('id','is_active')
 
 class FeatureModelSerializer(serializers.ModelSerializer):
     class Meta:

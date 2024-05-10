@@ -189,6 +189,16 @@ class AdminService:
             return {"data": serializer.data, "message": "UPDATED", "status": 200}
         return {"data": None, "message": serializer.errors, "status": 400}
     
+    def edit_purpose_status_by_id(self,request, purpose_id):
+        try:
+            sub_obj = PurposeModel.objects.get(pk=purpose_id)
+        except PurposeModel.DoesNotExist:
+            return {"data":None,"message": messages.RECORD_NOT_FOUND, "status": 404}
+        serializer = adminSerializer.GeteditpurposeStatusSerializer(sub_obj,request.data)
+        if serializer.is_valid():
+            serializer.save()
+        return {"data": serializer.data,"message": "updated successfully", "status": 200}
+    
     def delete_purpose(self, request, purpose_id):
         try:
             address = PurposeModel.objects.get(id=purpose_id)
@@ -198,9 +208,11 @@ class AdminService:
         return {"data": None, "message": "DELETED", "status": 200}
     
     def get_all_purpose(self, request):
-        purpose = PurposeModel.objects.all()
-        serializer = adminSerializer.PurposeSerializer(purpose, many=True)
-        return {"data": serializer.data, "message": "DETAILS", "status": 200}
+        purpose_obj = PurposeModel.objects.all()
+        pagination_obj = CustomPagination()
+        search_keys = ["name__icontains"]
+        result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.PurposeSerializer, purpose_obj)
+        return{'data': result,'message':  messages.FETCH, 'status': 200}
 
 #features
 
@@ -509,7 +521,7 @@ class AdminService:
         serializer = adminSerializer.GeteditSubAdminSerializer(sub_obj,request.data)
         if serializer.is_valid():
             serializer.save()
-        return {"data": serializer.data,"message": messages, "status": 200}
+        return {"data": serializer.data,"message": messages.SUB_ADMIN_UPDATED, "status": 200}
 
 
     def delete_sub_admin_by_id(self,request, sub_admin_id):
@@ -587,12 +599,67 @@ class AdminService:
 # cms
     def contatct_support(self, request):
         try:
-            cms_obj=CmsModel.objects.get(id=1)
-            serializer=adminSerializer.AddContactSupportSerializer(cms_obj,data=request.data)
-        except:
-            serializer=adminSerializer.AddContactSupportSerializer(data=request.data)
+            cms_obj = CmsModel.objects.first()
+            if not cms_obj:
+                serializer = adminSerializer.AddContactSupportSerializer(data=request.data)
+            else:
+                serializer = adminSerializer.AddContactSupportSerializer(cms_obj, data=request.data)
+        except Exception as e:
+            return {"data": None, "message": str(e), "status": 400}
         if serializer.is_valid():
             serializer.save()
-            return {"data": None, "message": "FAQ_DELETED", "status": 200}
+            message = "contatct_support_CREATED" if not cms_obj else "contatct_support_UPDATED"
+            return {"data": None, "message": message, "status": 200}
+        else:
+            return {"data": None, "message": serializer.errors, "status": 400}
 
-        
+
+    def privacy_policy(self, request):
+        try:
+            cms_obj = CmsModel.objects.first()
+            if not cms_obj:
+                serializer = adminSerializer.AddPrivacyPolicySerializer(data=request.data)
+            else:
+                serializer = adminSerializer.AddPrivacyPolicySerializer(cms_obj, data=request.data)
+        except Exception as e:
+            return {"data": None, "message": str(e), "status": 400}
+        if serializer.is_valid():
+            serializer.save()
+            message = "privacy_policy_CREATED" if not cms_obj else "privacy_policy_UPDATED"
+            return {"data": None, "message": message, "status": 200}
+        else:
+            return {"data": None, "message": serializer.errors, "status": 400}
+
+
+    def terms_conditions(self, request):
+        try:
+            cms_obj = CmsModel.objects.first()
+            if not cms_obj:
+                serializer = adminSerializer.AddTermsConditionSerializer(data=request.data)
+            else:
+                serializer = adminSerializer.AddTermsConditionSerializer(cms_obj, data=request.data)
+        except Exception as e:
+            return {"data": None, "message": str(e), "status": 400}
+        if serializer.is_valid():
+            serializer.save()
+            message = "terms_conditions_CREATED" if not cms_obj else "terms_conditions_UPDATED"
+            return {"data": None, "message": message, "status": 200}
+        else:
+            return {"data": None, "message": serializer.errors, "status": 400}
+
+
+    def about_us(self, request):
+        try:
+            cms_obj = CmsModel.objects.first()
+            if not cms_obj:
+                serializer = adminSerializer.AddAboutUsSerializer(data=request.data)
+            else:
+                serializer = adminSerializer.AddAboutUsSerializer(cms_obj, data=request.data)
+        except Exception as e:
+            return {"data": None, "message": str(e), "status": 400}
+        if serializer.is_valid():
+            serializer.save()
+            message = "about_us_CREATED" if not cms_obj else "about_us_UPDATED"
+            return {"data": None, "message": message, "status": 200}
+        else:
+            return {"data": None, "message": serializer.errors, "status": 400}

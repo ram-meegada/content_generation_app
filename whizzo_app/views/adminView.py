@@ -35,10 +35,22 @@ class GetAllManageUserView(APIView):
         result = admin_obj.get_all_user_admin(request)
         return Response(result, status=result["status"])
     
+class GetManageUserByIdView(APIView):
+    permission_classes = [AllowAny]
+    def get(self, request,id):
+        result = admin_obj.get_manage_user_by_id(request, id)
+        return Response(result, status=result["status"])
+    
 class UpdateManageUserView(APIView):
     permission_classes = [AllowAny]
     def put(self, request,id):
         result = admin_obj.update_manage_user_by_id(request, id)
+        return Response(result, status=result["status"])
+
+class UpdateManageUserStatusView(APIView):
+    permission_classes = [AllowAny]
+    def put(self, request,id):
+        result = admin_obj.edit_manage_user_status(request, id)
         return Response(result, status=result["status"])
     
 class DeleteManageUserView(APIView):
@@ -46,6 +58,20 @@ class DeleteManageUserView(APIView):
     def delete(self, request,id):
         result = admin_obj.delete_manage_users_by_id(request, id)
         return Response(result, status=result["status"])
+
+
+class GetDashboardDataView(APIView):
+    permission_classes = [AllowAny]
+    def get(self, request):
+        result = admin_obj.dashboard_data(request)
+        return Response(result, status=result["status"])
+    
+class GetDashboardUserGraphDataView(APIView):
+    permission_classes = [AllowAny]
+    def get(self, request):
+        result = admin_obj.get_admin_user_graph_data(request)
+        return Response(result, status=result["status"])
+
 
 class CreateAbilityView(APIView):
     permission_classes = [AllowAny]
@@ -192,6 +218,13 @@ class UpdatePurposeView(APIView):
     def put(self, request, purpose_id):
         result = admin_obj.update_purpose(request, purpose_id)
         return Response(result, status=result["status"])
+
+class UpdatePurposeStatusView(APIView):
+    permission_classes = [AllowAny]
+    def put(self, request, purpose_id):
+        result = admin_obj.edit_purpose_status_by_id(request, purpose_id)
+        return Response(result, status=result["status"]) 
+    
     
 class DeletePurposeView(APIView):
     permission_classes = [AllowAny]
@@ -281,3 +314,29 @@ class DeleteFaqView(APIView):
     def delete(self,request,faq_id):
         result=admin_obj.delete_faq(self,request,faq_id)
         return Response(result)
+    
+
+
+class AddContactSupportView(APIView):
+    permission_classes = [AllowAny]
+    def post(self, request):
+        result = admin_obj.contatct_support(request)
+        return Response(result, status=result["status"])
+    
+class AddPrivacyPolicyView(APIView):
+    permission_classes = [AllowAny]
+    def post(self, request):
+        result = admin_obj.privacy_policy(request)
+        return Response(result, status=result["status"])
+    
+class AddTermsConditionView(APIView):
+    permission_classes = [AllowAny]
+    def post(self, request):
+        result = admin_obj.terms_conditions(request)
+        return Response(result, status=result["status"])
+    
+class AddAboutUsView(APIView):
+    permission_classes = [AllowAny]
+    def post(self, request):
+        result = admin_obj.about_us(request)
+        return Response(result, status=result["status"])

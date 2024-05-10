@@ -29,6 +29,11 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle,Image
 from reportlab.lib import colors
 from pdf2image import convert_from_path
 from django.core.files.storage import FileSystemStorage
+import speech_recognition as sr
+from pydub import AudioSegment
+
+
+
 
 load_dotenv()
 google_api_key = settings.GOOGLE_API_KEY
@@ -427,3 +432,141 @@ class CategoryService:
             return {"message":"convert image to pdf successfully", "status": 200}
         except Exception as e:
             return {"message": str(e), "status": 400}
+        
+
+
+# note
+    def voice_to_text(self, request):
+        try:
+            audio = request.FILES.get("audio")
+            recognizer = sr.Recognizer()
+            audio = AudioSegment.from_mp3(audio)
+            audio.export("audio.wav", format="wav")
+            with sr.AudioFile("audio.wav") as source:
+                audio = recognizer.record(source)
+            text = recognizer.recognize_google(audio, language='en-US')
+            return {"message":text, "status": 200}
+        except Exception as e:
+            return {"message": str(e), "status": 400}
+        
+    def add_notes_audio_to_text(self, request):
+        try:
+            file=request.data.get("pdf_file")
+            category_obj=CategoryModel.objects.create(media=file, user=request.user.id, category=3, sub_category=5)
+            category_obj.save()
+            return {"data": request.data, "message": "note uploaded successfully", "status": 200}
+        
+        except Exception as e:
+            return {"error": str(e), "message": messages.WENT_WRONG, "status": 400}
+        
+
+    def ai_explanation(self, request):
+        text=request.data.get("text")
+        llm = ChatGoogleGenerativeAI(model="gemini-pro")
+        try:
+            response = llm.invoke(text)
+            result_qu = to_markdown(response.content)
+            return {"data": result_qu, "message": messages.FETCH, "status": 200}
+        except Exception as e:
+            return {"error": str(e), "message": messages.WENT_WRONG, "status": 400}
+        
+
+    def change_language_note(self, request):
+        try:
+            text= request.data.get("text")
+            translator = GoogleTranslator(source="auto", target="ar")
+            answer = translator.translate(text)
+            return {"data": answer, "message": messages.FETCH, "status": 200}
+        except Exception as e:
+            return {"error": str(e), "message": messages.WENT_WRONG, "status": 400}
+        
+    def get_all_listing_notes(self,request,id):
+        try:
+            notes_obj=CategoryModel.objects.filter(user_id=request.user.id, category=id)
+            serializer=categorySerializer.GetNoteListSerializer(notes_obj, many=True)
+            return{"data":serializer.data,"message":messages.FETCH,"status":200}
+        except:
+            return{"data":None,"message":messages.WENT_WRONG,"status":400}
+
+
+
+
+# research
+    def to_markdown(text):
+        text = text.replace('*', '')
+        intent_text=(textwrap.indent(text, '', predicate=lambda _: True))
+        return intent_text
+    
+    def get_research_answer(self, request):
+        reduce_citation=request.data.get("reduce_citation")
+        description=request.data.get("description")
+        if not request.data.get('upload_reference'):
+            topic = request.data.get("topic")
+            page = request.data.get("page")
+            words=int(page)*300
+            tone = request.data.get("tone")
+            reference = request.data.get("reference")
+            
+
+            data=f"generate esaay of {topic} having minimum {words} words answer with tone of voice {tone} by using reference from {reference} and also reduce recitation should be {reduce_citation} and also related to the give description that it {description}"
+            query = data
+            llm = ChatGoogleGenerativeAI(model="gemini-pro")
+            try:
+                response = llm.invoke(query)
+                result = to_markdown(response.content)
+                return{"data":result,"message":messages.FETCH,"status":200}
+            except Exception as e:
+                return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
+        
+        pdf_link =request.data['upload_reference']
+        data=f"generate esaay of mininimum 500 words from given link {pdf_link} and it should define with this {description} and reduce citation will be {reduce_citation}"
+        query = data
+        llm = ChatGoogleGenerativeAI(model="gemini-pro")
+        try:
+            response = llm.invoke(query)
+            result = to_markdown(response.content)
+            return{"data":result,"message":messages.FETCH,"status":200}
+        except Exception as e:
+            return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
+        
+
+    def save_rsearch_file(self, request):
+        try:
+            save_pdf=CategoryModel.objects.create(user_id=request.user.id,category=4, sub_category=5,media_id = request.data.get("pdf_file"))
+            save_pdf.save()
+            return{"data":request.data,"message":"saved successfully","status":200}
+        except Exception as e:
+            return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
+        
+    def get_history_research(self, request, id):
+        try:
+            notes_obj=CategoryModel.objects.filter(user_id=request.user.id, category=id)
+            serializer=categorySerializer.GetNoteListSerializer(notes_obj, many=True)
+            return{"data":serializer.data,"message":messages.FETCH,"status":200}
+        except:
+            return{"data":None,"message":messages.WENT_WRONG,"status":400}
+
+
+
+
+
+# assignment solution
+    def get_assignment_solution(self, request):
+        try:
+            image_link=request.data.get("image_link")
+            data=f"generate solution from the file of give link{image_link} "
+            query = data
+            llm = ChatGoogleGenerativeAI(model="gemini-pro")
+            try:
+                response = llm.invoke(query)
+                result = to_markdown(response.content)
+                return{"data":result,"message":messages.FETCH,"status":200}
+            except Exception as e:
+                return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
+            
+        except Exception as e:
+            return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
+
+
+        
+
