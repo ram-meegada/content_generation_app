@@ -13,7 +13,8 @@ from datetime import datetime
 class AdminService:
 # onboarding
     def login_admin(self, request):
-        print(request.data,"22222222222222222222222222")
+        
+
         email = request.data["email"]
         password = request.data["password"]
         try:
@@ -30,6 +31,8 @@ class AdminService:
             return {"data": None, "message": messages.PASSWORD_WRONG, "status": 400}
 
     def get_admin_profile(self, request):
+        print(request.data,"22222222222222222222222222")
+        print(request.headers,"22222222222222222222222222")
         user = UserModel.objects.get(id = request.user.id)
         serializer = adminSerializer.GetAdminSerializer(user)
         return {"data": serializer.data, "message": "USER_DETAILS", "status": 200}    

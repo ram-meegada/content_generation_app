@@ -29,7 +29,7 @@ DEBUG = config("DEBUG")
 
 ALLOWED_HOSTS = ['*']
 
-
+# CORS_ALLOWED_ORIGINS = ['http://localhost:3000']
 # Application definition
 
 INSTALLED_APPS = [
@@ -45,7 +45,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    # 'whizzo_project.SecurityMiddleware.DecryptionMiddleware',
+    'whizzo_project.SecurityMiddleware.DecryptionMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -75,15 +75,15 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'whizzo_project.wsgi.application'
 
-CORS_ALLOW_HEADERS = [
-    'Content-Type',
-    'X-Requested-With',
-    'X-New-Header',
-    'Authorization',
-    "Hash",
-    "Sek",
-    "Device",
-    # Add other header keys here
+CORS_ALLOW_HEADERS = ["*"
+    # 'Content-Type',
+    # 'X-Requested-With',
+    # 'X-New-Header',
+    # 'Authorization',
+    # "Hash",
+    # "Sek",
+    # "Device",
+    # # Add other header keys here
 ]
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
