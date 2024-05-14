@@ -118,6 +118,7 @@ class FaqModelSerializer(serializers.ModelSerializer):
 
 
 class GetAdminSerializer(serializers.ModelSerializer):
+    profile_picture = CreateUpdateUploadMediaSerializer()
     class Meta:
         model = UserModel
         fields = ['id', 'email', 'name', 'phone_no',  'country_code', 'profile_picture']
