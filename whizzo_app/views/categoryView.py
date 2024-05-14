@@ -109,3 +109,30 @@ class GetAssignmentSolutionView(APIView):
         result = category_obj.get_assignment_solution(request)
         return Response(result, status = result["status"])
      
+
+
+# setting app
+class GetFaqListView(APIView):
+    def get(self, request):
+        result = category_obj.get_list_faq(request)
+        return Response(result, status = result["status"])
+    
+class GetTermsConditionAppView(APIView):
+    def get(self, request):
+        result = category_obj.get_terms_condition(request)
+        return Response(result, status = result["status"])
+    
+
+class DeleteUserAppView(APIView):
+    def delete(self, request):
+        result = category_obj.delete_user(request)
+        return Response(result, status = result["status"])
+    
+
+
+# articles
+class GetArticlesView(APIView):
+    permission_classes = [AllowAny]
+    def post(self, request):
+        result = category_obj.get_article_response(request)
+        return Response(result, status = result["status"])

@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from whizzo_app.models import AbilityModel, AchievementModel, SubjectModel, SubRoleModel, UserModel, PermissionModel, ModuleModel, PurposeModel, FeaturesModel, SubscriptionModel, FaqModel, CmsModel
+from whizzo_app.models import AbilityModel, AchievementModel, SubjectModel, SubRoleModel, UserModel, PermissionModel, ModuleModel, PurposeModel, \
+       FeaturesModel, SubscriptionModel, FaqModel, CmsModel, TestimonialModel
 from whizzo_app.utils.generateLoginToken import generate_login_token
 from whizzo_app.serializers.uploadMediaSerializer import CreateUpdateUploadMediaSerializer
 
@@ -119,7 +120,7 @@ class FaqModelSerializer(serializers.ModelSerializer):
 class GetAdminSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserModel
-        fields = ['id', 'email', 'username', 'phone_no',  'country_code', 'profile_picture']
+        fields = ['id', 'email', 'name', 'phone_no',  'country_code', 'profile_picture']
 
 
 class GetAdminManageUserSerializer(serializers.ModelSerializer):
@@ -172,3 +173,21 @@ class AddAdminSerializer(serializers.ModelSerializer):
             return generate_login_token(obj)
         else:
             return None
+        
+
+
+class TestimonialSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TestimonialModel
+        fields = ["id","first_name","last_name","email","rating","message","profile_picture"]
+
+class GeteditTestimonialStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TestimonialModel
+        fields = ["id","is_active"]
+
+class GetTestimonialSerializer(serializers.ModelSerializer):
+    profile_picture = CreateUpdateUploadMediaSerializer()
+    class Meta:
+        model = TestimonialModel
+        fields = ["id","first_name","last_name","email","rating","message","profile_picture"]

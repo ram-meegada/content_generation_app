@@ -1,7 +1,7 @@
 from whizzo_app.utils import messages
 from whizzo_app.serializers import adminSerializer, userSerializer
 from whizzo_app.models import AbilityModel, AchievementModel, SubjectModel, SubRoleModel, UserModel, PermissionModel, PurposeModel, FeaturesModel, ModuleModel, \
-    SubscriptionModel, FaqModel, CmsModel
+    SubscriptionModel, FaqModel, CmsModel, TestimonialModel
 from whizzo_app.utils.customPagination import CustomPagination
 from whizzo_app.utils.otp import generate_password
 from whizzo_app.utils.sendMail import SendOtpToMail
@@ -31,21 +31,19 @@ class AdminService:
             return {"data": None, "message": messages.PASSWORD_WRONG, "status": 400}
 
     def get_admin_profile(self, request):
-        print(request.data,"22222222222222222222222222")
-        print(request.headers,"22222222222222222222222222")
         user = UserModel.objects.get(id = request.user.id)
         serializer = adminSerializer.GetAdminSerializer(user)
-        return {"data": serializer.data, "message": "USER_DETAILS", "status": 200}    
+        return {"data": serializer.data, "message": messages.FETCH, "status": 200}    
     
     def edit_admin_profile(self, request):
         try:
             user_obj=UserModel.objects.get(id=request.user.id)
         except UserModel.DoesNotExist:
-            return {"data": None, "message": "NOT_FOUND", "status": 400}
+            return {"data": None, "message": messages.USER_NOT_FOUND, "status": 400}
         serializer=adminSerializer.GetAdminSerializer(user_obj,data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return {"data": serializer.data, "message":"Profile updated successfully", "status": 200}
+            return {"data": serializer.data, "message":messages.UPDATED_SUCCESSFULLY, "status": 200}
         return {"data": None, "message": serializer.errors, "status": 400}
 
     def verify_admin_otp(self, request):
@@ -56,9 +54,9 @@ class AdminService:
             elif "phone_number" in request.data:
                 user = UserModel.objects.get(phone_no=request.data["phone_number"])
             else:
-                return {"data": None, "message": "Email or phone number not provided", "status": 400}
+                return {"data": None, "message": messages.EMAIL_PHONE_NOT_FOUND, "status": 400}
         except UserModel.DoesNotExist:
-            return {"data": None, "message": 'USER_NOT_FOUND', "status": 400}
+            return {"data": None, "message": messages.USER_NOT_FOUND, "status": 400}
         
         now = datetime.now(tz=pytz.UTC)
         otp_sent_time = user.otp_sent_time
@@ -67,7 +65,7 @@ class AdminService:
             if otp_duration > 60:
                 return {"data": None, "message": messages.OTP_EXPIRED, "status": 400}
         else:
-            return {"data": None, "message": "OTP not sent yet", "status": 400}
+            return {"data": None, "message": messages.OTP_NOT_SENT, "status": 400}
         
         if user.otp != request.data["otp"]:
             return {"data": None, "message":  messages.WRONG_OTP, "status": 400}
@@ -76,7 +74,7 @@ class AdminService:
         
         user.save()
         user_serializer = adminSerializer.AddAdminSerializer(user, context={"give_login_token": GIVE_LOGIN_TOKEN})    
-        return {"data": user_serializer.data, "message":  "OTP_VERIFIED", "status": 200}
+        return {"data": user_serializer.data, "message": messages.OTP_VERIFIED, "status": 200}
 # dashboard
 
     def dashboard_data(self, request):
@@ -123,21 +121,21 @@ class AdminService:
         try:
             user = UserModel.objects.get(pk=user_id)
         except UserModel.DoesNotExist:
-            return {"data":None,"message": 'NOT_FOUND', "status": 400}
+            return {"data":None,"message": messages.USER_NOT_FOUND, "status": 400}
         serializer = adminSerializer.GetAdminManageUserSerializer(user)
-        return {"data": serializer.data,"message": 'FETCH', "status": 200}
+        return {"data": serializer.data,"message": messages.FETCH, "status": 200}
 
 
     def update_manage_user_by_id(self,request,user_id):
         try:
             user = UserModel.objects.get(pk=user_id)
         except UserModel.DoesNotExist:
-            return {"data":None,"message": 'NOT_FOUND', "status": 400}
+            return {"data":None,"message": messages.USER_NOT_FOUND, "status": 400}
         serializer = adminSerializer.UpdateAdminManageUserSerializer(user, data=request.data )
         print(serializer)
         if serializer.is_valid():
             serializer.save()
-        return {"data": serializer.data,"message": 'FETCH', "status": 200}
+        return {"data": serializer.data,"message": messages.USER_UPDATED, "status": 200}
     
     def edit_manage_user_status(self, request, id):
         try:   
@@ -145,7 +143,7 @@ class AdminService:
             serializer=adminSerializer.EditManageUserStatusSerializer(user,data=request.data)
             if serializer.is_valid():
                 serializer.save()
-                return {"data": serializer.data, "message": "Updated successfully", "status": 200}
+                return {"data": serializer.data, "message": messages.UPDATED, "status": 200}
             return {"data": serializer.errors, "message": messages.WENT_WRONG, "status": 400}
         except:
             return {"data": None, "message": messages.RECORD_NOT_FOUND, "status": 400}
@@ -154,12 +152,61 @@ class AdminService:
         try:
             user_obj = UserModel.objects.get(pk=user_id)
         except UserModel.DoesNotExist:
-            return {"data": None,"message": 'NOT_FOUND', "status": 404}
+            return {"data": None,"message": messages.USER_NOT_FOUND, "status": 404}
         user_obj.delete()
-        return {"message": 'USER_DELETED', "status": 200}
+        return {"data": None,"message": messages.USER_DELETED, "status": 200}
     
 # testimonial
+    def add_testimonial(self, request):
+        serializer = adminSerializer.TestimonialSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return {"data": serializer.data, "message":messages.TESTIMONIAL_ADDED, "status": 201}
+        return {"data": None, "message": serializer.errors, "status": 400}
     
+    def get_testimonial(self, request, id):
+        try:
+            testimonial_obj = TestimonialModel.objects.get(id=id)
+        except TestimonialModel.DoesNotExist:
+            return {"data": None, "message": messages.RECORD_NOT_FOUND, "status": 400}
+        serializer = adminSerializer.GetTestimonialSerializer(testimonial_obj)
+        return {"data": serializer.data, "message": messages.FETCH, "status": 200}
+    
+    def update_testimonial(self, request, id):
+        try:
+            testimonial_obj = TestimonialModel.objects.get(id=id)
+        except TestimonialModel.DoesNotExist:
+            return {"data": None, "message":messages.RECORD_NOT_FOUND, "status": 400}
+        serializer = adminSerializer.TestimonialSerializer(testimonial_obj, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return {"data": serializer.data, "message": messages.TESTIMONIAL_UPDATED, "status": 200}
+        return {"data": None, "message": serializer.errors, "status": 400}
+    
+    def edit_testimonial_status_by_id(self,request, id):
+        try:
+            sub_obj = TestimonialModel.objects.get(pk=id)
+        except TestimonialModel.DoesNotExist:
+            return {"data":None,"message": messages.RECORD_NOT_FOUND, "status": 404}
+        serializer = adminSerializer.GeteditTestimonialStatusSerializer(sub_obj, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+        return {"data": serializer.data,"message": messages.TESTIMONIAL_UPDATED, "status": 200}
+    
+    def delete_testimonial(self, request, id):
+        try:
+            address = TestimonialModel.objects.get(id=id)
+        except TestimonialModel.DoesNotExist:
+            return {"data": None, "message": messages.RECORD_NOT_FOUND, "status": 400}
+        address.delete()
+        return {"data": None, "message": messages.TESTIMONIAL_DELETED, "status": 200}
+    
+    def get_all_testimonial(self, request):
+        Testimonial_obj = TestimonialModel.objects.all()
+        pagination_obj = CustomPagination()
+        search_keys = ["first_name__icontains"]
+        result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.TestimonialSerializer, Testimonial_obj)
+        return{'data': result,'message':  messages.FETCH, 'status': 200}
     
 # purpose
     
@@ -167,26 +214,26 @@ class AdminService:
         serializer = adminSerializer.PurposeSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return {"data": serializer.data, "message":" ADDED", "status": 201}
+            return {"data": serializer.data, "message":messages.PURPOSE_ADDED, "status": 201}
         return {"data": None, "message": serializer.errors, "status": 400}
     
     def get_purpose(self, request, purpose_id):
         try:
             purpose = PurposeModel.objects.get(id=purpose_id)
         except PurposeModel.DoesNotExist:
-            return {"data": None, "message": "NOT_FOUND", "status": 400}
+            return {"data": None, "message": messages.RECORD_NOT_FOUND, "status": 400}
         serializer = adminSerializer.PurposeSerializer(purpose)
-        return {"data": serializer.data, "message": "DETAILS", "status": 200}
+        return {"data": serializer.data, "message": messages.FETCH, "status": 200}
     
     def update_purpose(self, request, purpose_id):
         try:
             purpose = PurposeModel.objects.get(id=purpose_id)
         except PurposeModel.DoesNotExist:
-            return {"data": None, "message":"NOT_FOUND", "status": 400}
+            return {"data": None, "message":messages.RECORD_NOT_FOUND, "status": 400}
         serializer = adminSerializer.PurposeSerializer(purpose, data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return {"data": serializer.data, "message": "UPDATED", "status": 200}
+            return {"data": serializer.data, "message": messages.PURPOSE_UPDATED, "status": 200}
         return {"data": None, "message": serializer.errors, "status": 400}
     
     def edit_purpose_status_by_id(self,request, purpose_id):
@@ -197,15 +244,15 @@ class AdminService:
         serializer = adminSerializer.GeteditpurposeStatusSerializer(sub_obj,request.data)
         if serializer.is_valid():
             serializer.save()
-        return {"data": serializer.data,"message": "updated successfully", "status": 200}
+        return {"data": serializer.data,"message": messages.PURPOSE_UPDATED, "status": 200}
     
     def delete_purpose(self, request, purpose_id):
         try:
             address = PurposeModel.objects.get(id=purpose_id)
         except PurposeModel.DoesNotExist:
-            return {"data": None, "message": "NOT_FOUND", "status": 400}
+            return {"data": None, "message": messages.RECORD_NOT_FOUND, "status": 400}
         address.delete()
-        return {"data": None, "message": "DELETED", "status": 200}
+        return {"data": None, "message": messages.PURPOSE_DELETED, "status": 200}
     
     def get_all_purpose(self, request):
         purpose_obj = PurposeModel.objects.all()
@@ -221,18 +268,18 @@ class AdminService:
             serializer=adminSerializer.FeatureModelSerializer(data=request.data)
             if serializer.is_valid():
                 serializer.save()
-                return {"data": serializer.data,"message": 'FEATURE_ADDED', "status": 200}
-            return {"data": serializer.errors,"message": 'WENT_WRONG', "status": 200}
+                return {"data": serializer.data,"message": messages.FEATURE_ADDED, "status": 200}
+            return {"data": serializer.errors,"message": messages.WENT_WRONG, "status": 400}
         except Exception as e:
-            return {"error": str(e),"message": 'INTERNAL_SERVER_ERROR', "status": 200}
+            return {"error": str(e),"message": messages.WENT_WRONG, "status": 400}
         
     def get_all_features(self, request):
         try:
             faqs_obj = FeaturesModel.objects.filter(is_active=True).order_by("created_at")
             serializer = adminSerializer.FaqModelSerializer(faqs_obj, many=True)
-            return {'data': serializer.data, 'message': "FETCH", "status": 200}
+            return {'data': serializer.data, 'message': messages.FETCH, "status": 200}
         except FeaturesModel.DoesNotExist:
-            return {"data": None, "message": 'NOT_FOUND', "status": 400} 
+            return {"data": None, "message": messages.WENT_WRONG, "status": 400} 
 
 # subscription
 
@@ -240,43 +287,43 @@ class AdminService:
         serializer = adminSerializer.SubscriptionSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return {"data": serializer.data, "message": "ADDED", "status": 201}
+            return {"data": serializer.data, "message": messages.SUBSCRIPTION_ADDED, "status": 201}
         return {"data": None, "message": serializer.errors, "status": 400}
     
     def get_subscription(self, request, subscription_id):
         try:
             subscription = SubscriptionModel.objects.get(id=subscription_id)
         except SubscriptionModel.DoesNotExist:
-            return {"data": None, "message": "NOT_FOUND", "status": 400}
+            return {"data": None, "message": messages.RECORD_NOT_FOUND, "status": 400}
         serializer = adminSerializer.SubscriptionSerializer(subscription)
-        return {"data": serializer.data, "message": "DETAILS", "status": 200}
+        return {"data": serializer.data, "message": messages.FETCH, "status": 200}
     
     def update_subscription(self, request, subscription_id):
         try:
             subscription = SubscriptionModel.objects.get(id=subscription_id)
         except SubscriptionModel.DoesNotExist:
-            return {"data": None, "message": "NOT_FOUND", "status": 400}
+            return {"data": None, "message": messages.RECORD_NOT_FOUND, "status": 400}
         serializer = adminSerializer.SubscriptionSerializer(subscription, data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return {"data": serializer.data, "message": "UPDATED", "status": 200}
+            return {"data": serializer.data, "message": messages.SUBSCRIPTION_UPDATED, "status": 200}
         return {"data": None, "message": serializer.errors, "status": 400}
     
     def delete_subscription(self, request, subscription_id):
         try:
             subscription = SubscriptionModel.objects.get(id=subscription_id)
         except SubscriptionModel.DoesNotExist:
-            return {"data": None, "message": "NOT_FOUND", "status": 400}
+            return {"data": None, "message": messages.RECORD_NOT_FOUND, "status": 400}
         subscription.delete()
-        return {"data": None, "message": "DELETED", "status": 200}
+        return {"data": None, "message": messages.SUBSCRIPTION_DELETED, "status": 200}
     
     def get_all_subscriptions(self, request):
         try:
             subscription = SubscriptionModel.objects.all()
         except SubscriptionModel.DoesNotExist:
-            return {"data": None, "message": "NOT_FOUND", "status": 400}
+            return {"data": None, "message": messages.RECORD_NOT_FOUND, "status": 400}
         serializer = adminSerializer.SubscriptionSerializer(subscription, many=True)
-        return {"data": serializer.data, "message": "DETAILS", "status": 200}
+        return {"data": serializer.data, "message":messages.FETCH , "status": 200}
 
 # ability
     def add_ability(self, request):
@@ -540,10 +587,10 @@ class AdminService:
             serializer=adminSerializer.FaqModelSerializer(data=request.data)
             if serializer.is_valid():
                 serializer.save()
-                return {"data": serializer.data,"message": 'FAQ_ADDED', "status": 200}
-            return {"data": serializer.errors,"message": 'WENT_WRONG', "status": 200}
+                return {"data": serializer.data,"message": messages.FAQ_ADDED, "status": 200}
+            return {"data": serializer.errors,"message": messages.WENT_WRONG, "status": 200}
         except Exception as e:
-            return {"error": str(e),"message": 'INTERNAL_SERVER_ERROR', "status": 200}
+            return {"error": str(e),"message": messages.INTERNAL_SERVER_ERROR, "status": 200}
         
   
     
@@ -552,20 +599,20 @@ class AdminService:
         try:
             faqs_obj = FaqModel.objects.filter(is_active=True).order_by("created_at")
             serializer = adminSerializer.FaqModelSerializer(faqs_obj, many=True)
-            return {'data': serializer.data, 'message': "FETCH", "status": 200}
+            return {'data': serializer.data, 'message': messages.FETCH, "status": 200}
         except FaqModel.DoesNotExist:
-            return {"data": None, "message": 'NOT_FOUND', "status": 400}
+            return {"data": None, "message": messages.RECORD_NOT_FOUND, "status": 400}
 
 
     def faq_details_by_id(self, request,faq_id):
         try:
             faq = FaqModel.objects.get(id=faq_id)
             serializer = adminSerializer.FaqModelSerializer(faq)
-            return {"data": serializer.data, "message":  'FETCH', "status": 200}
+            return {"data": serializer.data, "message":  messages.FETCH, "status": 200}
         except FaqModel.DoesNotExist:
-            return {"data": None, "message": 'NOT_FOUND', "status": 404}
+            return {"data": None, "message": messages.RECORD_NOT_FOUND, "status": 404}
         except Exception as e:
-            return {"data": None, "message":  'INTERNAL_SERVER_ERROR', "status": 500}
+            return {"data": None, "message": messages.INTERNAL_SERVER_ERROR, "status": 500}
         
     def update_faq(self, request,faq_id):
         try:

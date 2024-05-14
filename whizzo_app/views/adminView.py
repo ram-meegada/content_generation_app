@@ -340,3 +340,42 @@ class AddAboutUsView(APIView):
     def post(self, request):
         result = admin_obj.about_us(request)
         return Response(result, status=result["status"])
+    
+
+
+class AddTestimonialView(APIView):
+    permission_classes = [AllowAny]
+    def post(self, request):
+        result = admin_obj.add_testimonial(request)
+        return Response(result, status=result["status"])
+    
+class GetTestimonialView(APIView):
+    permission_classes = [AllowAny]
+    def get(self, request, id):
+        result = admin_obj.get_testimonial(request, id)
+        return Response(result, status=result["status"])
+    
+class UpdateTestimonialView(APIView):
+    permission_classes = [AllowAny]
+    def put(self, request, id):
+        result = admin_obj.update_testimonial(request, id)
+        return Response(result, status=result["status"])
+
+class UpdateTestimonialStatusView(APIView):
+    permission_classes = [AllowAny]
+    def put(self, request, id):
+        result = admin_obj.edit_testimonial_status_by_id(request, id)
+        return Response(result, status=result["status"]) 
+    
+    
+class DeleteTestimonialView(APIView):
+    permission_classes = [AllowAny]
+    def delete(self, request, id):
+        result = admin_obj.delete_testimonial(request, id)
+        return Response(result, status=result["status"])
+    
+class GetAllTestimonialView(APIView):
+    permission_classes = [AllowAny]
+    def get(self, request):
+        result = admin_obj.get_all_testimonial(request)
+        return Response(result, status=result["status"])

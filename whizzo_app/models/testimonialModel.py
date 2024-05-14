@@ -1,9 +1,10 @@
 from django.db import models
-from whizzo_app.models import BaseModel
+from whizzo_app.models import BaseModel, UploadMediaModel
 
 
 
 class TestimonialModel(BaseModel):
+    profile_picture = models.ForeignKey(UploadMediaModel, on_delete=models.SET_NULL, null=True)
     first_name = models.CharField(max_length=255, default="")
     last_name = models.CharField(max_length=255, default="")
     email = models.CharField(max_length=255, default="")

@@ -6,11 +6,16 @@ EMAIL_NOT_FOUND = "User with this email not found"
 USER_LOGGED_IN = "Logged In successfully"
 
 PASSWORD_WRONG = "Incorrect password"
+USER_NOT_FOUND = "User not found"
+UPDATED_SUCCESSFULLY="Profile updated Successfully"
+EMAIL_PHONE_NOT_FOUND="Email or phone number not provided"
 
 #### otp #####
 OTP_EXPIRED = "Otp expired."
 RESENT_OTP = "Otp send successfully"
 WRONG_OTP = "The otp you entered is incorrect"
+OTP_NOT_SENT="Otp not sent yet"
+OTP_VERIFIED="Otp verified successfully"
  
 ####### media #########
 MEDIA_UPLOADED = "Media uploaded successfully"
@@ -53,3 +58,28 @@ INTERNAL_SERVER_ERROR= "Internal server error"
 SUB_ADMIN_CREATED= "Sub admin added successfully"
 SUB_ADMIN_UPDATED= "Sub admin updated successfully"
 SUB_ADMIN_DELETED= "Sub admin deleted successfully"
+
+USER_UPDATED="User updated successfully"
+UPDATED= "Updated successfully"
+USER_DELETED="User deleted successfully"
+
+TESTIMONIAL_ADDED="Testimonial added successfully"
+TESTIMONIAL_UPDATED="Testimonial updated successfully"
+TESTIMONIAL_DELETED="Testimonial deleted successfully"
+
+PURPOSE_ADDED="Purpose added successfully"
+PURPOSE_UPDATED="Purpose updated successfully"
+PURPOSE_DELETED="Purpose deleted successfully"
+
+FEATURE_ADDED="Feature added successfully"
+PURPOSE_UPDATED="Purpose updated successfully"
+PURPOSE_DELETED="Purpose deleted successfully"
+
+SUBSCRIPTION_ADDED="Subscription added successfully"
+SUBSCRIPTION_UPDATED="Subscription updated successfully"
+SUBSCRIPTION_DELETED="Subscription deleted successfully"
+
+FAQ_ADDED="Faq added successfully"
+FAQ_UPDATED="Faq updated successfully"
+FAQ_DELETED="Faq deleted successfully"
+

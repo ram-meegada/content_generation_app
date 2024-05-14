@@ -12,9 +12,9 @@ import urllib.request as urlopener
 from PyPDF2 import PdfReader
 from io import BytesIO
 import json
-from whizzo_app.models.categoryModel import CategoryModel
+from whizzo_app.models import FaqModel,CmsModel, UserModel
 from whizzo_app.utils import messages
-from whizzo_app.serializers import categorySerializer
+from whizzo_app.serializers import categorySerializer, adminSerializer
 from deep_translator import GoogleTranslator
 import aspose.words as aw
 from pdf2docx import Converter
@@ -570,3 +570,56 @@ class CategoryService:
 
         
 
+############## settings app ###########
+
+    def get_list_faq(self, request):
+        try:   
+            user = FaqModel.objects.all()
+        except:
+            return {"data": None, "message": messages.RECORD_NOT_FOUND, "status": 400}
+        serializer=adminSerializer.FaqModelSerializer(user, many=True)
+        return {"data": serializer.data, "message": messages.FETCH, "status": 200}
+
+
+    def get_terms_condition(self, request):
+        try:   
+            user = CmsModel.objects.all()
+        except:
+            return {"data": None, "message": messages.RECORD_NOT_FOUND, "status": 400}
+        serializer=adminSerializer.AddTermsConditionSerializer(user, many=True)
+        return {"data": serializer.data, "message": messages.FETCH, "status": 200}
+    
+
+    def delete_user(self, request):
+        try:
+            user_obj = UserModel.objects.get(id=request.user.id)
+        except UserModel.DoesNotExist:
+            return {"data": None, "message": messages.RECORD_NOT_FOUND, "status": 400}
+        user_obj.delete()
+        return {"data": None, "message": messages.USER_DELETED, "status": 200}
+    
+
+
+# articles
+
+    def get_article_response(self, request):
+        
+        # topic = request.data.get("topic")
+        # words = request.data.get("words")
+        # language = request.data.get("language")
+        # region = request.data.get("region")
+        # tone = request.data.get("tone")
+        # pronouns = request.data.get("pronouns")
+        image_link = request.data.get("image_link")
+
+        data=f"i want all the data from pdf link {image_link} in json"
+        query = data
+        llm = ChatGoogleGenerativeAI(model="gemini-pro")
+        try:
+            response = llm.invoke(query)
+            result = to_markdown(response.content)
+            return{"data":result,"message":messages.FETCH,"status":200}
+        except Exception as e:
+            return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
+    
+       

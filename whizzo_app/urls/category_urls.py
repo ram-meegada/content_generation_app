@@ -34,6 +34,14 @@ urlpatterns = [
     #### assignment ####
     path("get-research-answer/", categoryView.GetAssignmentSolutionView.as_view()),
 
+    ##### setting app  ######
+    path("get-faq-app-list/", categoryView.GetFaqListView.as_view()),
+    path("get-terms-condition-app/", categoryView.GetTermsConditionAppView.as_view()),
+    path("delete-user-app/", categoryView.DeleteUserAppView.as_view()),
+    
+
+    # #### articles #####
+    path("get-articles-response/", categoryView.GetArticlesView.as_view()),
 
 ]
 

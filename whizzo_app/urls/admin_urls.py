@@ -70,4 +70,11 @@ urlpatterns = [
     path("add-terms-condition/",adminView.AddTermsConditionView.as_view()),
     path("add-about-us/",adminView.AddAboutUsView.as_view()),
 
+    path('add-testimonial/', adminView.AddTestimonialView.as_view()),
+    path('get-testimonial/<int:id>/', adminView.GetTestimonialView.as_view()),
+    path('update-testimonial/<int:id>/', adminView.UpdateTestimonialView.as_view()),
+    path("update-testimonial-status-by-id/<int:id>/", adminView.UpdateTestimonialStatusView.as_view()),
+    path('delete-testimonial/<int:id>/', adminView.DeleteTestimonialView.as_view()),
+    path('get-all-testimonial/', adminView.GetAllTestimonialView.as_view()),
+
 ]
