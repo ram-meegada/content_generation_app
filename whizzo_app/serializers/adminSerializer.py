@@ -123,6 +123,12 @@ class GetAdminSerializer(serializers.ModelSerializer):
         model = UserModel
         fields = ['id', 'email', 'name', 'phone_no',  'country_code', 'profile_picture']
 
+class UpdateAdminSerializer(serializers.ModelSerializer):
+    # profile_picture = CreateUpdateUploadMediaSerializer()
+    class Meta:
+        model = UserModel
+        fields = ['id', 'email', 'name', 'phone_no',  'country_code', 'profile_picture']
+
 
 class GetAdminManageUserSerializer(serializers.ModelSerializer):
     profile_picture = CreateUpdateUploadMediaSerializer()

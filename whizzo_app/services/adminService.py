@@ -40,7 +40,7 @@ class AdminService:
             user_obj=UserModel.objects.get(id=request.user.id)
         except UserModel.DoesNotExist:
             return {"data": None, "message": messages.USER_NOT_FOUND, "status": 400}
-        serializer=adminSerializer.GetAdminSerializer(user_obj,data=request.data)
+        serializer=adminSerializer.UpdateAdminSerializer(user_obj,data=request.data)
         if serializer.is_valid():
             serializer.save()
             return {"data": serializer.data, "message":messages.UPDATED_SUCCESSFULLY, "status": 200}
