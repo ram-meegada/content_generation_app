@@ -234,7 +234,7 @@ class DeletePurposeView(APIView):
     
 class GetAllPurposeView(APIView):
     permission_classes = [AllowAny]
-    def get(self, request):
+    def post(self, request):
         result = admin_obj.get_all_purpose(request)
         return Response(result, status=result["status"])
     
@@ -248,7 +248,7 @@ class AddFeaturesView(APIView):
     
 class GetAllFeaturesView(APIView):
     permission_classes = [AllowAny]
-    def get(self, request):
+    def post(self, request):
         result = admin_obj.get_all_features(request)
         return Response(result, status=result["status"])
     
