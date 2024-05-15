@@ -620,23 +620,23 @@ class AdminService:
             serializer = adminSerializer.FaqModelSerializer(faq, data=request.data, partial=True)
             if serializer.is_valid():
                 serializer.save()
-                return {"data": serializer.data, "message":  "FAQ_UPDATED", "status": 200}
+                return {"data": serializer.data, "message":  messages.FAQ_UPDATED, "status": 200}
             else:
-                return {"data": serializer.errors, "message":  'WENT_WRONG', "status": 400}
+                return {"data": serializer.errors, "message":  messages.WENT_WRONG, "status": 400}
         except FaqModel.DoesNotExist:
-            return {"data": None, "message":  'NOT_FOUND', "status": 404}
+            return {"data": None, "message":  messages.RECORD_NOT_FOUND, "status": 404}
         except Exception as e:
-            return {"data": None, "message": 'INTERNAL_SERVER_ERROR', "status": 500}
+            return {"data": None, "message": messages.INTERNAL_SERVER_ERROR, "status": 500}
         
     def delete_faq(self, request, faq_id):
         try:
             faq = FaqModel.objects.get(id=faq_id)
             faq.delete()
-            return {"data": None, "message": "FAQ_DELETED", "status": 200}
+            return {"data": None, "message": messages.FAQ_DELETED, "status": 200}
         except FaqModel.DoesNotExist:
-            return {"data": None, "message": 'NOT_FOUND', "status": 404}
+            return {"data": None, "message": messages.RECORD_NOT_FOUND, "status": 404}
         except Exception as e:
-            return {"data": None, "message":  'INTERNAL_SERVER_ERROR', "status": 500}
+            return {"data": None, "message":  messages.INTERNAL_SERVER_ERROR, "status": 500}
         
 
 
@@ -655,7 +655,7 @@ class AdminService:
             return {"data": None, "message": str(e), "status": 400}
         if serializer.is_valid():
             serializer.save()
-            message = "contatct_support_CREATED" if not cms_obj else "contatct_support_UPDATED"
+            message = "Contact support created successfully " if not cms_obj else "Contact support updated successfully"
             return {"data": None, "message": message, "status": 200}
         else:
             return {"data": None, "message": serializer.errors, "status": 400}
@@ -672,7 +672,7 @@ class AdminService:
             return {"data": None, "message": str(e), "status": 400}
         if serializer.is_valid():
             serializer.save()
-            message = "privacy_policy_CREATED" if not cms_obj else "privacy_policy_UPDATED"
+            message = "Privacy policy created successfully" if not cms_obj else "Privacy policy updated successfully"
             return {"data": None, "message": message, "status": 200}
         else:
             return {"data": None, "message": serializer.errors, "status": 400}
@@ -689,7 +689,7 @@ class AdminService:
             return {"data": None, "message": str(e), "status": 400}
         if serializer.is_valid():
             serializer.save()
-            message = "terms_conditions_CREATED" if not cms_obj else "terms_conditions_UPDATED"
+            message = "Terms conditions created successfully" if not cms_obj else "Terms conditions updated successfully"
             return {"data": None, "message": message, "status": 200}
         else:
             return {"data": None, "message": serializer.errors, "status": 400}
@@ -706,7 +706,7 @@ class AdminService:
             return {"data": None, "message": str(e), "status": 400}
         if serializer.is_valid():
             serializer.save()
-            message = "about_us_CREATED" if not cms_obj else "about_us_UPDATED"
+            message = "about us created successfully" if not cms_obj else "about us updated successfully"
             return {"data": None, "message": message, "status": 200}
         else:
             return {"data": None, "message": serializer.errors, "status": 400}

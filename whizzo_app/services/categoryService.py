@@ -356,7 +356,7 @@ class CategoryService:
             serializer.save()
         if os.path.exists(file_save_path):
             os.remove(file_save_path)
-        return {"data": serializer.data, "message": "conversion is done", "status": 200}                
+        return {"data": serializer.data, "message": messages.CONVERT_SUCCESS, "status": 200}                
     
     def Excel_To_Pdf(self, excel_file, pdf_file):
         # Read Excel file into pandas DataFrame
@@ -393,7 +393,7 @@ class CategoryService:
         saved_files = self.pdf_to_image(input_pdf_file, image_path_prefix)
         if os.path.exists(input_pdf_file):
             os.remove(input_pdf_file)
-        return {"data": saved_files, "message": "conversion is done", "status": 200}
+        return {"data": saved_files, "message": messages.CONVERT_SUCCESS, "status": 200}
 
     def pdf_to_image(self, pdf_path, image_path_prefix):
         # Convert PDF to a list of PIL Image objects
@@ -429,7 +429,7 @@ class CategoryService:
 
             doc.save(f"{file_name}.pdf")
 
-            return {"message":"convert image to pdf successfully", "status": 200}
+            return {"message":messages.CONVERT_SUCCESS, "status": 200}
         except Exception as e:
             return {"message": str(e), "status": 400}
         

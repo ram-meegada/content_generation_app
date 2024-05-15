@@ -35,6 +35,8 @@ SUMMARY_FETCHED = "File summary fetched successfully"
 PDF_TO_WORD = "Pdf file converted to word successfully"
 PDF_TO_EXCEL = "Pdf file converted to excel successfully"
 
+CONVERT_SUCCESS ="Converted sucessfully"
+
 
 ########### admin ###########
 ABILITY_ADDED="Abilty added successfully"
