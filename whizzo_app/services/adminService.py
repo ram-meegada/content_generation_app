@@ -330,8 +330,10 @@ class AdminService:
     def get_all_ability(self, request):
         try:
             data = AbilityModel.objects.all()
-            serializer = adminSerializer.CreateAbilitySerializer(data, many=True)
-            return {"data":serializer.data,"message":messages.FETCH,"status":200}
+            pagination_obj = CustomPagination()
+            search_keys = ["username__icontains", "email__icontains"]
+            result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.CreateAbilitySerializer, data)
+            return {"data":result,"message":messages.FETCH,"status":200}
         except Exception as e:
             return {"data":None,"message":messages.WENT_WRONG,"status":400}
         
@@ -467,6 +469,25 @@ class AdminService:
             return {"data": None, "message": messages.RECORD_NOT_FOUND, "status": 400}
         achievement_obj.delete()
         return {"data": None, "message": messages.ACHIEVEMENT_DELETED, "status": 200}
+    
+    def get_all_achievement(self, request):
+        try:
+            data = AchievementModel.objects.all()
+            pagination_obj = CustomPagination()
+            search_keys = ["username__icontains", "email__icontains"]
+            result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.CreateAcheivementSerializer, data)
+            return {"data":result,"message":messages.FETCH,"status":200}
+        except Exception as e:
+            return {"data":None,"message":messages.WENT_WRONG,"status":400}
+        
+
+    def get_achievement_by_id(self, request, id):
+        try:
+            data = AchievementModel.objects.get(id = id)
+            serializer = adminSerializer.CreateAcheivementSerializer(data)
+            return {"data":serializer.data,"message":messages.FETCH,"status":200}
+        except Exception as e:
+            return {"data":None,"message":messages.WENT_WRONG,"status":400}
     
 
 # sub admin

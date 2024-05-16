@@ -93,14 +93,14 @@ class DeleteAbilityView(APIView):
     
 class GetAllAbilityView(APIView):
     permission_classes=(AllowAny,)
-    def get(self, request):
+    def post(self, request):
         result = admin_obj.get_all_ability(request)
         return Response(result, status=result["status"])
     
 class GetAbilityByIdView(APIView):
     permission_classes =(AllowAny,)
     def get(self, request, id):
-        result = admin_obj.get_ability_by_id(self, request, id)
+        result = admin_obj.get_ability_by_id(request, id)
         return Response(result, status=result["status"])
 
 
@@ -122,6 +122,20 @@ class DeleteAchievementView(APIView):
     def delete(self, request,id):
         result = admin_obj.delete_achievement(request, id)
         return Response(result, status=result["status"])
+    
+class GetAllAchivementVeiw(APIView):
+    permission_classes=(AllowAny,)
+    def post(self, request):
+        result = admin_obj.get_all_achievement(request)
+        return Response(result, status=result["status"])
+    
+
+class GetAllAchivementByIdVeiw(APIView):
+    permission_classes = [AllowAny]
+    def get(self, request,id):
+        result = admin_obj.get_achievement_by_id(request, id)
+        return Response(result, status=result["status"])
+
     
 
 
