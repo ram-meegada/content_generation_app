@@ -197,6 +197,6 @@ class GetTestimonialSerializer(serializers.ModelSerializer):
     profile_picture = CreateUpdateUploadMediaSerializer()
     class Meta:
         model = TestimonialModel
-        fields = ["id","first_name","last_name","email","rating","message","profile_picture"]
+        fields = ["id","first_name","last_name","email","rating","message","profile_picture","is_active"]
 
 
