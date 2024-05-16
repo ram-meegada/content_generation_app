@@ -20,6 +20,8 @@ urlpatterns = [
     path("add-ability/", adminView.CreateAbilityView.as_view()),
     path("update-ability/<int:id>/", adminView.UpdateAbilityView.as_view()),
     path("delete-ability/<int:id>/", adminView.DeleteAbilityView.as_view()),
+    path("get-all-ability/",adminView.GetAllAbilityView.as_view()),
+    path("get-abiity-by-id/<int:id>",adminView.GetAbilityByIdView.as_view()),
 
     path("add-achievement/", adminView.CreateAchievementView.as_view()),
     path("update-achievement/<int:id>/", adminView.UpdateAchievementView.as_view()),

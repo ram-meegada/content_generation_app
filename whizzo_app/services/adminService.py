@@ -205,7 +205,7 @@ class AdminService:
         Testimonial_obj = TestimonialModel.objects.all()
         pagination_obj = CustomPagination()
         search_keys = ["first_name__icontains"]
-        result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.TestimonialSerializer, Testimonial_obj)
+        result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.GetTestimonialSerializer, Testimonial_obj)
         return{'data': result,'message':  messages.FETCH, 'status': 200}
     
 # purpose
