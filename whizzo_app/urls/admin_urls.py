@@ -55,7 +55,7 @@ urlpatterns = [
     path('add-purpose/', adminView.AddPurposeView.as_view()),
     path('get-purpose/<int:purpose_id>/', adminView.GetPurposeView.as_view()),
     path('update-purpose/<int:purpose_id>/', adminView.UpdatePurposeView.as_view()),
-    path("update-purpose-status-by-id/<int:id>/", adminView.UpdatePurposeStatusView.as_view()),
+    path("update-purpose-status-by-id/<int:purpose_id>/", adminView.UpdatePurposeStatusView.as_view()),
     path('delete-purpose/<int:purpose_id>/', adminView.DeletePurposeView.as_view()),
     path('get-all-purpose/', adminView.GetAllPurposeView.as_view()),
 
