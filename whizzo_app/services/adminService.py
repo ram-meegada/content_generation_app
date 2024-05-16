@@ -326,6 +326,24 @@ class AdminService:
         return {"data": serializer.data, "message":messages.FETCH , "status": 200}
 
 # ability
+
+    def get_all_ability(self, request):
+        try:
+            data = AbilityModel.objects.all()
+            serializer = adminSerializer.CreateAbilitySerializer(data, many=True)
+            return {"data":serializer.data,"message":messages.FETCH,"status":200}
+        except Exception as e:
+            return {"data":None,"message":messages.WENT_WRONG,"status":400}
+        
+
+    def get_ability_by_id(self, request, id):
+        try:
+            data = AbilityModel.objects.get(id = id)
+            serializer = adminSerializer.CreateAbilitySerializer(data)
+            return {"data":serializer.data,"message":messages.FETCH,"status":200}
+        except Exception as e:
+            return {"data":None,"message":messages.WENT_WRONG,"status":400}
+        
     def add_ability(self, request):
         try:   
             data={

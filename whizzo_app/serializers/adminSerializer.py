@@ -186,7 +186,7 @@ class AddAdminSerializer(serializers.ModelSerializer):
 class TestimonialSerializer(serializers.ModelSerializer):
     class Meta:
         model = TestimonialModel
-        fields = ["id","first_name","last_name","email","rating","message","profile_picture"]
+        fields = ["id", "first_name", "last_name", "email", "coutntry_code", "phone_no", "rating", "message", "profile_picture"]
 
 class GeteditTestimonialStatusSerializer(serializers.ModelSerializer):
     class Meta:
@@ -198,3 +198,5 @@ class GetTestimonialSerializer(serializers.ModelSerializer):
     class Meta:
         model = TestimonialModel
         fields = ["id","first_name","last_name","email","rating","message","profile_picture"]
+
+

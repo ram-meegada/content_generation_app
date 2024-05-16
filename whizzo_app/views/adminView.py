@@ -90,6 +90,18 @@ class DeleteAbilityView(APIView):
     def delete(self, request,id):
         result = admin_obj.delete_ability(request, id)
         return Response(result, status=result["status"])
+    
+class GetAllAbilityView(APIView):
+    permission_classes=(AllowAny,)
+    def get(self, request):
+        result = admin_obj.get_all_ability(request)
+        return Response(result, status=result["status"])
+    
+class GetAbilityByIdView(APIView):
+    permission_classes =(AllowAny,)
+    def get(self, request, id):
+        result = admin_obj.get_ability_by_id(self, request, id)
+        return Response(result, status=result["status"])
 
 
 
@@ -376,6 +388,6 @@ class DeleteTestimonialView(APIView):
     
 class GetAllTestimonialView(APIView):
     permission_classes = [AllowAny]
-    def get(self, request):
+    def post(self, request):
         result = admin_obj.get_all_testimonial(request)
         return Response(result, status=result["status"])
