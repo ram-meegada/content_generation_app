@@ -255,7 +255,7 @@ class AdminService:
         return {"data": None, "message": messages.PURPOSE_DELETED, "status": 200}
     
     def get_all_purpose(self, request):
-        purpose_obj = PurposeModel.objects.all().order_by("created_at")
+        purpose_obj = PurposeModel.objects.all().order_by("-created_at")
         pagination_obj = CustomPagination()
         search_keys = ["name__icontains"]
         result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.PurposeSerializer, purpose_obj)
