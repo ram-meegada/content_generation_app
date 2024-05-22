@@ -314,13 +314,13 @@ class GetAllSubscriptionsView(APIView):
 class AddFaqView(APIView):
     permission_classes = [AllowAny]
     def post(self, request):
-        result = admin_obj.add_faqs(self,request)
+        result = admin_obj.add_faqs(request)
         return Response(result)
     
 class GetAllFaqView(APIView):
     permission_classes = [AllowAny]
     def get(self, request):
-        result = admin_obj.get_all_faqs(self,request)
+        result = admin_obj.get_all_faqs(request)
         return Response(result)
     
 class FaqDetailView(APIView):
@@ -332,13 +332,13 @@ class FaqDetailView(APIView):
 class UpdateFaqView(APIView):
     permission_classes = [AllowAny]
     def put(self, request,faq_id):
-        result = admin_obj.update_faq(self,request,faq_id)
+        result = admin_obj.update_faq(request,faq_id)
         return Response(result)
     
 class DeleteFaqView(APIView):
     permission_classes = [AllowAny]
     def delete(self,request,faq_id):
-        result=admin_obj.delete_faq(self,request,faq_id)
+        result=admin_obj.delete_faq(request,faq_id)
         return Response(result)
     
 
