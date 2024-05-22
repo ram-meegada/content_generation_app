@@ -749,3 +749,26 @@ class AdminService:
             return {"data": None, "message": message, "status": 200}
         else:
             return {"data": None, "message": serializer.errors, "status": 400}
+        
+
+    def get_all_cms_details(self, request):
+        try:
+            cms_obj = CmsModel.objects.first()
+            if not cms_obj:
+                return {"data": None, "message": "No CMS details found", "status": 404}
+
+            contact_support_serializer = adminSerializer.AddContactSupportSerializer(cms_obj)
+            privacy_policy_serializer = adminSerializer.AddPrivacyPolicySerializer(cms_obj)
+            terms_condition_serializer = adminSerializer.AddTermsConditionSerializer(cms_obj)
+            about_us_serializer = adminSerializer.AddAboutUsSerializer(cms_obj)
+
+            data = {
+                "contact_support": contact_support_serializer.data,
+                "privacy_policy": privacy_policy_serializer.data,
+                "terms_condition": terms_condition_serializer.data,
+                "about_us": about_us_serializer.data
+            }
+
+            return {"data": data, "message": "CMS details retrieved successfully", "status": 200}
+        except Exception as e:
+            return {"data": None, "message": str(e), "status": 400}

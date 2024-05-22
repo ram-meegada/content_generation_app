@@ -74,6 +74,7 @@ urlpatterns = [
     path("add-privacy-policy/",adminView.AddPrivacyPolicyView.as_view()),
     path("add-terms-condition/",adminView.AddTermsConditionView.as_view()),
     path("add-about-us/",adminView.AddAboutUsView.as_view()),
+    path("get-cms-detail/",adminView.GetCmsDetailView.as_view()),
 
     path('add-testimonial/', adminView.AddTestimonialView.as_view()),
     path('get-testimonial/<int:id>/', adminView.GetTestimonialView.as_view()),
