@@ -250,8 +250,9 @@ class DecryptionMiddleware:
 
                 # Extract the authorization token
                 print(data_dict)
+                # authorization_token = data_dict.get('authorization', '')
                 authorization_token = data_dict.get('authorization', '')
-                print(authorization_token,"33333333333333333333333333333333333333333")
+                request.META["HTTP_AUTHORIZATION"] = data_dict.get('authorization', '')
 
                 # Handle authorization logic
                 if authorization_token:
