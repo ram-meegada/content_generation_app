@@ -1,3 +1,4 @@
+from re import search
 from rest_framework import status
 from whizzo_app.models.userModel import UserModel
 from whizzo_app.utils import messages
@@ -165,19 +166,11 @@ class UserService:
     
     def update_profile(self, request):
         try:
-            email = request.data.get("email")
-            phone_no = request.data.get("phone_no")
-
-            user = UserModel.objects.get(email = email)
-            user.first_name = request.data["first_name"]
-            user.last_name = request.data["last_name"]
-            user.profile_picture_id = request.data["profile_picture"]
-            if phone_no:    
-                user.phone_no = request.data["phone_no"]
-            if email:
-                user.email = request.data["email"]
-            user.save()
-            return {"data": None, "message": "Profile updated successfully", "status": 200}
+            user  = UserModel.objects.get(id = request.user.id)
+            serializer = userSerializer.updateUserSerializer(user,data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return {"data": serializer.data, "message": "Profile updated successfully", "status": 200}
         except Exception as error:
             return {"data": None, "message": "Something went wrong", "status": 400}
         

@@ -27,6 +27,7 @@ urlpatterns = [
     path("get-ai-explanation/", categoryView.GetAiExplanation.as_view()),
     path("change-language/", categoryView.ChangeLanguageNoteView.as_view()),
     path("get-all-listing-notes/", categoryView.ChangeLanguageNoteView.as_view()),
+    path("send-notes-via-mail/",categoryView.SendNotesViaMale.as_view()),
 
     #### research ####
     path("get-research-answer/", categoryView.GetResearchAnswerView.as_view()),

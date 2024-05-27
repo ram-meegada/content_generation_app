@@ -51,12 +51,12 @@ class ResetPasswordView(APIView):
         result = user_obj.reset_password(request)
         return Response(result, status=result["status"])
 
-class UpdateProfileView(APIView):
-    def post(self, request):
+class UpdateProfileByTokenView(APIView):
+    def put(self, request):
         result = user_obj.update_profile(request)
         return Response(result, status=result["status"])
 
 class UserDetailsByTokenView(APIView):
-    def post(self, request):
+    def get(self, request):
         result = user_obj.user_details_by_token(request)
         return Response(result, status=result["status"])

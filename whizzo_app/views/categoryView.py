@@ -92,6 +92,10 @@ class GetAllListingNotesView(APIView):
     def post(self, request):
         result = category_obj.get_all_listing_notes(request)
         return Response(result, status = result["status"])   
+
+class SendNotesViaMale(APIView):
+    def post(self, request):
+        pass
     
 
 # research

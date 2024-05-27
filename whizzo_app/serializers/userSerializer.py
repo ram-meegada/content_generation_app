@@ -19,3 +19,8 @@ class GetUserSerializer(serializers.ModelSerializer):
             return generate_login_token(obj)
         else:
             return None
+
+class updateUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserModel
+        fields = ["id","email","name","phone_no","country_code","email","profile_status"]
