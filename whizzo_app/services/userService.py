@@ -32,9 +32,11 @@ class UserService:
             user.save()
             Thread(target=sendMail.send_otp_to_mail, args=[email, otp]).start()
         elif "phone_no" in request.data:
-            user = UserModel.objects.filter(phone_no = phone_no).exists()
-            if user:
+            user = UserModel.objects.filter(phone_no = phone_no)
+            if user.exists() and user.first().profile_status > 1:
                 return {"data": None, "message": messages.PHONE_ALREADY_EXISTS, "status": 400}
+            elif user.exists() and user.first().profile_status == 1:
+                user.first().delete()
             user = UserModel(phone_no=phone_no)
             user.role = 2
             user.country_code=country_code
