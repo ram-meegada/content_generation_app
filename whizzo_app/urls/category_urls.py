@@ -26,7 +26,8 @@ urlpatterns = [
     path("create-notes/", categoryView.CreateNotesView.as_view()),
     path("get-ai-explanation/", categoryView.GetAiExplanation.as_view()),
     path("change-language/", categoryView.ChangeLanguageNoteView.as_view()),
-    path("get-all-listing-notes/", categoryView.ChangeLanguageNoteView.as_view()),
+    path("get-all-listing-notes/", categoryView.GetAllListingNotesView.as_view()),
+    path("get-notes-by-id/<int:id>/", categoryView.GetListingNotesByIdView.as_view()),
     path("send-notes-via-mail/",categoryView.SendNotesViaMale.as_view()),
 
     #### research ####

@@ -12,7 +12,7 @@ import urllib.request as urlopener
 from PyPDF2 import PdfReader
 from io import BytesIO
 import json
-from whizzo_app.models import FaqModel,CmsModel, UserModel
+from whizzo_app.models import FaqModel,CmsModel, UserModel, FileSumarizationModel, NoteModel
 from whizzo_app.utils import messages
 from whizzo_app.serializers import categorySerializer, adminSerializer
 from deep_translator import GoogleTranslator
@@ -197,6 +197,9 @@ class CategoryService:
         serializer = categorySerializer.GetPreviousTestSerializer(previous_tests, many=True)
         return {"data": serializer.data, "message": messages.TESTING_CATEGORY_PAST_TESTS, "status": 200}
 
+
+# filesumarization
+
     def generate_file_summary(self, request):
         file_link = request.FILES.get("file_link")
         llm = ChatGoogleGenerativeAI(model="gemini-pro")
@@ -211,9 +214,9 @@ class CategoryService:
             )
             response = llm.invoke([message])
             result = to_markdown(response.content)
-            save_file_summary_record = CategoryModel.objects.create(
+            save_file_summary_record = FileSumarizationModel.objects.create(
                                                     user_id=request.user.id,
-                                                    category=2,
+                                                    sub_category=5,
                                                     result=result
             )
             return {"data": result, "message": messages.SUMMARY_GENERATED, "status": 200}
@@ -229,19 +232,19 @@ class CategoryService:
         return pdf_text
     
     def file_summary_history(self, request):
-        summary_history_objects = CategoryModel.objects.filter(
+        summary_history_objects = FileSumarizationModel.objects.filter(
             user_id=request.user.id,
-            category=2
+            sub_category=5
         )
-        serializer = categorySerializer.GetPreviousTestSerializer(summary_history_objects, many=True)
+        serializer = categorySerializer.GetFileSumarizationSerializer(summary_history_objects, many=True)
         return {"data": serializer.data, "message": messages.TESTING_CATEGORY_PAST_TESTS, "status": 200}
     
     def get_file_summary_by_id(self, request, file_id):
         try:
-            get_summary_obj = CategoryModel.objects.get(id=file_id)
-        except CategoryModel.DoesNotExist:
+            get_summary_obj = FileSumarizationModel.objects.get(id=file_id)
+        except FileSumarizationModel.DoesNotExist:
             return {"data": None, "message": messages.RECORD_NOT_FOUND, "status": 400}
-        serializer = categorySerializer.GetFileSummarySerializer(get_summary_obj)
+        serializer = categorySerializer.GetFileSummarizationIdSerializer(get_summary_obj)
         return {"data": serializer.data, "message": messages.SUMMARY_FETCHED, "status": 200}
     
 
@@ -449,12 +452,14 @@ class CategoryService:
         except Exception as e:
             return {"message": str(e), "status": 400}
         
-    def add_notes_audio_to_text(self, request):
+    def add_notes(self, request):
         try:
-            file=request.data.get("pdf_file")
-            category_obj=CategoryModel.objects.create(media=file, user=request.user.id, category=3, sub_category=5)
-            category_obj.save()
-            return {"data": request.data, "message": "note uploaded successfully", "status": 200}
+            serializers=categorySerializer.AddNoteSerializer(data=request.data)
+            if serializers.is_valid():
+                user_obj = serializers.save()
+                user_obj.user_id=request.user.id
+                user_obj.save()
+            return {"data": serializers.data, "message": "note uploaded successfully", "status": 200}
         
         except Exception as e:
             return {"error": str(e), "message": messages.WENT_WRONG, "status": 400}
@@ -480,10 +485,18 @@ class CategoryService:
         except Exception as e:
             return {"error": str(e), "message": messages.WENT_WRONG, "status": 400}
         
-    def get_all_listing_notes(self,request,id):
+    def get_all_listing_notes(self,request):
         try:
-            notes_obj=CategoryModel.objects.filter(user_id=request.user.id, category=id)
-            serializer=categorySerializer.GetNoteListSerializer(notes_obj, many=True)
+            notes_obj=NoteModel.objects.filter(user_id=request.user.id)
+            serializer=categorySerializer.GetNoteSerializer(notes_obj, many=True)
+            return{"data":serializer.data,"message":messages.FETCH,"status":200}
+        except:
+            return{"data":None,"message":messages.WENT_WRONG,"status":400}
+        
+    def get_notes_by_id(self,request,id):
+        try:
+            notes_obj=NoteModel.objects.filter(user_id=request.user.id)
+            serializer=categorySerializer.GetNoteSerializer(notes_obj)
             return{"data":serializer.data,"message":messages.FETCH,"status":200}
         except:
             return{"data":None,"message":messages.WENT_WRONG,"status":400}

@@ -20,6 +20,8 @@ SUB_CATEGORY_CHOICES = [
     (3, "ABILITIES"),
     (4, "ACHIEVEMENTS"),
     (5, "UPLOAD FILES OR BOOKS"),
+    (6, "NEW NOTE"),
+    (7, "WRITE ABOUT ME"),
 
 ]
 

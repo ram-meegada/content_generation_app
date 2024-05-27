@@ -15,3 +15,6 @@ from .faqModel import FaqModel
 from .ratingModel import RatingModel
 from .testimonialModel import TestimonialModel
 from .cmsModel import CmsModel
+from .fileSumarizationModel import FileSumarizationModel
+from .noteModel import NoteModel
+from .assignmentModel import AssignmentModel
