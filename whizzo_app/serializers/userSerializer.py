@@ -10,7 +10,7 @@ class GetUserSerializer(serializers.ModelSerializer):
     token = serializers.SerializerMethodField()
     class Meta:
         model = UserModel
-        fields = ['id', 'email', 'name', 'phone_no',  'country_code', \
+        fields = ['id', 'email', 'name', 'phone_no', 'country_name', 'country_code', \
                   'email_verification', 'profile_status', 'token']
 
     def get_token(self, obj):
@@ -23,4 +23,4 @@ class GetUserSerializer(serializers.ModelSerializer):
 class updateUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserModel
-        fields = ["id","email","name","phone_no","country_code","email","profile_status"]
+        fields = ["id","email","name","phone_no","country_code","country_name","email","profile_status"]

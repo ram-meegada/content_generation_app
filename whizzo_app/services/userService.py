@@ -15,6 +15,8 @@ class UserService:
         email = request.data.get("email")
         password = request.data.get("password")
         phone_no = request.data.get("phone_no")
+        country_code = request.data.get("country_code")
+        country_name = request.data.get("country_name")
         if "email" in request.data:
             check_user = UserModel.objects.filter(email = email)
             if check_user.exists() and check_user.first().profile_status > 1:
@@ -35,6 +37,8 @@ class UserService:
                 return {"data": None, "message": messages.PHONE_ALREADY_EXISTS, "status": 400}
             user = UserModel(phone_no=phone_no)
             user.role = 2
+            user.country_code=country_code
+            user.country_name = country_name
             user.otp = otp
             user.otp_sent_time = datetime.now(tz=pytz.UTC)
             user.profile_status = 1
@@ -42,18 +46,34 @@ class UserService:
         return {"data": "", "message": messages.OTP_SENT_AFTER_REGISTRATION, "status": 201}
     
     def login_user(self, request):
-        email = request.data["email"]
-        password = request.data["password"]
-        try:
-            user = UserModel.objects.get(email = email, role=2)
-        except UserModel.DoesNotExist:
-            return {"data": None, "message": messages.EMAIL_NOT_FOUND, "status": 400}
-        
-        verify_password = check_password(password, user.password)
-        if verify_password:
-            give_login_token = True
-            serializer = userSerializer.GetUserSerializer(user, context = {"give_login_token": give_login_token})
-            return {"data": serializer.data, "message": messages.USER_LOGGED_IN, "status": 200}
+        otp=sendMail.generate_otp()
+        if request.data.get("email"):
+            email = request.data["email"]
+            password = request.data["password"]
+            try:
+                user = UserModel.objects.get(email = email, role=2)
+            except UserModel.DoesNotExist:
+                return {"data": None, "message": messages.EMAIL_NOT_FOUND, "status": 400}
+            verify_password = check_password(password, user.password)
+            if verify_password:
+                give_login_token = True
+                serializer = userSerializer.GetUserSerializer(user, context = {"give_login_token": give_login_token})
+                return {"data": serializer.data, "message": messages.USER_LOGGED_IN, "status": 200}
+            else:
+                return {"data": None, "message": messages.PASSWORD_WRONG, "status": 400}
+        if request.data.get("phone_no"):
+            phone_no = request.data["phone_no"]
+            country_name = request.data["country_name"]
+            country_code = request.data["country_code"]
+            try:
+                user = UserModel.objects.get(phone_no = phone_no,country_name=country_name,country_code=country_code, role=2)
+            except UserModel.DoesNotExist:
+                return {"data": None, "message": messages.PHONE_NOT_FOUND, "status": 400}
+        if user:
+            user.otp=otp
+            user.otp_sent_time = datetime.now(tz=pytz.UTC)
+            user.save()
+            return {"data": None, "message": messages.OTP_SENT_PHONE, "status": 200}
         else:
             return {"data": None, "message": messages.PASSWORD_WRONG, "status": 400}
 
@@ -66,8 +86,8 @@ class UserService:
         try:
             if "email" in request.data:
                 user = UserModel.objects.get(email=request.data["email"])
-            elif "phone_number" in request.data:
-                user = UserModel.objects.get(phone_no=request.data["phone_number"])
+            elif "phone_no" in request.data:
+                user = UserModel.objects.get(phone_no=request.data["phone_no"])
             else:
                 return {"data": None, "message": "Email or phone number not provided", "status": 400}
         except UserModel.DoesNotExist:
@@ -83,6 +103,10 @@ class UserService:
             if user.profile_status == 1:
                 user.profile_status = 2
                 GIVE_LOGIN_TOKEN = True
+        if "phone_no" in request.data:
+            if user.profile_status == 1:
+                user.profile_status = 2
+            GIVE_LOGIN_TOKEN = True
         user.save()
         user_serializer = userSerializer.GetUserSerializer(user, context={"give_login_token": GIVE_LOGIN_TOKEN})    
         return {"data": user_serializer.data, "message":  "OTP_VERIFIED", "status": 200}
@@ -93,8 +117,8 @@ class UserService:
             if "email" in request.data:
                 user = UserModel.objects.get(email=request.data["email"])
                 Thread(target=sendMail.send_otp_to_mail, args=[request.data["email"], otp]).start()
-            elif "phone_number" in request.data:
-                user = UserModel.objects.get(phone_no=request.data["phone_number"])
+            elif "phone_no" in request.data:
+                user = UserModel.objects.get(phone_no=request.data["phone_no"])
             else:
                 return {"data": None, "message": "Email or phone number not provided", "status": 400}
         except UserModel.DoesNotExist:

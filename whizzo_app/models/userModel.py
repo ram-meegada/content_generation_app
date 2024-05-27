@@ -16,6 +16,7 @@ class UserModel(AbstractUser, BaseModel):
     name = models.CharField(max_length=255, default="")
     phone_no = models.CharField(max_length=100, default="")
     country_code = models.CharField(max_length=17, default="")
+    country_name = models.CharField(max_length=17, default="")
     otp = models.CharField(max_length=100, default="")
 
     profile_status = models.IntegerField(choices=PROFILE_STATUS_OPTIONS, default=0)
