@@ -10,6 +10,6 @@ urlpatterns = [
     path("change-password/", userView.ChangePasswordView.as_view()),
     path("forgot-password/", userView.ForgotPasswordView.as_view()),
     path("reset-password/", userView.ResetPasswordView.as_view()),
-    path("update-profile/", userView.UpdateProfileView.as_view()),
+    path("update-profile/", userView.UpdateProfileByTokenView.as_view()),
     path("user-details/", userView.UserDetailsByTokenView.as_view()),
 ]
