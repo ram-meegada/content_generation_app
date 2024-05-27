@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from whizzo_app.models.categoryModel import CategoryModel
-from whizzo_app.models import FileSumarizationModel, NoteModel
+from whizzo_app.models import FileSumarizationModel, NoteModel, ReseaerchModel
 from whizzo_app.serializers.uploadMediaSerializer import CreateUpdateUploadMediaSerializer
 
 class GetPreviousTestSerializer(serializers.ModelSerializer):
@@ -73,3 +73,11 @@ class GetNoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = NoteModel
         fields = ["id", "media", "sub_category", "voice_media","created_at"] 
+
+
+class GetResearchSerializer(serializers.ModelSerializer):
+    media=CreateUpdateUploadMediaSerializer()
+    voice_media=CreateUpdateUploadMediaSerializer()
+    class Meta:
+        model = ReseaerchModel
+        fields = ["id", "media", "sub_category", "topic","page", "tone_of_voice", "specify_reference","is_reduce_citation", "description","created_at"] 

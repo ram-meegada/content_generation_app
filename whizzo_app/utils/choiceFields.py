@@ -14,6 +14,27 @@ CATEGORY_CHOICES = [
     (8, "ARTICLES")
 ]
 
+TONE_OF_VOICE = [
+    (1, "FORMAL"),
+    (2, "INFORMATIVE"),
+    (3, "NARATIVE"),
+    (4, "OBJECTIVE"),
+    (5, "ANALYTICAL"),
+    (6, "PERSUASIVE"),
+    (7, "CASUAL"),
+    (8, "DESCRITIVE")
+]
+
+SPECIFY_REFERENCE = [
+    (1, "NONE"),
+    (2, "MLA"),
+    (3, "APA"),
+    (4, "IEEE"),
+    (5, "CHICAGO"),
+    (6, "HARVARD"),
+    (7, "VANCOVER"),
+]
+
 SUB_CATEGORY_CHOICES = [
     (1, "QUESTIONS WITH OPTIONS"),
     (2, "FLASH CARDS"),
@@ -22,6 +43,8 @@ SUB_CATEGORY_CHOICES = [
     (5, "UPLOAD FILES OR BOOKS"),
     (6, "NEW NOTE"),
     (7, "WRITE ABOUT ME"),
+    (8, "NEW RESEARCH"),
+    (9, "UPLOAD REFERENCE"),
 
 ]
 

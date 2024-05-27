@@ -110,6 +110,15 @@ class GetResearchAnswerView(APIView):
         result = category_obj.get_research_answer(request)
         return Response(result, status = result["status"])
     
+class GetAllResearchView(APIView):
+    def post(self, request):
+        result = category_obj.get_all_research(request)
+        return Response(result, status = result["status"])   
+    
+class GetResearchByIdView(APIView):
+    def post(self, request, id):
+        result = category_obj.get_research_by_id(request, id)
+        return Response(result, status = result["status"]) 
 
 
 # assignment

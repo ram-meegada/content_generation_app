@@ -12,7 +12,7 @@ import urllib.request as urlopener
 from PyPDF2 import PdfReader
 from io import BytesIO
 import json
-from whizzo_app.models import FaqModel,CmsModel, UserModel, FileSumarizationModel, NoteModel
+from whizzo_app.models import FaqModel,CmsModel, UserModel, FileSumarizationModel, NoteModel, ReseaerchModel
 from whizzo_app.utils import messages
 from whizzo_app.serializers import categorySerializer, adminSerializer
 from deep_translator import GoogleTranslator
@@ -31,6 +31,7 @@ from pdf2image import convert_from_path
 from django.core.files.storage import FileSystemStorage
 import speech_recognition as sr
 from pydub import AudioSegment
+from whizzo_app.utils.choiceFields import  SUB_CATEGORY_CHOICES, TONE_OF_VOICE, SPECIFY_REFERENCE
 
 
 
@@ -495,7 +496,7 @@ class CategoryService:
         
     def get_notes_by_id(self,request,id):
         try:
-            notes_obj=NoteModel.objects.filter(user_id=request.user.id)
+            notes_obj=NoteModel.objects.filter(id=id)
             serializer=categorySerializer.GetNoteSerializer(notes_obj)
             return{"data":serializer.data,"message":messages.FETCH,"status":200}
         except:
@@ -511,14 +512,14 @@ class CategoryService:
         return intent_text
     
     def get_research_answer(self, request):
-        reduce_citation=request.data.get("reduce_citation")
+        reduce_citation=request.data.get("is_reduce_citation")
         description=request.data.get("description")
         if not request.data.get('upload_reference'):
             topic = request.data.get("topic")
             page = request.data.get("page")
             words=int(page)*300
-            tone = request.data.get("tone")
-            reference = request.data.get("reference")
+            tone = request.data.get("tone_of_voice")
+            reference = request.data.get("specify_reference")
             
 
             data=f"generate esaay of {topic} having minimum {words} words answer with tone of voice {tone} by using reference from {reference} and also reduce recitation should be {reduce_citation} and also related to the give description that it {description}"
@@ -527,6 +528,8 @@ class CategoryService:
             try:
                 response = llm.invoke(query)
                 result = to_markdown(response.content)
+                user_obj=ReseaerchModel.objects.create(user_id=request.user.id,topic=topic,page=page, tone_of_voice=tone, specify_reference=reference,description=description,is_reduce_citation=reduce_citation, sub_category=8)
+                user_obj.save()
                 return{"data":result,"message":messages.FETCH,"status":200}
             except Exception as e:
                 return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
@@ -538,6 +541,8 @@ class CategoryService:
         try:
             response = llm.invoke(query)
             result = to_markdown(response.content)
+            user_obj=ReseaerchModel.objects.create(user_id=request.user.id,description=description,is_reduce_citation=reduce_citation, sub_category=9)
+            user_obj.save()
             return{"data":result,"message":messages.FETCH,"status":200}
         except Exception as e:
             return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
@@ -551,13 +556,24 @@ class CategoryService:
         except Exception as e:
             return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
         
-    def get_history_research(self, request, id):
+
+    
+    def get_all_research(self,request):
         try:
-            notes_obj=CategoryModel.objects.filter(user_id=request.user.id, category=id)
-            serializer=categorySerializer.GetNoteListSerializer(notes_obj, many=True)
+            notes_obj=ReseaerchModel.objects.filter(user_id=request.user.id)
+            serializer=categorySerializer.GetResearchSerializer(notes_obj, many=True)
             return{"data":serializer.data,"message":messages.FETCH,"status":200}
         except:
             return{"data":None,"message":messages.WENT_WRONG,"status":400}
+        
+    def get_research_by_id(self,request,id):
+        try:
+            notes_obj=ReseaerchModel.objects.filter(id=id)
+            serializer=categorySerializer.GetResearchSerializer(notes_obj)
+            return{"data":serializer.data,"message":messages.FETCH,"status":200}
+        except:
+            return{"data":None,"message":messages.WENT_WRONG,"status":400}
+
 
 
 
