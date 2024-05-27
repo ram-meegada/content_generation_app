@@ -123,6 +123,7 @@ class GetResearchByIdView(APIView):
 
 # assignment
 class GetAssignmentSolutionView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         result = category_obj.get_assignment_solution(request)
         return Response(result, status = result["status"])

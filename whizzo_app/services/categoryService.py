@@ -1,3 +1,4 @@
+from whizzo_app.models.assignmentModel import AssignmentModel
 from whizzo_app.models.categoryModel import CategoryModel
 from whizzo_project import settings
 from langchain.vectorstores import FAISS
@@ -12,7 +13,7 @@ import urllib.request as urlopener
 from PyPDF2 import PdfReader
 from io import BytesIO
 import json
-from whizzo_app.models import FaqModel,CmsModel, UserModel, FileSumarizationModel, NoteModel, ReseaerchModel
+from whizzo_app.models import FaqModel,CmsModel, UserModel, FileSumarizationModel, NoteModel
 from whizzo_app.utils import messages
 from whizzo_app.serializers import categorySerializer, adminSerializer
 from deep_translator import GoogleTranslator
@@ -31,7 +32,6 @@ from pdf2image import convert_from_path
 from django.core.files.storage import FileSystemStorage
 import speech_recognition as sr
 from pydub import AudioSegment
-from whizzo_app.utils.choiceFields import  SUB_CATEGORY_CHOICES, TONE_OF_VOICE, SPECIFY_REFERENCE
 
 
 
@@ -63,6 +63,7 @@ def image_processing(image_link , query):
     )
     response = llm.invoke([message])
     result_qu = to_markdown(response.content)
+    print(result_qu,"asdfkhaskdfjhalskfjdh")
     return result_qu
 
 def pdf_processing(pdf_file , query):
@@ -122,14 +123,14 @@ class CategoryService:
             sub_category = request.data["sub_category"]
             final_response = []
             for file in file_links:
-                if file.endswith((".jpeg",".png",".jpg")):
+                if file.endswith((".jpeg",".png",".jpg",".webp")):
                     if sub_category == 1:
                         query = f"generate {settings.NUMBER_OF_QUESTIONS} mcqs with options and answers for this image and make in python json list format."
                         result = image_processing(file, query)
                         json_result = self.jsonify_response(result)
                         final_response += json_result
                     elif  sub_category == 2:
-                        query = f"generate {settings.NUMBER_OF_QUESTIONS} flashcards for this image and make in python json list format. make a name is frontside and backside not any other name for this and also generate 4-5 backside answers."
+                        query = f"generate {settings.NUMBER_OF_QUESTIONS} flashcards for this image and make in python json list format. make a name is frontside and backside not any other name for this and give me only one answer for this."
                         result = image_processing(file, query)
                         json_result = self.jsonify_response(result)
                         final_response += json_result
@@ -157,7 +158,7 @@ class CategoryService:
                         final_response.append(json_result)
                         print(result, '-----result----')
                     elif  sub_category == 2:
-                        query = f"generate {settings.NUMBER_OF_QUESTIONS} flashcards for this image and make in python json list format. make a name is frontside and backside not any other name for this and also generate 4-5 backside answers."
+                        query = f"generate {settings.NUMBER_OF_QUESTIONS} flashcards for this image and make in python json list format. make a name is frontside and backside not any other name for this and give me only one answer for this."
                         result = pdf_processing(file , query)
                         json_result = self.jsonify_response(result)
                         final_response.append(json_result)
@@ -496,7 +497,7 @@ class CategoryService:
         
     def get_notes_by_id(self,request,id):
         try:
-            notes_obj=NoteModel.objects.filter(id=id)
+            notes_obj=NoteModel.objects.filter(user_id=request.user.id)
             serializer=categorySerializer.GetNoteSerializer(notes_obj)
             return{"data":serializer.data,"message":messages.FETCH,"status":200}
         except:
@@ -512,14 +513,14 @@ class CategoryService:
         return intent_text
     
     def get_research_answer(self, request):
-        reduce_citation=request.data.get("is_reduce_citation")
+        reduce_citation=request.data.get("reduce_citation")
         description=request.data.get("description")
         if not request.data.get('upload_reference'):
             topic = request.data.get("topic")
             page = request.data.get("page")
             words=int(page)*300
-            tone = request.data.get("tone_of_voice")
-            reference = request.data.get("specify_reference")
+            tone = request.data.get("tone")
+            reference = request.data.get("reference")
             
 
             data=f"generate esaay of {topic} having minimum {words} words answer with tone of voice {tone} by using reference from {reference} and also reduce recitation should be {reduce_citation} and also related to the give description that it {description}"
@@ -528,8 +529,6 @@ class CategoryService:
             try:
                 response = llm.invoke(query)
                 result = to_markdown(response.content)
-                user_obj=ReseaerchModel.objects.create(user_id=request.user.id,topic=topic,page=page, tone_of_voice=tone, specify_reference=reference,description=description,is_reduce_citation=reduce_citation, sub_category=8)
-                user_obj.save()
                 return{"data":result,"message":messages.FETCH,"status":200}
             except Exception as e:
                 return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
@@ -541,8 +540,6 @@ class CategoryService:
         try:
             response = llm.invoke(query)
             result = to_markdown(response.content)
-            user_obj=ReseaerchModel.objects.create(user_id=request.user.id,description=description,is_reduce_citation=reduce_citation, sub_category=9)
-            user_obj.save()
             return{"data":result,"message":messages.FETCH,"status":200}
         except Exception as e:
             return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
@@ -556,24 +553,13 @@ class CategoryService:
         except Exception as e:
             return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
         
-
-    
-    def get_all_research(self,request):
+    def get_history_research(self, request, id):
         try:
-            notes_obj=ReseaerchModel.objects.filter(user_id=request.user.id)
-            serializer=categorySerializer.GetResearchSerializer(notes_obj, many=True)
+            notes_obj=CategoryModel.objects.filter(user_id=request.user.id, category=id)
+            serializer=categorySerializer.GetNoteListSerializer(notes_obj, many=True)
             return{"data":serializer.data,"message":messages.FETCH,"status":200}
         except:
             return{"data":None,"message":messages.WENT_WRONG,"status":400}
-        
-    def get_research_by_id(self,request,id):
-        try:
-            notes_obj=ReseaerchModel.objects.filter(id=id)
-            serializer=categorySerializer.GetResearchSerializer(notes_obj)
-            return{"data":serializer.data,"message":messages.FETCH,"status":200}
-        except:
-            return{"data":None,"message":messages.WENT_WRONG,"status":400}
-
 
 
 
@@ -582,19 +568,32 @@ class CategoryService:
 # assignment solution
     def get_assignment_solution(self, request):
         try:
-            image_link=request.data.get("image_link")
-            data=f"generate solution from the file of give link{image_link} "
-            query = data
+            # file_link = request.data.get("file_link")
+            file_link = request.FILES.get("file_link")
             llm = ChatGoogleGenerativeAI(model="gemini-pro")
             try:
-                response = llm.invoke(query)
+                text_data = self.extract_text(file_link)
+                message = HumanMessage(
+                    content=[
+                        {"type": "text",
+                        "text": f"generate the solution for this given file and provide in python json list format "},
+                        {"type": "text", "text":text_data}
+                    ]
+                )
+                response = llm.invoke([message])
                 result = to_markdown(response.content)
-                return{"data":result,"message":messages.FETCH,"status":200}
+                data = self.jsonify_response(result)
+                print(data)
+                return{"data":data,"message":messages.FETCH,"status":200}
             except Exception as e:
                 return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
             
         except Exception as e:
             return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
+
+    # def get_all_assignment_history(self, request):
+    #     pass
+
 
 
         
