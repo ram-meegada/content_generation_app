@@ -24,6 +24,7 @@ from whizzo_app.utils.saveImage import save_file_conversion
 from whizzo_app.serializers.uploadMediaSerializer import CreateUpdateUploadMediaSerializer
 import os
 import tabula
+import xlsxwriter
 import pandas as pd
 from reportlab.lib.pagesizes import letter,A3
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle,Image
@@ -32,6 +33,7 @@ from pdf2image import convert_from_path
 from django.core.files.storage import FileSystemStorage
 import speech_recognition as sr
 from pydub import AudioSegment
+from whizzo_app.utils.saveImage import save_image
 
 
 
@@ -266,8 +268,8 @@ class CategoryService:
     
     def pdf_to_word(self , request):
         pdf_file = request.FILES.get("pdf_file")
-        
-        file_name = "".join((pdf_file.name).split(" "))
+        f_name = pdf_file.name
+        file_name = "".join((f_name).split(" "))
         file_name = f"{file_name}_{random.randint(10000, 99999)}"
         output_word_file = f"{file_name}.docx"
         input_name = f"{file_name}_{random.randint(10000, 99999)}"
@@ -425,18 +427,55 @@ class CategoryService:
     def image_to_pdf(self , request):
         try:
             image_file = request.FILES.get("image")
-            file_name = image_file.name
-
+            fs = FileSystemStorage()
+            f_name= image_file.name
+            input_image_file = fs.save(f_name, image_file)
+            
+            # Create a new Aspose Words document
             doc = aw.Document()
             builder = aw.DocumentBuilder(doc)
 
-            builder.insert_image(str(image_file))
+            # Insert the image into the document
+            builder.insert_image(fs.path(input_image_file))
 
-            doc.save(f"{file_name}.pdf")
+            # Generate a unique file name for the PDF
+            file_name = os.path.splitext(f_name)[0]
+            output_pdf_file = f"{file_name}_{random.randint(10000, 99999)}.pdf"
+            file_save_path = fs.path(output_pdf_file)
 
-            return {"message":messages.CONVERT_SUCCESS, "status": 200}
+            # Save the document as a PDF
+            doc.save(file_save_path)
+
+            # Generate the URL for the PDF file
+            # pdf_url = fs.url(output_pdf_file)
+            SAVED_FILE_RESPONSE = save_file_conversion(file_save_path, file_save_path, "application/pdf")
+            data = {
+                    "media_url": SAVED_FILE_RESPONSE[0],
+                    "media_type": "pdf",
+                    "media_name": SAVED_FILE_RESPONSE[1]
+                }
+            serializer = CreateUpdateUploadMediaSerializer(data = data)
+            if os.path.exists(file_save_path):
+                os.remove(file_save_path)
+            if serializer.is_valid():
+                serializer.save()
+            return {"data":serializer.data,"status":200}
+
         except Exception as e:
             return {"message": str(e), "status": 400}
+
+        #     file_name = image_file.name
+
+        #     doc = aw.Document()
+        #     builder = aw.DocumentBuilder(doc)
+
+        #     builder.insert_image(str(image_file))
+
+        #     doc.save(f"{file_name}.pdf")
+
+        #     return {"message":messages.CONVERT_SUCCESS, "status": 200}
+        # except Exception as e:
+        #     return {"message": str(e), "status": 400}
         
 
 

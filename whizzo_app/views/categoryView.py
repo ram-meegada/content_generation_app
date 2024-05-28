@@ -75,7 +75,7 @@ class ConvertVoiceToTextView(APIView):
     
 class CreateNotesView(APIView):
     def post(self, request):
-        result = category_obj.add_notes(request)
+        result = category_obj.add_notes_audio_to_text(request)
         return Response(result, status = result["status"])
 
 class GetAiExplanation(APIView):
@@ -91,12 +91,12 @@ class ChangeLanguageNoteView(APIView):
 class GetAllListingNotesView(APIView):
     def post(self, request):
         result = category_obj.get_all_listing_notes(request)
-        return Response(result, status = result["status"])   
-    
+        return Response(result, status = result["status"])  
+
 class GetListingNotesByIdView(APIView):
     def post(self, request, id):
         result = category_obj.get_notes_by_id(request, id)
-        return Response(result, status = result["status"]) 
+        return Response(result, status = result["status"])  
 
 class SendNotesViaMale(APIView):
     def post(self, request):
@@ -109,7 +109,7 @@ class GetResearchAnswerView(APIView):
     def post(self, request):
         result = category_obj.get_research_answer(request)
         return Response(result, status = result["status"])
-    
+
 class GetAllResearchView(APIView):
     def post(self, request):
         result = category_obj.get_all_research(request)
@@ -120,10 +120,12 @@ class GetResearchByIdView(APIView):
         result = category_obj.get_research_by_id(request, id)
         return Response(result, status = result["status"]) 
 
+    
+
 
 # assignment
 class GetAssignmentSolutionView(APIView):
-    permission_classes = [AllowAny]
+    
     def post(self, request):
         result = category_obj.get_assignment_solution(request)
         return Response(result, status = result["status"])
