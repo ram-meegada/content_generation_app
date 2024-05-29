@@ -34,6 +34,8 @@ from django.core.files.storage import FileSystemStorage
 import speech_recognition as sr
 from pydub import AudioSegment
 from whizzo_app.utils.saveImage import save_image
+from whizzo_app.utils import sendMail
+from whizzo_app.services.uploadMediaService import UploadMediaService
 
 
 
@@ -608,7 +610,8 @@ class CategoryService:
     def get_assignment_solution(self, request):
         try:
             # file_link = request.data.get("file_link")
-            file_link = request.FILES.get("file_link")
+            file_link = request.FILES.get("media")
+            val = UploadMediaService.upload_media(self, request)
             llm = ChatGoogleGenerativeAI(model="gemini-pro")
             try:
                 text_data = self.extract_text(file_link)
@@ -623,7 +626,14 @@ class CategoryService:
                 result = to_markdown(response.content)
                 data = self.jsonify_response(result)
                 print(data)
-                return{"data":data,"message":messages.FETCH,"status":200}
+                print("adsfkjhaslkdfjhalksjdhflkajshdf")
+                
+                assignment_solution = AssignmentModel.objects.create(
+                    user = request.user.id,
+                    media = val["data"][0]["id"],
+                    result = data
+                )
+                return{"data":assignment_solution,"message":messages.FETCH,"status":200}
             except Exception as e:
                 return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
             
@@ -688,5 +698,20 @@ class CategoryService:
             return{"data":result,"message":messages.FETCH,"status":200}
         except Exception as e:
             return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
+
+
+###common for all ####
+
+    def send_file_to_mail(self, request):
+        try:
+            data = UserModel.objects.get(id = request.user.id)
+            email = data.email
+            file_link = request.data["file_link"]
+            sendMail.send_pdf_file_to_mail(email,file_link)
+
+            return {"data":None,"message":messages.FILE_LINK_SEND, "status":200}
+        except Exception as e:
+            return{"data":None,"message":messages.WENT_WRONG,"status":400}
+
     
        

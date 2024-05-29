@@ -58,3 +58,16 @@ class EmailThread(threading.Thread):
         return None
 def send_notification_to_mail(recipient_list, title, message):
     EmailThread(recipient_list, title, message).start()
+
+
+
+def send_pdf_file_to_mail(email,file_link):
+    try:
+        context = {"link": file_link}
+        temp = render_to_string("sendPdfFileToMail.html", context=context)
+        msg = EmailMultiAlternatives("Dont reply" ,temp, settings.DEFAULT_FROM_EMAIL, [email])
+        msg.content_subtype = "html"
+        msg.send()
+        print("########## sent ###########")
+    except Exception as error:
+        print(error, "----------error---------")  

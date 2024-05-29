@@ -147,7 +147,7 @@ class CreateSubjectView(APIView):
     
 class GetAllSubjectView(APIView):
     permission_classes = [AllowAny]
-    def get(self, request):
+    def post(self, request):
         result = admin_obj.get_all_subject(request)
         return Response(result, status=result["status"])
     
@@ -305,7 +305,7 @@ class DeleteSubscriptionView(APIView):
 
 class GetAllSubscriptionsView(APIView):
     permission_classes = [AllowAny]
-    def get(self, request):
+    def post(self, request):
         result = admin_obj.get_all_subscriptions(request)
         return Response(result, status=result["status"])
     
@@ -319,7 +319,7 @@ class AddFaqView(APIView):
     
 class GetAllFaqView(APIView):
     permission_classes = [AllowAny]
-    def get(self, request):
+    def post(self, request):
         result = admin_obj.get_all_faqs(request)
         return Response(result)
     

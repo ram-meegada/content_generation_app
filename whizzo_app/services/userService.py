@@ -1,4 +1,5 @@
 from re import search
+from tabnanny import check
 from rest_framework import status
 from whizzo_app.models.userModel import UserModel
 from whizzo_app.utils import messages
@@ -141,6 +142,9 @@ class UserService:
             }
         old_password = request.data.get("old_password")
         new_password = request.data.get("new_password")
+        pswd = check_password(new_password, user.password)
+        if pswd:
+            return {"data":None,"messages":messages.PASSWORD_NOT_SAME,"status":status.HTTP_400_BAD_REQUEST}
         verify_password = check_password(old_password, user.password)
         if verify_password:
             user.set_password(new_password)
