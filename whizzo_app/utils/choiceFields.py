@@ -45,6 +45,14 @@ SUB_CATEGORY_CHOICES = [
     (7, "WRITE ABOUT ME"),
     (8, "NEW RESEARCH"),
     (9, "UPLOAD REFERENCE"),
+    (10, "PDF TO WORD"),
+    (11, "WORD TO PDF"),
+    (12, "PDF TO JPEG"),
+    (13, "JPEG TO PDF"),
+    (14, "PDF TO EXCEL"),
+    (15, "EXCEL TO PDF"),
+    (16, "PDF TO PPT"),
+    (17, "PPT TO PDF"),
 
 ]
 
