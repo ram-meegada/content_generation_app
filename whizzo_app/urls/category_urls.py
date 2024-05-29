@@ -47,6 +47,12 @@ urlpatterns = [
     # #### articles #####
     path("get-articles-response/", categoryView.GetArticlesView.as_view()),
 
+
+
+    ####common for all #####
+
+    path("send-file-to-mail/",categoryView.SendFileToMailByToken.as_view()),
+
 ]
 
 

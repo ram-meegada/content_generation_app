@@ -322,8 +322,11 @@ class AdminService:
             subscription = SubscriptionModel.objects.all()
         except SubscriptionModel.DoesNotExist:
             return {"data": None, "message": messages.RECORD_NOT_FOUND, "status": 400}
-        serializer = adminSerializer.SubscriptionSerializer(subscription, many=True)
-        return {"data": serializer.data, "message":messages.FETCH , "status": 200}
+        pagination_obj = CustomPagination()
+        search_keys = ["plan_type__icontains"]
+        result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.SubscriptionSerializer, subscription)
+        return {"data":result,"message":messages.FETCH,"status":200}
+
 
 # ability
 
@@ -331,7 +334,7 @@ class AdminService:
         try:
             data = AbilityModel.objects.all()
             pagination_obj = CustomPagination()
-            search_keys = ["username__icontains", "email__icontains"]
+            search_keys = ["question__icontains", "answer_option__icontains"]
             result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.CreateAbilitySerializer, data)
             return {"data":result,"message":messages.FETCH,"status":200}
         except Exception as e:
@@ -348,11 +351,13 @@ class AdminService:
         
     def add_ability(self, request):
         try:   
-            data={
-                "question":request.data.get("question"),
-                "answer_option":request.data.get("answer_option",[])
-            }
-            serializer=adminSerializer.CreateAbilitySerializer(data=data)
+            # data={
+            #     "question":request.data.get("question"),
+            #     "answer_option":request.data.get("answer_option",[]),
+            #     "correct_answer":request.data.get("corect_answer"),
+            #     "is_mcq":request.data.get("is_mcq")
+            # }
+            serializer=adminSerializer.CreateAbilitySerializer(data=request.data)
             if serializer.is_valid():
                 serializer.save()
                 return {"data": serializer.data, "message": messages.ABILITY_ADDED, "status": 200}
@@ -364,12 +369,12 @@ class AdminService:
 
     def update_ability(self, request, id):
         try:   
-            data={
-                "question":request.data.get("question"),
-                "answer_option":request.data.get("answer_option",[])
-            }
+            # data={
+            #     "question":request.data.get("question"),
+            #     "answer_option":request.data.get("answer_option",[])
+            # }
             ability_obj = AbilityModel.objects.get(id=id)
-            serializer=adminSerializer.CreateAbilitySerializer(ability_obj, data=data)
+            serializer=adminSerializer.CreateAbilitySerializer(ability_obj, data=request.data)
             if serializer.is_valid():
                 serializer.save()
                 return {"data": serializer.data, "message": messages.ABILITY_UPDATED, "status": 200}
@@ -414,8 +419,11 @@ class AdminService:
             sub_obj = SubjectModel.objects.all()
         except:
             return {"data": None, "message": messages.RECORD_NOT_FOUND, "status": 400}
-        serializer=adminSerializer.GetSubjectSerializer(sub_obj,many=True)
-        return {"data": serializer.data, "message": messages.FETCH, "status": 200}
+        pagination_obj = CustomPagination()
+        search_keys = ["subject_name__icontains",]
+        result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.GetSubjectSerializer, sub_obj)
+        return {"data":result,"message":messages.FETCH,"status":200}
+        
     
 
     def delete_subject(self, request, id):
@@ -430,12 +438,12 @@ class AdminService:
 
     def add_achievement(self, request):
         try:   
-            data={
-                "question":request.data.get("question"),
-                "subject":request.data.get("subject"),
-                "answer_option":request.data.get("answer_option",[])
-            }
-            serializer=adminSerializer.CreateAcheivementSerializer(data=data)
+            # data={
+            #     "question":request.data.get("question"),
+            #     "subject":request.data.get("subject"),
+            #     "answer_option":request.data.get("answer_option",[])
+            # }
+            serializer=adminSerializer.CreateAcheivementSerializer(data=request.data)
             if serializer.is_valid():
                 serializer.save()
                 return {"data": serializer.data, "message": messages.ACHIEVEMENT_ADDED, "status": 200}
@@ -447,13 +455,13 @@ class AdminService:
 
     def update_achievement(self, request, id):
         try:   
-            data={
-                "question":request.data.get("question"),
-                "subject":request.data.get("subject"),
-                "answer_option":request.data.get("answer_option",[])
-            }
+            # data={
+            #     "question":request.data.get("question"),
+            #     "subject":request.data.get("subject"),
+            #     "answer_option":request.data.get("answer_option",[])
+            # }
             achievement_obj = AchievementModel.objects.get(id=id)
-            serializer=adminSerializer.CreateAcheivementSerializer(achievement_obj, data=data)
+            serializer=adminSerializer.CreateAcheivementSerializer(achievement_obj, data=request.data)
             if serializer.is_valid():
                 serializer.save()
                 return {"data": serializer.data, "message": messages.ACHIEVEMENT_UPDATED, "status": 200}
@@ -474,7 +482,7 @@ class AdminService:
         try:
             data = AchievementModel.objects.all()
             pagination_obj = CustomPagination()
-            search_keys = ["username__icontains", "email__icontains"]
+            search_keys = [ "question__icontains","corect_answer__icontains"]
             result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.CreateAcheivementSerializer, data)
             return {"data":result,"message":messages.FETCH,"status":200}
         except Exception as e:
@@ -637,8 +645,10 @@ class AdminService:
     def get_all_faqs(self, request):
         try:
             faqs_obj = FaqModel.objects.filter(is_active=True).order_by("created_at")
-            serializer = adminSerializer.FaqModelSerializer(faqs_obj, many=True)
-            return {'data': serializer.data, 'message': messages.FETCH, "status": 200}
+            pagination_obj = CustomPagination()
+            search_keys = ["question__icontains"]
+            result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.FaqModelSerializer, faqs_obj)
+            return{'data': result,'message':  messages.FETCH, 'status': 200}
         except FaqModel.DoesNotExist:
             return {"data": None, "message": messages.RECORD_NOT_FOUND, "status": 400}
 

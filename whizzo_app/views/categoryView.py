@@ -157,3 +157,13 @@ class GetArticlesView(APIView):
     def post(self, request):
         result = category_obj.get_article_response(request)
         return Response(result, status = result["status"])
+
+
+
+#common for all 
+
+class SendFileToMailByToken(APIView):
+    permission_classes =[AllowAny]
+    def get(self, request):
+        result = category_obj.send_file_to_mail(request)
+        return Response(result, status = result["status"])
