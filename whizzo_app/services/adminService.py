@@ -532,7 +532,7 @@ class AdminService:
 
     def get_module_sub_admin(self,request):
         try:
-            role_obj = ModuleModel.objects.order_by("created_at")
+            role_obj = ModuleModel.objects.all()
         except ModuleModel.DoesNotExist:
             return {"data":None,"message": messages.RECORD_NOT_FOUND, "status": 400}
         serializer = adminSerializer.CreateModuleSubAdminSerializer(role_obj, many=True)
