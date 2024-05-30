@@ -59,10 +59,9 @@ class GetRolePermissionSubAdminSerializer(serializers.ModelSerializer):
         fields = ['id','module', 'can_add_edit', 'can_view', 'can_be_delete']
 
 class CreateSubAdminSerializer(serializers.ModelSerializer):
-    
     class Meta:
         model = UserModel
-        fields = ("id","username","email","phone_no","profile_picture",'role','sub_role')
+        fields = ("id","name","email","phone_no","profile_picture","country_code",'role','sub_role')
         extra_kwargs = {'role': {'default': 3}}
 
 
