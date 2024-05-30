@@ -40,6 +40,7 @@ urlpatterns = [
 
     path("add-module/", adminView.CreateModuleView.as_view()),
     path("get-all-module/", adminView.GetAllModuleView.as_view()),
+    path("delete-role/",adminView.DeleteRoleView.as_view()),
 
     path("add-sub-admin/", adminView.CreateSubAdminView.as_view()),
     path("update-subadmin/<int:id>/", adminView.UpdateSubAdnibView.as_view()),

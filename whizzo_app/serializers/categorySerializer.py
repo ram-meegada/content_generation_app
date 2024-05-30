@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from whizzo_app.models.assignmentModel import AssignmentModel
 from whizzo_app.models.categoryModel import CategoryModel
 from whizzo_app.models import FileSumarizationModel, NoteModel, ReseaerchModel
 from whizzo_app.serializers.uploadMediaSerializer import CreateUpdateUploadMediaSerializer
@@ -81,3 +82,9 @@ class GetResearchSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReseaerchModel
         fields = ["id", "media", "sub_category", "topic","page", "tone_of_voice", "specify_reference","is_reduce_citation", "description","created_at"] 
+
+###assignment module 
+class CreateAssignmentSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = AssignmentModel
+        fields = ["id","media","user","download_file","result"]

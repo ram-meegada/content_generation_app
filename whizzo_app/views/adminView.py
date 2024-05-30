@@ -189,6 +189,11 @@ class GetAllModuleView(APIView):
         result = admin_obj.get_module_sub_admin(request)
         return Response(result, status=result["status"])
 
+class DeleteRoleView(APIView):
+    def delete(self, request):
+        result = admin_obj.delete_role(request, id)
+        return Response(result, status=result["status"])
+
 class CreateSubAdminView(APIView):
     # permission_classes = [AllowAny]
     def post(self, request):
