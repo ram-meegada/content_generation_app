@@ -190,7 +190,7 @@ class GetAllModuleView(APIView):
         return Response(result, status=result["status"])
 
 class DeleteRoleView(APIView):
-    def delete(self, request):
+    def delete(self, request,id):
         result = admin_obj.delete_role(request, id)
         return Response(result, status=result["status"])
 
