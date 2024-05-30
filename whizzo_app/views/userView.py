@@ -63,6 +63,6 @@ class UserDetailsByTokenView(APIView):
 
 
 class DeleteAccountByTokenView(APIView):
-    def Delete(self, request):
+    def delete(self, request):
         result = user_obj.delete_account(request)
         return Response(result, status=result["status"])
