@@ -57,6 +57,6 @@ class GetAllDetailUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserModel
         fields = ['id', 'email', 'name', 'phone_no', 'country_name', 'country_code', \
-                  'email_verification', 'profile_status', 'token',"purpose","profile_picture","first_name","last_name"]
+                  'email_verification', 'profile_status',"purpose","profile_picture","first_name","last_name"]
 
   
