@@ -12,4 +12,5 @@ urlpatterns = [
     path("reset-password/", userView.ResetPasswordView.as_view()),
     path("update-profile/", userView.UpdateProfileByTokenView.as_view()),
     path("user-details/", userView.UserDetailsByTokenView.as_view()),
+    path("delete-user/",userView.DeleteAccountByTokenView.as_view()),
 ]

@@ -207,4 +207,12 @@ class UserService:
     def user_details_by_token(self, request):
         user = UserModel.objects.get(id = request.user.id)
         serializer = userSerializer.GetUserSerializer(user)
-        return {"data": serializer.data, "message": "USER_DETAILS", "status": 200}    
+        return {"data": serializer.data, "message": "USER_DETAILS", "status": 200}  
+
+    def delete_account(self, request):
+        try:
+            user = UserModel.objects.get(id = request.user.id)
+            user.delete()
+            return {"data":None,"message":messages.USER_DELETED,"status":200}
+        except UserModel.DoesNotExist:
+            return {"data":None,"message":"User Does not exist","status":400}

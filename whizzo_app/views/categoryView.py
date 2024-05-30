@@ -125,12 +125,20 @@ class GetResearchByIdView(APIView):
 
 # assignment
 class GetAssignmentSolutionView(APIView):
-    
     def post(self, request):
         result = category_obj.get_assignment_solution(request)
         return Response(result, status = result["status"])
      
 
+class GetAllAssginmentView(APIView):
+    def post(self, request):
+        result = category_obj.get_all_assignment(request)
+        return Response(result, status = result["status"])
+
+class updateAssignmentView(APIView):
+    def put(self, request, id):
+        result = category_obj.update_download_file(request, id)
+        return Response(result, status=result["status"])
 
 # setting app
 class GetFaqListView(APIView):

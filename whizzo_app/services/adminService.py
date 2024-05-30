@@ -537,7 +537,14 @@ class AdminService:
             return {"data":None,"message": messages.RECORD_NOT_FOUND, "status": 400}
         serializer = adminSerializer.CreateModuleSubAdminSerializer(role_obj, many=True)
         return {"data": serializer.data,"message": messages.FETCH, "status": 200}
-    
+
+    def delete_role(self, request, id):
+        try:
+            user = SubRoleModel.objects.get(id=id)
+            user.delete()
+            return {"data":None,"message":messages.ROLE_DELETE,"status":200}
+        except Exception as e:
+            return {"data":None,"message":messages.WENT_WRONG,"status":400}    
 
     def add_sub_admin(self, request):
         try:

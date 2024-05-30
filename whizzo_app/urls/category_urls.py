@@ -37,6 +37,8 @@ urlpatterns = [
 
     #### assignment ####
     path("get-assignmnet-answer/", categoryView.GetAssignmentSolutionView.as_view()),
+    path("fetch-all-assignment/",categoryView.GetAllAssginmentView.as_view()),
+    path("update-assignment/<int:id>/",categoryView.updateAssignmentView.as_view()),
 
     ##### setting app  ######
     path("get-faq-app-list/", categoryView.GetFaqListView.as_view()),

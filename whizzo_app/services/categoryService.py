@@ -1,3 +1,6 @@
+from ssl import SSL_ERROR_EOF
+from typing import final
+from django.http import JsonResponse
 from whizzo_app.models.assignmentModel import AssignmentModel
 from whizzo_app.models.categoryModel import CategoryModel
 from whizzo_project import settings
@@ -24,6 +27,8 @@ from whizzo_app.utils.saveImage import save_file_conversion
 from whizzo_app.serializers.uploadMediaSerializer import CreateUpdateUploadMediaSerializer
 import os
 import tabula
+import re
+import json
 import xlsxwriter
 import pandas as pd
 from reportlab.lib.pagesizes import letter,A3
@@ -36,6 +41,7 @@ from pydub import AudioSegment
 from whizzo_app.utils.saveImage import save_image
 from whizzo_app.utils import sendMail
 from whizzo_app.services.uploadMediaService import UploadMediaService
+from whizzo_app.utils.customPagination import CustomPagination
 
 
 
@@ -45,10 +51,73 @@ google_api_key = settings.GOOGLE_API_KEY
 
 
 
+# def to_markdown(text):
+#   text = text.replace('*', '')
+#   intent_text=(textwrap.indent(text, '', predicate=lambda _: True))
+#   return intent_text
+
+# def to_markdown(text):
+#     # Remove Markdown headers (e.g., # Header)
+#     text = re.sub(r'^\s*#+\s+', '', text, flags=re.MULTILINE)
+#     # Remove emphasis (e.g., *italic* or **bold**)
+#     text = re.sub(r'(\*|_){1,2}(.*?)\1{1,2}', r'\2', text)
+#     # Remove inline code (e.g., `code`)
+#     text = re.sub(r'`(.*?)`', r'\1', text)
+#     # Remove strikethrough (e.g., ~~text~~)
+#     text = re.sub(r'~~(.*?)~~', r'\1', text)
+#     # Remove links (e.g., [text](url))
+#     text = re.sub(r'\[(.*?)\]\(.*?\)', r'\1', text)
+#     # Remove images (e.g., ![alt text](url))
+#     text = re.sub(r'!\[(.*?)\]\(.*?\)', r'\1', text)
+#     # Remove remaining special characters used in Markdown
+#     text = re.sub(r'[*_~`]', '', text)
+    
+#     # Normalize indentation
+#     text = textwrap.dedent(text)
+
+#     # Split text into lines and clean up
+#     lines = [line.strip() for line in text.splitlines() if line.strip()]
+
+#     # Join lines to form a single JSON string
+#     json_string = " ".join(lines)
+    
+#     # Attempt to parse as JSON
+#     try:
+#         json_list = json.loads(json_string)
+#     except json.JSONDecodeError as e:
+#         raise ValueError(f"Failed to decode JSON: {e}")
+    
+#     return json_list
+
 def to_markdown(text):
-  text = text.replace('*', '')
-  intent_text=(textwrap.indent(text, '', predicate=lambda _: True))
-  return intent_text
+    # Remove Markdown headers (e.g., # Header)
+    text = re.sub(r'^\s*#+\s+', '', text, flags=re.MULTILINE)
+    # Remove emphasis (e.g., *italic* or **bold**)
+    text = re.sub(r'(\*|_){1,2}(.*?)\1{1,2}', r'\2', text)
+    # Remove inline code (e.g., `code`)
+    text = re.sub(r'`(.*?)`', r'\1', text)
+    # Remove strikethrough (e.g., ~~text~~)
+    text = re.sub(r'~~(.*?)~~', r'\1', text)
+    # Remove links (e.g., [text](url))
+    text = re.sub(r'\[(.*?)\]\(.*?\)', r'\1', text)
+    # Remove images (e.g., ![alt text](url))
+    text = re.sub(r'!\[(.*?)\]\(.*?\)', r'\1', text)
+    # Remove remaining special characters used in Markdown
+    text = re.sub(r'[*_~`]', '', text)
+    
+    # Normalize indentation
+    text = textwrap.dedent(text)
+
+    # Split text into lines and clean up
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    
+    # Convert lines to JSON list
+    try:
+        json_list = json.loads("[" + ",".join(lines) + "]")
+    except json.JSONDecodeError:
+        json_list = lines  # Fallback: return lines as plain list if JSON decoding fails
+    
+    return json_list
 
 def image_processing(image_link , query):
     '''processing the image and generate the mcq with options and answer 
@@ -608,10 +677,8 @@ class CategoryService:
 
 # assignment solution
     def get_assignment_solution(self, request):
+        file_link = request.FILES.get("media")
         try:
-            # file_link = request.data.get("file_link")
-            file_link = request.FILES.get("media")
-            val = UploadMediaService.upload_media(self, request)
             llm = ChatGoogleGenerativeAI(model="gemini-pro")
             try:
                 text_data = self.extract_text(file_link)
@@ -623,27 +690,81 @@ class CategoryService:
                     ]
                 )
                 response = llm.invoke([message])
-                result = to_markdown(response.content)
-                data = self.jsonify_response(result)
-                print(data)
+                final_result = to_markdown(response.content)
+                print(final_result)
+                # dataa = self.jsonify_response(final_result)
+                # print(dataa)
                 print("adsfkjhaslkdfjhalksjdhflkajshdf")
-                
-                assignment_solution = AssignmentModel.objects.create(
-                    user = request.user.id,
-                    media = val["data"][0]["id"],
-                    result = data
+                # serializer = categorySerializer.CreateAssignmentSerializers(data=request.data)
+                final_data= AssignmentModel.objects.create(
+                    user_id=request.user.id,
+                    result = final_result
                 )
-                return{"data":assignment_solution,"message":messages.FETCH,"status":200}
+                serializer = categorySerializer.CreateAssignmentSerializers(instance=final_data)
+                if serializer.is_valid():
+                    serializer.save()
+                    print(serializer.data,"akajfasldjfalksjdf")
+                    return {"data": serializer.data, "message": messages.FETCH, "status": 200}
             except Exception as e:
                 return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
-            
         except Exception as e:
             return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
+        # try:
+        #     file_link = request.FILES.get("media")
+        #     if not file_link:
+        #         return {"data": None, "message": "No file provided", "status": 400}
 
-    # def get_all_assignment_history(self, request):
-    #     pass
+        #     # # Upload the media file
+        #     # val = UploadMediaService.upload_media(self, request)
+        #     # if not val or "data" not in val or len(val["data"]) == 0:
+        #     #     return {"data": None, "message": "Failed to upload media", "status": 400}
+            
+        #     try:
+        #         llm = ChatGoogleGenerativeAI(model="gemini-pro")
+        #         text_data = self.extract_text(file_link)
+        #         message = HumanMessage(
+        #             content=[
+        #                 {"type": "text",
+        #                 "text": f"generate the solution for this given file and provide in python json list format "},
+        #                 {"type": "text", "text":text_data}
+        #             ]
+        #         )
+        #         response = llm.invoke([message])
+        #         result = to_markdown(response.content)
+        #         dataa = json.loads(self.jsonify_response(result)) 
+        #         serializer = categorySerializer.CreateAssignmentSerializers(data=request.data)
+        #         if serializer.is_valid():
+        #             serializer.save(user_id=request.user.id,result = dataa)
+        #         return {"data": serializer.data, "message": messages.FETCH, "status": 200}
+            
+        #     except Exception as e:
+        #         return {"data": str(e), "message": messages.WENT_WRONG, "status": 400}
+        
+        # except Exception as e:
+        #     return {"data": str(e), "message": messages.WENT_WRONG, "status": 400}
 
+    def get_all_assignment(self, request):
+        try:
+            data = AssignmentModel.objects.all()
+            pagination_obj = CustomPagination()
+            search_keys = []
+            result = pagination_obj.custom_pagination(request, search_keys, categorySerializer.CreateAssignmentSerializers, data)
+            return {"data":result,"message":messages.FETCH,"status":200}
+        except Exception as e:
+            return {"data":None,"message":messages.WENT_WRONG,"status":400}
 
+    def update_download_file(self, request,id):
+        try:
+            assignment = AssignmentModel.objects.get(id = id)
+            serializers = categorySerializer.CreateAssignmentSerializers(assignment,data=request.data)
+            if serializers.is_valid():
+                serializers.save()
+            return {"data":None,"message":messages.UPDATED,"status":200}
+
+        except Exception as e:
+            return {"data":None,"message":messages.WENT_WRONG,"status":400}
+
+            
 
         
 
