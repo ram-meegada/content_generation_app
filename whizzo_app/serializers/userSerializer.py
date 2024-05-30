@@ -11,7 +11,7 @@ class GetUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserModel
         fields = ['id', 'email', 'name', 'phone_no', 'country_name', 'country_code', \
-                  'email_verification', 'profile_status', 'token']
+                  'email_verification', 'profile_status', 'token',"purpose","profile_picture","first_name","last_name"]
 
     def get_token(self, obj):
         give_login_token = self.context.get("give_login_token", False)
@@ -23,4 +23,4 @@ class GetUserSerializer(serializers.ModelSerializer):
 class updateUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserModel
-        fields = ["id","email","name","phone_no","country_code","country_name","email","profile_status"]
+        fields = ["id","email","name","phone_no","country_code","country_name","email","profile_status","purpose","profile_picture","first_name","last_name"]
