@@ -14,7 +14,7 @@ class GetUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserModel
         fields = ['id', 'email', 'name', 'phone_no', 'country_name', 'country_code', \
-                  'email_verification', 'profile_status', 'token',"purpose","profile_picture","first_name","last_name"]
+                  'email_verification','phone_verification', 'profile_status', 'token',"purpose","profile_picture","first_name","last_name"]
 
     def get_token(self, obj):
         give_login_token = self.context.get("give_login_token", False)
@@ -28,7 +28,7 @@ class updateUserSerializer(serializers.ModelSerializer):
     purpose = serializers.SerializerMethodField()
     class Meta:
         model = UserModel
-        fields = ["id","email","name","phone_no","country_code","country_name","email","profile_status","purpose","profile_picture","first_name","last_name"]
+        fields = ["id","email","name","phone_no","country_code","country_name",'email_verification','phone_verification',"email","profile_status","purpose","profile_picture","first_name","last_name"]
     
     def get_profile_picture(self, obj):
         if obj.profile_picture:
@@ -55,7 +55,7 @@ class updateWithoutPPUserSerializer(serializers.ModelSerializer):
     purpose = serializers.SerializerMethodField()
     class Meta:
         model = UserModel
-        fields = ["id","email","name","phone_no","country_code","country_name","email","profile_status","purpose","first_name","last_name"]
+        fields = ["id","email","name","phone_no","country_code","country_name","email",'email_verification','phone_verification',"profile_status","purpose","first_name","last_name"]
     
     def get_purpose(self, obj):
         if obj.purpose:

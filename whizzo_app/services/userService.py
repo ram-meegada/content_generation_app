@@ -198,18 +198,18 @@ class UserService:
     def update_profile(self, request):
         try:
             user  = UserModel.objects.get(id = request.user.id)
-            if request.data["profile_picture"]:
+            if request.data.get("profile_picture"):
                 serializer = userSerializer.updateUserSerializer(user,data=request.data, context={"user_profile":request.data["profile_picture"],"purpose":request.data["purpose"]})
                 if serializer.is_valid():
                     serializer.save(profile_picture_id=request.data["profile_picture"], purpose_id=request.data["purpose"])
                     return {"data": serializer.data, "message": "Profile updated successfully", "status": 200}
             else:
-                serializer = userSerializer.updateUserSerializer(user,data=request.data, context={"purpose":request.data["purpose"]})
+                serializer = userSerializer.updateWithoutPPUserSerializer(user,data=request.data, context={"purpose":request.data["purpose"]})
                 if serializer.is_valid():
                     serializer.save( purpose_id=request.data["purpose"])
                     return {"data": serializer.data, "message": "Profile updated successfully", "status": 200}
-        except Exception as error:
-            return {"data": None, "message": "Something went wrong", "status": 400}
+        except Exception as e:
+            return {"data": str(e), "message": "Something went wrong", "status": 400}
         
     def user_details_by_token(self, request):
         user = UserModel.objects.get(id = request.user.id)
