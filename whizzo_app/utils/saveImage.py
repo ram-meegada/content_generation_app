@@ -20,7 +20,7 @@ def save_image(image):
                 "ContentType": image.content_type
             }
         )
-    s3_location = "http://{}.s3.ap-south-1.amazonaws.com/".format(bucket_name)
+    s3_location = "https://{}.s3.ap-south-1.amazonaws.com/".format(bucket_name)
     return "{}{}".format(s3_location, image_name), image_name
 
 
