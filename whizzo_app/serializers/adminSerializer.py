@@ -75,7 +75,7 @@ class GetSubAdminSerializer(serializers.ModelSerializer):
         fields = ("id", "username", "email","country_code","name", "phone_no", "profile_picture", 'is_active','sub_role', 'role_permission')
     def get_role_permission(self, obj):
         try:
-            roles_permissions = PermissionModel.objects.filter(UserModel = obj.id)
+            roles_permissions = PermissionModel.objects.filter(user_id = obj.id)
             serializer = GetRolePermissionSubAdminSerializer(roles_permissions, many = True)
             return serializer.data
         except:
