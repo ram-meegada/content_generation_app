@@ -51,10 +51,10 @@ google_api_key = settings.GOOGLE_API_KEY
 
 
 
-# def to_markdown(text):
-#   text = text.replace('*', '')
-#   intent_text=(textwrap.indent(text, '', predicate=lambda _: True))
-#   return intent_text
+def to_markdown(text):
+  text = text.replace('*', '')
+  intent_text=(textwrap.indent(text, '', predicate=lambda _: True))
+  return intent_text
 
 # def to_markdown(text):
 #     # Remove Markdown headers (e.g., # Header)
@@ -89,7 +89,38 @@ google_api_key = settings.GOOGLE_API_KEY
     
 #     return json_list
 
-def to_markdown(text):
+# def to_markdown(text):
+#     # Remove Markdown headers (e.g., # Header)
+#     text = re.sub(r'^\s*#+\s+', '', text, flags=re.MULTILINE)
+#     # Remove emphasis (e.g., *italic* or **bold**)
+#     text = re.sub(r'(\*|_){1,2}(.*?)\1{1,2}', r'\2', text)
+#     # Remove inline code (e.g., `code`)
+#     text = re.sub(r'`(.*?)`', r'\1', text)
+#     # Remove strikethrough (e.g., ~~text~~)
+#     text = re.sub(r'~~(.*?)~~', r'\1', text)
+#     # Remove links (e.g., [text](url))
+#     text = re.sub(r'\[(.*?)\]\(.*?\)', r'\1', text)
+#     # Remove images (e.g., ![alt text](url))
+#     text = re.sub(r'!\[(.*?)\]\(.*?\)', r'\1', text)
+#     # Remove remaining special characters used in Markdown
+#     text = re.sub(r'[*_~`]', '', text)
+    
+#     # Normalize indentation
+#     text = textwrap.dedent(text)
+
+#     # Split text into lines and clean up
+#     lines = [line.strip() for line in text.splitlines() if line.strip()]
+    
+#     # Convert lines to JSON list
+#     try:
+#         json_list = json.loads("[" + ",".join(lines) + "]")
+#     except json.JSONDecodeError:
+#         json_list = lines  # Fallback: return lines as plain list if JSON decoding fails
+    
+#     return json_list
+
+
+def assignment_to_markdown(text):
     # Remove Markdown headers (e.g., # Header)
     text = re.sub(r'^\s*#+\s+', '', text, flags=re.MULTILINE)
     # Remove emphasis (e.g., *italic* or **bold**)
@@ -110,6 +141,9 @@ def to_markdown(text):
 
     # Split text into lines and clean up
     lines = [line.strip() for line in text.splitlines() if line.strip()]
+    
+    # Remove commas from each line
+    lines = [line.replace(',', '') for line in lines]
     
     # Convert lines to JSON list
     try:
@@ -690,8 +724,12 @@ class CategoryService:
                     ]
                 )
                 response = llm.invoke([message])
-                final_result = to_markdown(response.content)
+                final_result = assignment_to_markdown(response.content)
                 print(final_result)
+                # for i in final_result[1]:
+                #     if len(i)-1==",":
+                #         i[len(i)-1].replace(',', '')
+                # print(final_result,"asdfkhaksdjfhlaksjhdflkasjd")
                 # dataa = self.jsonify_response(final_result)
                 # print(dataa)
                 print("adsfkjhaslkdfjhalksjdhflkajshdf")
@@ -700,11 +738,14 @@ class CategoryService:
                     user_id=request.user.id,
                     result = final_result
                 )
-                serializer = categorySerializer.CreateAssignmentSerializers(instance=final_data)
-                if serializer.is_valid():
-                    serializer.save()
-                    print(serializer.data,"akajfasldjfalksjdf")
-                    return {"data": serializer.data, "message": messages.FETCH, "status": 200}
+                final_data.save()
+                # serializer = categorySerializer.CreateAssignmentSerializers(instance=final_data)
+                # if serializer.is_valid():
+                #     serializer.save()
+                #     print(serializer.data,"")
+                return {"data": final_result, "message": messages.FETCH, "status": 200}
+                # else:
+                #     return{"data":serializer.errors,"message":messages.WENT_WRONG,"status":400}
             except Exception as e:
                 return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
         except Exception as e:
@@ -763,6 +804,15 @@ class CategoryService:
 
         except Exception as e:
             return {"data":None,"message":messages.WENT_WRONG,"status":400}
+
+    def get_assignment_by_id(self, request, id):
+        try:
+            data = AssignmentModel.objects.get(id=id)
+        except:
+            return {"data":None,"message":messages.RECORD_NOT_FOUND, "status":400}
+
+        serializer = categorySerializer.CreateAssignmentSerializers(data)
+        return {"data":serializer.data, "message":messages.FETCH, "status":200}
 
             
 

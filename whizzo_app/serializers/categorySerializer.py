@@ -87,4 +87,4 @@ class GetResearchSerializer(serializers.ModelSerializer):
 class CreateAssignmentSerializers(serializers.ModelSerializer):
     class Meta:
         model = AssignmentModel
-        fields = ["id","media","user","download_file","result"]
+        fields = ["id","user","result"]

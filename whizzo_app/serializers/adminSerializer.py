@@ -72,7 +72,7 @@ class GetSubAdminSerializer(serializers.ModelSerializer):
     sub_role=CreateRoleSubAdminSerializer()
     class Meta:
         model = UserModel
-        fields = ("id", "username", "email", "phone_no", "profile_picture", 'is_active','sub_role', 'role_permission')
+        fields = ("id", "username", "email","country_code","name", "phone_no", "profile_picture", 'is_active','sub_role', 'role_permission')
     def get_role_permission(self, obj):
         try:
             roles_permissions = PermissionModel.objects.filter(UserModel = obj.id)

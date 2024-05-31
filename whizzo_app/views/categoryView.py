@@ -139,6 +139,11 @@ class updateAssignmentView(APIView):
     def put(self, request, id):
         result = category_obj.update_download_file(request, id)
         return Response(result, status=result["status"])
+    
+class GetAssigmentByIdView(APIView):
+    def get(self, request, id):
+        result = category_obj.get_assignment_by_id(request, id)
+        return Response(result, status=result["status"])
 
 # setting app
 class GetFaqListView(APIView):
