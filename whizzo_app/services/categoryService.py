@@ -750,39 +750,6 @@ class CategoryService:
                 return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
         except Exception as e:
             return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
-        # try:
-        #     file_link = request.FILES.get("media")
-        #     if not file_link:
-        #         return {"data": None, "message": "No file provided", "status": 400}
-
-        #     # # Upload the media file
-        #     # val = UploadMediaService.upload_media(self, request)
-        #     # if not val or "data" not in val or len(val["data"]) == 0:
-        #     #     return {"data": None, "message": "Failed to upload media", "status": 400}
-            
-        #     try:
-        #         llm = ChatGoogleGenerativeAI(model="gemini-pro")
-        #         text_data = self.extract_text(file_link)
-        #         message = HumanMessage(
-        #             content=[
-        #                 {"type": "text",
-        #                 "text": f"generate the solution for this given file and provide in python json list format "},
-        #                 {"type": "text", "text":text_data}
-        #             ]
-        #         )
-        #         response = llm.invoke([message])
-        #         result = to_markdown(response.content)
-        #         dataa = json.loads(self.jsonify_response(result)) 
-        #         serializer = categorySerializer.CreateAssignmentSerializers(data=request.data)
-        #         if serializer.is_valid():
-        #             serializer.save(user_id=request.user.id,result = dataa)
-        #         return {"data": serializer.data, "message": messages.FETCH, "status": 200}
-            
-        #     except Exception as e:
-        #         return {"data": str(e), "message": messages.WENT_WRONG, "status": 400}
-        
-        # except Exception as e:
-        #     return {"data": str(e), "message": messages.WENT_WRONG, "status": 400}
 
     def get_all_assignment(self, request):
         try:

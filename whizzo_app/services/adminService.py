@@ -25,7 +25,7 @@ class AdminService:
         verify_password = check_password(password, user.password)
         if verify_password:
             give_login_token = True
-            serializer = adminSerializer.AddAdminSerializer(user, context = {"give_login_token": give_login_token})
+            serializer = adminSerializer.loginAdminSerializer(user, context = {"give_login_token": give_login_token})
             return {"data": serializer.data, "message": messages.USER_LOGGED_IN, "status": 200}
         else:
             return {"data": None, "message": messages.PASSWORD_WRONG, "status": 400}
