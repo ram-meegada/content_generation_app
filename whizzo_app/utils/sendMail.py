@@ -6,13 +6,14 @@ import threading
 
 
 def send_otp_to_mail(email, otp):
+    print(otp,"22222222222222222222222222222222222222")
     try:
         context = {"otp": otp}
         temp = render_to_string("sendOtpToMail.html", context=context)
         msg = EmailMultiAlternatives("Dont reply" ,temp, settings.DEFAULT_FROM_EMAIL, [email])
         msg.content_subtype = "html"
         msg.send()
-        print("########## sent ###########")
+        print(settings.DEFAULT_FROM_EMAIL,"########## sent ###########")
     except Exception as error:
         print(error, "----------error---------")    
 
