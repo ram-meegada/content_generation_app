@@ -53,10 +53,14 @@ class CreateRolePermissionSubAdminSerializer(serializers.ModelSerializer):
         fields = ['id','module','can_add_edit','can_view','can_be_delete']
 
 class GetRolePermissionSubAdminSerializer(serializers.ModelSerializer):
-    module = CreateModuleSubAdminSerializer()
+    module = serializers.SerializerMethodField()
     class Meta:
         model = PermissionModel
         fields = ['id','module', 'can_add_edit', 'can_view', 'can_be_delete']
+    
+    def get_module(self, obj):
+        data = ModuleModel.objects.get(id = obj.module.id)
+        return data.module_name
 
 class CreateSubAdminSerializer(serializers.ModelSerializer):
     class Meta:
@@ -172,6 +176,19 @@ class AddAdminSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserModel
         fields = ['id', 'email', 'username', 'phone_no',  'country_code', 'profile_status', 'token']
+
+    def get_token(self, obj):
+        give_login_token = self.context.get("give_login_token", False)
+        if give_login_token:
+            return generate_login_token(obj)
+        else:
+            return None
+
+class loginAdminSerializer(serializers.ModelSerializer):
+    token = serializers.SerializerMethodField()
+    class Meta:
+        model = UserModel
+        fields = ['id', 'email',"role", 'username', 'phone_no',  'country_code', 'profile_status', 'token']
 
     def get_token(self, obj):
         give_login_token = self.context.get("give_login_token", False)
