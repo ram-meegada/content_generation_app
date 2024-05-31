@@ -801,7 +801,7 @@ class CategoryService:
             user = CmsModel.objects.all()
         except:
             return {"data": None, "message": messages.RECORD_NOT_FOUND, "status": 400}
-        serializer=adminSerializer.AddTermsConditionSerializer(user, many=True)
+        serializer=adminSerializer.GetAllTermsConditionSerializer(user, many=True)
         return {"data": serializer.data, "message": messages.FETCH, "status": 200}
     
 

@@ -166,6 +166,11 @@ class AddTermsConditionSerializer(serializers.ModelSerializer):
         model = CmsModel
         fields = ["id","terms_condition"]
 
+class GetAllTermsConditionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CmsModel
+        fields = ["id","terms_condition","email","phone_no","country_code","privacy_policy","about_us"]
+
 class AddAboutUsSerializer(serializers.ModelSerializer):
     class Meta:
         model = CmsModel

@@ -152,6 +152,7 @@ class GetFaqListView(APIView):
         return Response(result, status = result["status"])
     
 class GetTermsConditionAppView(APIView):
+    permission_classes = [AllowAny]
     def get(self, request):
         result = category_obj.get_terms_condition(request)
         return Response(result, status = result["status"])
