@@ -23,6 +23,7 @@ class UserModel(AbstractUser, BaseModel):
 
     profile_status = models.IntegerField(choices=PROFILE_STATUS_OPTIONS, default=0)
     email_verification = models.BooleanField(default=False)
+    phone_verification = models.BooleanField(default=False)
     otp_sent_time = models.DateTimeField(blank=True, null=True)
     role = models.IntegerField(choices = USER_ROLE_CHOICES, default=0) 
     sub_role = models.ForeignKey(SubRoleModel, on_delete=models.CASCADE, null=True)

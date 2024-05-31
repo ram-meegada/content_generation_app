@@ -107,9 +107,10 @@ class UserService:
                 user.profile_status = 2
                 GIVE_LOGIN_TOKEN = True
         if "phone_no" in request.data:
+            user.phone_verification = True
             if user.profile_status == 1:
                 user.profile_status = 2
-            GIVE_LOGIN_TOKEN = True
+                GIVE_LOGIN_TOKEN = True
         user.save()
         user_serializer = userSerializer.GetUserSerializer(user, context={"give_login_token": GIVE_LOGIN_TOKEN})    
         return {"data": user_serializer.data, "message":  "OTP_VERIFIED", "status": 200}
@@ -197,10 +198,16 @@ class UserService:
     def update_profile(self, request):
         try:
             user  = UserModel.objects.get(id = request.user.id)
-            serializer = userSerializer.updateUserSerializer(user,data=request.data, context={"user_profile":request.data["profile_picture"],"purpose":request.data["purpose"]})
-            if serializer.is_valid():
-                serializer.save(profile_picture_id=request.data["profile_picture"], purpose_id=request.data["purpose"])
-                return {"data": serializer.data, "message": "Profile updated successfully", "status": 200}
+            if request.data["profile_picture"]:
+                serializer = userSerializer.updateUserSerializer(user,data=request.data, context={"user_profile":request.data["profile_picture"],"purpose":request.data["purpose"]})
+                if serializer.is_valid():
+                    serializer.save(profile_picture_id=request.data["profile_picture"], purpose_id=request.data["purpose"])
+                    return {"data": serializer.data, "message": "Profile updated successfully", "status": 200}
+            else:
+                serializer = userSerializer.updateUserSerializer(user,data=request.data, context={"purpose":request.data["purpose"]})
+                if serializer.is_valid():
+                    serializer.save( purpose_id=request.data["purpose"])
+                    return {"data": serializer.data, "message": "Profile updated successfully", "status": 200}
         except Exception as error:
             return {"data": None, "message": "Something went wrong", "status": 400}
         
@@ -216,3 +223,38 @@ class UserService:
             return {"data":None,"message":messages.USER_DELETED,"status":200}
         except UserModel.DoesNotExist:
             return {"data":None,"message":"User Does not exist","status":400}
+
+
+    # def social_login(self, request):
+    #         social_login_id = request.data.get('social_login_id')
+    #         social_login_type = request.data.get('social_login_type')
+    #         email = request.data.get('email', None)
+    #         phone_no = request.data.get('phone_no', None)
+    #         if not social_login_id or not social_login_type:
+    #             return {"data": None, "message": "Social login ID and type are required", "status": 400}
+    #         try:
+    #             user = UserModel.objects.get(social_login_id=social_login_id, social_login_type=social_login_type)
+    #         except UserModel.DoesNotExist:
+    #             if email:
+    #                 user, created = UserModel.objects.get_or_create(email=email)
+    #             elif phone_no:
+    #                 user, created = UserModel.objects.get_or_create(phone_no=phone_no)
+    #             else:
+    #                 user = UserModel()
+    #                 created = True
+    #             user.social_login_id = social_login_id
+    #             user.social_login_type = social_login_type
+    #             user.is_active = True
+    #             user.profile_status = 1
+    #             user.save()
+    #         if user.profile_status >= 1:
+    #             give_token = True
+    #             user.email_verification = True
+    #             user.encoded_id = " "
+    #             user.save()
+    #             serializer = userSerializer.GetUserSerializer(user, context = {"give_token": give_token})
+    #             user_details = serializer.data
+    #             return {"data": user_details, "message": "SOCIAL LOGIN SUCCESSFUL", "status": 200}
+
+
+    

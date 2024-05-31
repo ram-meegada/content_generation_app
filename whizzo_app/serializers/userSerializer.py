@@ -49,7 +49,23 @@ class updateUserSerializer(serializers.ModelSerializer):
             except PurposeModel.DoesNotExist:
                 return None
         return None
+    
 
+class updateWithoutPPUserSerializer(serializers.ModelSerializer):
+    purpose = serializers.SerializerMethodField()
+    class Meta:
+        model = UserModel
+        fields = ["id","email","name","phone_no","country_code","country_name","email","profile_status","purpose","first_name","last_name"]
+    
+    def get_purpose(self, obj):
+        if obj.purpose:
+            try:
+                pic_data = PurposeModel.objects.get(id=self.context.get("purpose"))
+                serializer = PurposeSerializer(pic_data)
+                return serializer.data
+            except PurposeModel.DoesNotExist:
+                return None
+        return None
 
 class GetAllDetailUserSerializer(serializers.ModelSerializer):
     profile_picture=CreateUpdateUploadMediaSerializer()
@@ -57,6 +73,6 @@ class GetAllDetailUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserModel
         fields = ['id', 'email', 'name', 'phone_no', 'country_name', 'country_code', \
-                  'email_verification', 'profile_status',"purpose","profile_picture","first_name","last_name"]
+                  'email_verification','phone_verification', 'profile_status',"purpose","profile_picture","first_name","last_name"]
 
   
