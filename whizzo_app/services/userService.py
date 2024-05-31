@@ -113,7 +113,7 @@ class UserService:
                 GIVE_LOGIN_TOKEN = True
         user.save()
         user_serializer = userSerializer.GetUserSerializer(user, context={"give_login_token": GIVE_LOGIN_TOKEN})    
-        return {"data": user_serializer.data, "message":  "OTP_VERIFIED", "status": 200}
+        return {"data": user_serializer.data, "message":  "OTP verified successfully", "status": 200}
     
     def resend_otp(self, request):
         otp = sendMail.generate_otp()
@@ -126,11 +126,11 @@ class UserService:
             else:
                 return {"data": None, "message": "Email or phone number not provided", "status": 400}
         except UserModel.DoesNotExist:
-            return {"data": None, "message":  'USER_NOT_FOUND', "status": 400}
+            return {"data": None, "message": messages.USER_NOT_FOUND, "status": 400}
         user.otp_sent_time = datetime.now(tz=pytz.UTC)
         user.otp = otp
         user.save()
-        return {"data": None, "message":  "OTP_SENT", "status": 200}
+        return {"data": None, "message":  "OTP sent successfully", "status": 200}
     
     def change_password(self, request):
         try:

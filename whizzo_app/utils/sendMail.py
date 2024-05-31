@@ -18,7 +18,7 @@ def send_otp_to_mail(email, otp):
 
 def generate_otp():
     # otp = random.randint(0000, 9999)
-    otp = "1111"
+    otp = "1234"
     return otp
 
 class SendOtpToMail(threading.Thread):
