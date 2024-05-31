@@ -147,6 +147,7 @@ class GetAssigmentByIdView(APIView):
 
 # setting app
 class GetFaqListView(APIView):
+    permission_classes = [AllowAny]
     def get(self, request):
         result = category_obj.get_list_faq(request)
         return Response(result, status = result["status"])
