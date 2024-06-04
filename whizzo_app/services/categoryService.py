@@ -711,41 +711,44 @@ class CategoryService:
 
 # assignment solution
     def get_assignment_solution(self, request):
-        file_link = request.FILES.get("media")
         try:
+            # file_link = request.data.get("file_link")
+            file_link = request.FILES.get("file_link")
             llm = ChatGoogleGenerativeAI(model="gemini-pro")
             try:
                 text_data = self.extract_text(file_link)
                 message = HumanMessage(
                     content=[
                         {"type": "text",
-                        "text": f"generate the solution for this given file and provide in python json list format "},
+                         "text": "I am an invligator to mark the questions i need correct answers ,provide me correct answers for these questions and when needed diagrams and figures or explanations just give concise answers and give answers to remaining questions,lastly provide the answers in json list format (question no. ,question, options(this field will will only be there if options are present else no need ), correct answer)"},
+                        #  "text": f"list the answers for all questions present  in these given file's (don't leave any question ,even if there is breaks between questions)and provide in  json  format (questtions which have no options just give correct answers in concise manner) try writing answer in this way  (question no. ,question, options(this field will will only be there if options are present else no need ),correct answer) "},
                         {"type": "text", "text":text_data}
                     ]
                 )
                 response = llm.invoke([message])
-                final_result = assignment_to_markdown(response.content)
-                print(final_result)
-                # for i in final_result[1]:
-                #     if len(i)-1==",":
-                #         i[len(i)-1].replace(',', '')
-                # print(final_result,"asdfkhaksdjfhlaksjhdflkasjd")
-                # dataa = self.jsonify_response(final_result)
-                # print(dataa)
-                print("adsfkjhaslkdfjhalksjdhflkajshdf")
-                # serializer = categorySerializer.CreateAssignmentSerializers(data=request.data)
+                result = to_markdown(response.content)
+                # print(result, '--------result------------')
+                # data = self.jsonify_response(result)
+              
+                final_response = ""
+                for i in range(len(result)-1, -1, -1):
+                    if result[i] == "}":
+                        break
+                final_response = result[result.index("["): i+1] + "]"
+                final_response = json.loads(final_response)
+                for i in final_response:
+                    if not i["options"]:
+                        i["question_type"] = 1
+                    elif i["options"]:
+                        i["question_type"] = 2
+
                 final_data= AssignmentModel.objects.create(
                     user_id=request.user.id,
-                    result = final_result
+                    result = final_response
                 )
                 final_data.save()
-                # serializer = categorySerializer.CreateAssignmentSerializers(instance=final_data)
-                # if serializer.is_valid():
-                #     serializer.save()
-                #     print(serializer.data,"")
-                return {"data": final_result, "message": messages.FETCH, "status": 200}
-                # else:
-                #     return{"data":serializer.errors,"message":messages.WENT_WRONG,"status":400}
+                return {"data": final_response, "message": "RESPONSE", "status": 200}
+       
             except Exception as e:
                 return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
         except Exception as e:
