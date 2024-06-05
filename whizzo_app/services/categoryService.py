@@ -714,6 +714,7 @@ class CategoryService:
         try:
             # file_link = request.data.get("file_link")
             file_link = request.FILES.get("file_link")
+            print(request.data,"kdfahlkjsdhflakjshdflakjshdflkjh")
             llm = ChatGoogleGenerativeAI(model="gemini-pro")
             try:
                 text_data = self.extract_text(file_link)
@@ -727,7 +728,7 @@ class CategoryService:
                 )
                 response = llm.invoke([message])
                 result = to_markdown(response.content)
-                # print(result, '--------result------------')
+                print(result, '--------result------------')
                 # data = self.jsonify_response(result)
               
                 final_response = ""
