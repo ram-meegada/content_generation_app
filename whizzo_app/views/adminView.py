@@ -416,4 +416,30 @@ class GetCmsDetailView(APIView):
     # permission_classes = [AllowAny]
     def get(self,request):
         result=admin_obj.get_all_cms_details(request)
-        return Response(result)
+        return Response(result, status=result["status"])
+    
+class AllQueryView(APIView):
+    def post(self, request):
+        result = admin_obj.get_all_customer_support(request)
+        return Response(result, status=result["status"])
+
+class RevertQueryByIdView(APIView):
+    def post(self, request, cs_id):
+        result = admin_obj.revert_query_by_admin(request, cs_id)
+        return Response(result, status=result["status"])
+
+class DeleteQueryByIdView(APIView):
+    def delete(self, request, cs_id):
+        result = admin_obj.delete_query_by_admin(request, cs_id)
+        return Response(result, status=result["status"])
+    
+class AddNotificationView(APIView):
+    permission_classes = [AllowAny]
+    def post(self, request):
+        result = admin_obj.add_notification_by_admin(request)
+        return Response(result, status=result["status"])
+    
+class AllNotificationView(APIView):
+    def post(self, request):
+        result = admin_obj.get_all_notifications(request)
+        return Response(result, status=result["status"])

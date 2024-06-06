@@ -1,6 +1,6 @@
 from whizzo_app.utils import messages
 from whizzo_app.serializers import adminSerializer, userSerializer
-from whizzo_app.models import AbilityModel, AchievementModel, SubjectModel, SubRoleModel, UserModel, PermissionModel, PurposeModel, FeaturesModel, ModuleModel, \
+from whizzo_app.models import AbilityModel, AchievementModel, SubjectModel,NotificationModel, SubRoleModel, CustomerSupportModel, UserModel, PermissionModel, PurposeModel, FeaturesModel, ModuleModel, \
     SubscriptionModel, FaqModel, CmsModel, TestimonialModel
 from whizzo_app.utils.customPagination import CustomPagination
 from whizzo_app.utils.otp import generate_password
@@ -9,6 +9,7 @@ from django.contrib.auth.hashers import check_password
 from django.utils import timezone
 import pytz
 from datetime import datetime
+from whizzo_app.utils.sendMail import send_notification_to_mail
 
 class AdminService:
 # onboarding
@@ -532,7 +533,7 @@ class AdminService:
 
     def get_module_sub_admin(self,request):
         try:
-            role_obj = ModuleModel.objects.all()
+            role_obj = ModuleModel.objects.all().order_by("id")
             serializer = adminSerializer.CreateModuleSubAdminSerializer(role_obj, many=True)
             return {"data": serializer.data,"message": messages.FETCH, "status": 200}
         except ModuleModel.DoesNotExist:
@@ -549,14 +550,18 @@ class AdminService:
     def add_sub_admin(self, request):
         try:
             data = request.data
+            if UserModel.objects.filter(email=data["email"]).first():
+                return {'data': None, 'message': "Email already taken", 'status': 400}
+
             user_serializer = adminSerializer.CreateSubAdminSerializer(data=data)
+
             if user_serializer.is_valid():
                 user_data = user_serializer.save()
                 # password=generate_password()
-                password="123456"
+                password="Test@123"
                 user_data.set_password(password)
                 user_data.save()
-                SendOtpToMail(password, [user_data.email]).run()
+                SendOtpToMail(password, [user_data.email]).start()
                 for i in request.data['role_permission']:
                     role_serializer = adminSerializer.CreateRolePermissionSubAdminSerializer(data=i)
                     if role_serializer.is_valid():
@@ -566,7 +571,8 @@ class AdminService:
                     else:
                         return {'data':role_serializer.errors, 'status':400}    
                 return {'data':request.data, 'message': messages.SUB_ADMIN_CREATED,'status':200}
-            return {'data':user_serializer.errors,"message": messages.WENT_WRONG,'status':400}
+            else:
+                return {'data': user_serializer.errors, 'message': "Something went wrong",'status':400}
         except Exception as e:
             return {"error": str(e),"message": messages.INTERNAL_SERVER_ERROR, "status": 500}
         
@@ -789,3 +795,138 @@ class AdminService:
             return {"data": data, "message": "CMS details retrieved successfully", "status": 200}
         except Exception as e:
             return {"data": None, "message": str(e), "status": 400}
+        
+
+
+##########CUSTOMER SUPPORT
+    
+    def get_all_customer_support(self,request):
+        customer_support = CustomerSupportModel.objects.all()
+        pagination_obj = CustomPagination()
+        search_keys = ["username__icontains", "email__icontains"]
+        result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.CustomerSupportListSerializer, customer_support)
+        return {"data": result, "message": "retrieved successfully", "status": 200}
+    
+    def revert_query_by_admin(self,request,cs_id):
+        try:
+            query = CustomerSupportModel.objects.get(id=cs_id)
+            query.answer = request.data["answer"]
+            query.reverted_back = True
+            query.save()
+            send_notification_to_mail(query.customer.email, "Hello user this is your response for query", request.data["answer"])
+                # try:
+                #     user = UserModel.objects.filter(id=faq.customer_id)
+                #     try:
+                #         device_tokens.append(UserSession.objects.get(user_id=user.id).device_token)
+                #         for i in device_tokens:
+                #             try:
+                #                 push_service = FCMNotification(api_key=None)
+                #                 result = push_service.notify_single_device(
+                #                     registration_id=f"{i}",
+                #                     message_title=request.data["title"],
+                #                     message_body=request.data["message"],
+                #                     )
+                #             except:
+                #                 pass
+                #     except:
+                #         pass
+
+
+                # except:
+                #         pass
+
+            return {"data": request.data, "message":  "Message sent to user successfully", "status": 200}
+        except CustomerSupportModel.DoesNotExist:
+            return {"data": None, "message":  'NOT_FOUND', "status": 404}
+        
+    def delete_query_by_admin(self, request, cs_id):
+        try:
+            query = CustomerSupportModel.objects.get(id=cs_id)
+            query.delete()
+            return {"data": None, "message": "Query deleted successfully", "status": 200}
+        except CustomerSupportModel.DoesNotExist:
+            return {"data": None, "message":  'NOT_FOUND', "status": 400}
+
+
+
+
+#=========================notification
+
+
+
+    def add_notification_by_admin(self, request, format=None):
+        user_ids, all_email_to_send, device_tokens = [], [], []
+        try:
+            if request.data["notification_for"] == 1:
+                users = UserModel.objects.filter(role__in=[3,2])
+                for i in users:
+                    user_ids.append(i.id)
+                    all_email_to_send.append(i.email)
+                    # try:
+                    #     device_tokens.append(UserSession.objects.get(user_id=i.id).device_token)
+                    # except:
+                    #     pass
+            elif request.data["notification_for"] == 2:
+                users = UserModel.objects.filter(role__in=[2])
+                for i in users:
+                    user_ids.append(i.id)
+                    all_email_to_send.append(i.email)
+                    print(all_email_to_send)
+                    # try:
+                    #     device_tokens.append(UserSession.objects.get(user_id=i.id).device_token)
+                    # except:
+                    #     pass
+
+            elif request.data["notification_for"] == 3:
+                users = UserModel.objects.filter(role__in=[3])
+                for i in users:
+                    user_ids.append(i.id)
+                    all_email_to_send.append(i.email)
+                    # print(all_email_to_send)
+                    # try:
+                    #     device_tokens.append(UserSession.objects.get(user_id=i.id).device_token)
+                    # except:
+                    #     pass
+
+
+            for email in all_email_to_send:
+                title=request.data['notification_title']
+                message=request.data["notification_message"]
+                
+                send_notification_to_mail(email, title, message)
+
+            # for i in device_tokens:
+            #     try:
+            #         push_service = FCMNotification(api_key=None)
+            #         result = push_service.notify_single_device(
+            #             registration_id=f"{i}",
+            #             message_title=request.data["notification_title"],
+            #             message_body=request.data["notification_message"],
+            #             )
+            #     except:
+            #         pass
+            # starting_id_of_push_model = []
+            # for id in user_ids:
+            #     create_notification_obj = NotificationModel.objects.create(
+            #         title = request.data['notification_title'],
+            #         message = request.data['notification_message'],
+            #         # for_user_id = id,
+            #         notification_type = request.data['notification_type'],
+            #         notification_for=request.data["notification_for"]
+            #     )
+            #     if len(starting_id_of_push_model) < 1: starting_id_of_push_model.append(create_notification_obj.id)
+         
+            
+            return {'data':None, 'message':"NOTIFICATION_SENT", 'status':200}
+        except Exception as e:
+            return {'data':None, 'message':f"{e}", 'status':400}
+
+
+    def get_all_notifications(self,request):
+        notifications = NotificationModel.objects.all()
+        pagination_obj = CustomPagination()
+        search_keys = ["username__icontains", "email__icontains"]
+        result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.NotificationListSerializer, notifications)
+        return {"data": result, "message": "retrieved successfully", "status": 200}
+    
+

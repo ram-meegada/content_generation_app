@@ -13,4 +13,7 @@ urlpatterns = [
     path("update-profile/", userView.UpdateProfileByTokenView.as_view()),
     path("user-details/", userView.UserDetailsByTokenView.as_view()),
     path("delete-user/",userView.DeleteAccountByTokenView.as_view()),
+
+    #### customer support
+    path("send-query/",userView.QueryToAdminView.as_view()),
 ]

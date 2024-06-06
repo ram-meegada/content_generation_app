@@ -931,12 +931,16 @@ class CategoryService:
                         break
                 final_response = result[result.index("["): i+1] + "]"
                 final_response = json.loads(final_response)
-                for i in final_response:
-                    if not i["options"]:
-                        i["question_type"] = 1
-                    elif i["options"]:
-                        i["question_type"] = 2
-
+                try:
+                    for i in final_response:
+                        if not i.get("options"):
+                            i["question_type"] = 1
+                        elif not i["options"]:
+                            i["question_type"] = 1
+                        elif i["options"]:
+                            i["question_type"] = 2
+                except:
+                    pass            
                 # image_info = upload_media_obj.upload_media(request)
                 image_info = upload_media_obj.upload_media(request)
                 print(image_info["data"],"333333333333333333333333333333333333333333")
@@ -952,6 +956,7 @@ class CategoryService:
             except Exception as e:
                 return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
         except Exception as e:
+            print(e, '-------error-------------')
             return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
 
     def get_all_assignment(self, request):
@@ -985,7 +990,7 @@ class CategoryService:
                 return {"data":None, "message": "File send to your email successfully", "status":200}
             return {"data": file, "message":messages.UPDATED,"status":200}
         except Exception as e:
-            return {"data":None,"message":messages.WENT_WRONG,"status":400}
+            return {"data": str(e),"message":messages.WENT_WRONG,"status":400}
 
     def html_to_pdf(self, request):
         try:

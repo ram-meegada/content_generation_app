@@ -1,6 +1,6 @@
 from rest_framework import serializers
-from whizzo_app.models import AbilityModel, AchievementModel, SubjectModel, SubRoleModel, UserModel, PermissionModel, ModuleModel, PurposeModel, \
-       FeaturesModel, SubscriptionModel, FaqModel, CmsModel, TestimonialModel
+from whizzo_app.models import AbilityModel, AchievementModel, SubjectModel,CustomerSupportModel, SubRoleModel, UserModel, PermissionModel, ModuleModel, PurposeModel, \
+       FeaturesModel, SubscriptionModel, FaqModel, CmsModel, TestimonialModel,NotificationModel
 from whizzo_app.utils.generateLoginToken import generate_login_token
 from whizzo_app.serializers.uploadMediaSerializer import CreateUpdateUploadMediaSerializer
 
@@ -221,3 +221,21 @@ class GetTestimonialSerializer(serializers.ModelSerializer):
         fields = ["id","first_name","last_name","email","rating","message","profile_picture","country_code", "phone_no","is_active"]
 
 
+class CustomerSupportListSerializer(serializers.ModelSerializer):
+    customer = serializers.SerializerMethodField()
+    class Meta:
+        model = CustomerSupportModel
+        fields = ['id',  'customer', 'username',  'queries', 'reverted_back']
+    def get_customer(self, obj):
+        try:
+            data = {}
+            data["customer_id"] = obj.customer_id  
+            data["email"] = obj.customer.email
+            return data
+        except:
+            return obj.customer
+
+class NotificationListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NotificationModel
+        fields = ['title',  'message', 'notification_for']

@@ -66,3 +66,8 @@ class DeleteAccountByTokenView(APIView):
     def delete(self, request):
         result = user_obj.delete_account(request)
         return Response(result, status=result["status"])
+
+class QueryToAdminView(APIView):
+    def post(self, request):
+        result = user_obj.send_query_to_admin(request)
+        return Response(result, status=result["status"])

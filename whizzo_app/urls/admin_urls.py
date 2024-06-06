@@ -84,4 +84,11 @@ urlpatterns = [
     path('delete-testimonial/<int:id>/', adminView.DeleteTestimonialView.as_view()),
     path('get-all-testimonial/', adminView.GetAllTestimonialView.as_view()),
 
+    path("all-queries/", adminView.AllQueryView.as_view()),
+    path("revert-query/<int:cs_id>/", adminView.RevertQueryByIdView.as_view()),
+    path("delete-query/<int:cs_id>/", adminView.DeleteQueryByIdView.as_view()),
+
+
+    path("add/notification/",adminView.AddNotificationView.as_view()),
+
 ]

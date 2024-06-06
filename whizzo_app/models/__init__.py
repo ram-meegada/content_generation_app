@@ -19,3 +19,5 @@ from .fileSumarizationModel import FileSumarizationModel
 from .noteModel import NoteModel
 from .assignmentModel import AssignmentModel
 from .researchModel  import ReseaerchModel
+from .customerSupportModel import CustomerSupportModel
+from .notificationModel import NotificationModel

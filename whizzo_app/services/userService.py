@@ -9,6 +9,7 @@ from whizzo_app.utils import sendMail
 from datetime import datetime
 from threading import Thread
 import pytz
+from whizzo_app.models.customerSupportModel import CustomerSupportModel
 
 class UserService:
     def user_registration(self, request):
@@ -257,4 +258,10 @@ class UserService:
     #             return {"data": user_details, "message": "SOCIAL LOGIN SUCCESSFUL", "status": 200}
 
 
-    
+    def send_query_to_admin(self, request):
+        customer_support = CustomerSupportModel.objects.create(
+            customer_id=request.user.id,  
+            username=request.data["fullname"],
+            queries=request.data["query"],
+        )
+        return {"data": "", "message": "Query sent to admin successfully", "status": 200}

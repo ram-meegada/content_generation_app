@@ -52,7 +52,7 @@ class EmailThread(threading.Thread):
     def run(self):
         context = {'message':self.message}
         temp = render_to_string('notification.html', context)
-        msg = EmailMultiAlternatives(f"{self.title}", temp, settings.DEFAULT_FROM_EMAIL, self.recipient_list)
+        msg = EmailMultiAlternatives(f"{self.title}", temp, settings.DEFAULT_FROM_EMAIL, [self.recipient_list])
         msg.content_subtype = 'html'
         msg.send()
         print('sent')
