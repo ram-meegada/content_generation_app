@@ -900,64 +900,88 @@ class CategoryService:
             return{"data":None,"message":messages.WENT_WRONG,"status":400}
 
 
-
-
+    def gemini_solution(self, file_link):
+        llm = ChatGoogleGenerativeAI(model="gemini-pro")
+        text_data = self.extract_text(file_link)
+        message = HumanMessage(
+            content=[
+                {"type": "text",
+                    "text": "I am an invligator to mark the questions i need correct answers ,provide me correct answers for these questions and when needed diagrams and figures or explanations just give concise answers and give answers to remaining questions,lastly provide the answers in json list format (question no. ,question, options(this field will will only be there if options are present else no need ), correct answer)"},
+                #  "text": f"list the answers for all questions present  in these given file's (don't leave any question ,even if there is breaks between questions)and provide in  json  format (questtions which have no options just give correct answers in concise manner) try writing answer in this way  (question no. ,question, options(this field will will only be there if options are present else no need ),correct answer) "},
+                {"type": "text", "text":text_data}
+            ]
+        )
+        response = llm.invoke([message])
+        result = to_markdown(response.content)
+        return result
 
 # assignment solution
     def get_assignment_solution(self, request):
-        try:
+        # try:
             # file_link = request.data.get("file_link")
-            file_link = request.FILES.get("file_link")
-            print(request.data,"kdfahlkjsdhflakjshdflakjshdflkjh")
-            llm = ChatGoogleGenerativeAI(model="gemini-pro")
+        file_link = request.FILES.get("file_link")
+        print(request.data,"kdfahlkjsdhflakjshdflakjshdflkjh")
+        # llm = ChatGoogleGenerativeAI(model="gemini-pro")
+        try:
+            # text_data = self.extract_text(file_link)
+            # message = HumanMessage(
+            #     content=[
+            #         {"type": "text",
+            #          "text": "I am an invligator to mark the questions i need correct answers ,provide me correct answers for these questions and when needed diagrams and figures or explanations just give concise answers and give answers to remaining questions,lastly provide the answers in json list format (question no. ,question, options(this field will will only be there if options are present else no need ), correct answer)"},
+            #         #  "text": f"list the answers for all questions present  in these given file's (don't leave any question ,even if there is breaks between questions)and provide in  json  format (questtions which have no options just give correct answers in concise manner) try writing answer in this way  (question no. ,question, options(this field will will only be there if options are present else no need ),correct answer) "},
+            #         {"type": "text", "text":text_data}
+            #     ]
+            # )
+            # response = llm.invoke([message])
+            # result = to_markdown(response.content)
+            result = self.gemini_solution(file_link)
+            print(result, '--------result------------')
+            # data = self.jsonify_response(result)
+            final_response = ""
             try:
-                text_data = self.extract_text(file_link)
-                message = HumanMessage(
-                    content=[
-                        {"type": "text",
-                         "text": "I am an invligator to mark the questions i need correct answers ,provide me correct answers for these questions and when needed diagrams and figures or explanations just give concise answers and give answers to remaining questions,lastly provide the answers in json list format (question no. ,question, options(this field will will only be there if options are present else no need ), correct answer)"},
-                        #  "text": f"list the answers for all questions present  in these given file's (don't leave any question ,even if there is breaks between questions)and provide in  json  format (questtions which have no options just give correct answers in concise manner) try writing answer in this way  (question no. ,question, options(this field will will only be there if options are present else no need ),correct answer) "},
-                        {"type": "text", "text":text_data}
-                    ]
-                )
-                response = llm.invoke([message])
-                result = to_markdown(response.content)
-                print(result, '--------result------------')
-                # data = self.jsonify_response(result)
-              
-                final_response = ""
                 for i in range(len(result)-1, -1, -1):
                     if result[i] == "}":
                         break
                 final_response = result[result.index("["): i+1] + "]"
                 final_response = json.loads(final_response)
-                try:
-                    for i in final_response:
-                        if not i.get("options"):
-                            i["question_type"] = 1
-                        elif not i["options"]:
-                            i["question_type"] = 1
-                        elif i["options"]:
-                            i["question_type"] = 2
-                except:
-                    pass            
-                # image_info = upload_media_obj.upload_media(request)
-                image_info = upload_media_obj.upload_media(request)
-                print(image_info["data"],"333333333333333333333333333333333333333333")
-                # if image_info["status"] == 200:
-                final_data = AssignmentModel.objects.create(
-                    user_id=request.user.id,
-                    result = final_response
-                )
-                final_data.save()
-                # elif image_info["status"] == 400:
-                #     return {"data": image_info["data"], "message": "Something went wrong", "status": 400}
-                return {"data": final_response, "record_id": final_data.id, "message": "RESPONSE", "status": 200}
-            except Exception as e:
-                return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
+            except:
+                pass
+                # for i in range(len(result)-1, -1, -1):
+                #     if result[i] == "}":
+                #         break
+                # final_response = result[result.index("["): i+1] + "]"
+                # final_response = json.loads(final_response)
+            try:
+                for i in final_response:
+                    if not i.get("options"):
+                        i["question_type"] = 1
+                    elif not i["options"]:
+                        i["question_type"] = 1
+                    elif i["options"]:
+                        i["question_type"] = 2
+            except:
+                pass            
+            # image_info = upload_media_obj.upload_media(request)
+            image_info = upload_media_obj.upload_media(request)
+            print(image_info["data"],"333333333333333333333333333333333333333333")
+            # if image_info["status"] == 200:
+            final_data = AssignmentModel.objects.create(
+                user_id=request.user.id,
+                result = final_response
+            )
+            final_data.save()
+            # elif image_info["status"] == 400:
+            #     return {"data": image_info["data"], "message": "Something went wrong", "status": 400}
+            if not final_response:
+                return {"data": None, "message": "Please upload the file again", "status": 200}
+            return {"data": final_response, "record_id": final_data.id, "message": "RESPONSE", "status": 200}
         except Exception as e:
-            print(e, '-------error-------------')
-            return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
+            print(e, type(e), '-------error-------------')
+            # result = self.gemini_solution(file_link)
+            return{"data": str(e), "message": "Please upload the file again", "status": 400}
+        # except Exception as e:
+        #     print(e, '-------error-------------')
+        #     return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
 
     def get_all_assignment(self, request):
         try:
