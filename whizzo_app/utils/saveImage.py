@@ -37,4 +37,23 @@ def save_file_conversion(file, image_name, content_type):
             }
         )
     s3_location = "https://{}.s3.ap-south-1.amazonaws.com/".format(bucket_name)
+    
     return "{}{}".format(s3_location, image_name), image_name
+
+
+def saveFile(image_path, file_type):
+    image_name = f"{random.randint(1000, 9999)}_{image_path}"
+    s3 = boto3.client("s3", aws_access_key_id=access_key_id, aws_secret_access_key=secret_access_key)
+    acl="public-read"
+    with open(image_path, 'rb') as image:
+        url = s3.upload_fileobj(
+                image,
+                bucket_name,
+                image_name,
+                ExtraArgs={
+                    "ACL": acl,
+                    "ContentType": file_type
+                }
+            )
+        s3_location = "https://{}.s3.ap-south-1.amazonaws.com/".format(bucket_name)
+        return "{}{}".format(s3_location, image_name), image_name

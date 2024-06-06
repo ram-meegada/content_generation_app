@@ -68,7 +68,7 @@ SUB_ADMIN_UPDATED= "Sub admin updated successfully"
 SUB_ADMIN_DELETED= "Sub admin deleted successfully"
 
 USER_UPDATED="User updated successfully"
-UPDATED= "Updated successfully"
+UPDATED= "File downloaded successfully"
 USER_DELETED="User deleted successfully"
 
 TESTIMONIAL_ADDED="Testimonial added successfully"

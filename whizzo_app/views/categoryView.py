@@ -49,6 +49,11 @@ class ConvertPdfToExcelView(APIView):
     def post(self, request):
         result = category_obj.convert_pdf_to_excel(request)
         return Response(result, status = result["status"])
+
+class ConvertWordToPdfView(APIView):
+    def post(self, request):
+        result = category_obj.word_to_pdf(request)
+        return Response(result, status = result["status"])
     
 class ConvertExcelToPdfView(APIView):
     def post(self, request):
@@ -63,6 +68,11 @@ class ConvertPdfToImageView(APIView):
 class ConvertImageToPdfView(APIView):
     def post(self, request):
         result = category_obj.image_to_pdf(request)
+        return Response(result, status = result["status"])    
+
+class ConvertPptToPdfView(APIView):
+    def post(self, request):
+        result = category_obj.ppt_to_pdf(request)
         return Response(result, status = result["status"])    
     
 
@@ -136,7 +146,8 @@ class GetAllAssginmentView(APIView):
         return Response(result, status = result["status"])
 
 class updateAssignmentView(APIView):
-    def put(self, request, id):
+    permission_classes = [AllowAny]
+    def post(self, request, id):
         result = category_obj.update_download_file(request, id)
         return Response(result, status=result["status"])
     

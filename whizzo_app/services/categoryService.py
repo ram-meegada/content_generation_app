@@ -42,9 +42,26 @@ from whizzo_app.utils.saveImage import save_image
 from whizzo_app.utils import sendMail
 from whizzo_app.services.uploadMediaService import UploadMediaService
 from whizzo_app.utils.customPagination import CustomPagination
+from docx import Document
+from docx2pdf import convert
+import fitz
+from PIL import Image
+import tempfile
+from pptx.util import Inches
+from pptx import Presentation
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from reportlab.platypus import SimpleDocTemplate, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet
+from rest_framework import status
+import pdfkit
+import pypandoc
+from whizzo_app.utils.saveImage import saveFile
+from whizzo_app.services.uploadMediaService import UploadMediaService
+from whizzo_app.utils.sendMail import send_pdf_file_to_mail
+from threading import Thread
 
-
-
+upload_media_obj = UploadMediaService()
 
 load_dotenv()
 google_api_key = settings.GOOGLE_API_KEY
@@ -359,17 +376,17 @@ class CategoryService:
 
     ############# FILE CONVERSIONS ###############
 
-    def word_to_pdf(self , request):
-        """
-            We have to provide the link of the doc file and after
-            that we can convert the file into pdf file.
-        """
-        word_file = request.FILES.get("pdf_file")
-        file_name = word_file.name
+    # def word_to_pdf(self , request):
+    #     """
+    #         We have to provide the link of the doc file and after
+    #         that we can convert the file into pdf file.
+    #     """
+    #     word_file = request.FILES.get("pdf_file")
+    #     file_name = word_file.name
 
-        doc = aw.Document(word_file)
-        doc.save(f"{file_name}.pdf")
-        return {"data": "", "message": "conversion is done", "status": 200}
+    #     doc = aw.Document(word_file)
+    #     doc.save(f"{file_name}.pdf")
+    #     return {"data": "", "message": "conversion is done", "status": 200}
     
     def pdf_to_word(self , request):
         pdf_file = request.FILES.get("pdf_file")
@@ -426,6 +443,83 @@ class CategoryService:
         if os.path.exists(output_path):
             os.remove(output_path)
         return {"data": data, "message": messages.PDF_TO_EXCEL, "status": 200}
+    
+    def word_to_pdf(self, request):
+        word_file = request.FILES.get("word_file")
+        if not word_file:
+            return {"message": "No Word file provided", "status": 400}
+
+        # Generate unique file names
+        file_name = "".join((word_file.name).split(" "))
+        base_name = f"output_{random.randint(10000, 99999)}"
+        temp_dir = tempfile.gettempdir()
+        input_word_file = os.path.join(temp_dir, f"{base_name}.docx")
+        # output_pdf_file = os.path.join(temp_dir, f"{base_name}.pdf")
+        output_pdf_file = os.path.join( f"{base_name}.pdf")
+
+        # Save the uploaded Word file temporarily
+        with open(input_word_file, 'wb') as f:
+            for chunk in word_file.chunks():
+                f.write(chunk)
+
+        print(f"Input Word file path: {input_word_file}")
+
+        # # Convert Word to PDF
+        # doc = aw.Document(input_word_file)
+        # doc.save(output_pdf_file)
+        # print(f"Output PDF file path: {output_pdf_file}")
+
+
+        # Read the Word document and extract its contents
+        document = Document(input_word_file)
+        content = []
+        for paragraph in document.paragraphs:
+            content.append(paragraph.text)
+
+        # Generate PDF using ReportLab
+        doc = SimpleDocTemplate(output_pdf_file, pagesize=letter)
+        styles = getSampleStyleSheet()
+        paragraphs = [Paragraph(text, styles["Normal"]) for text in content]
+        doc.build(paragraphs)
+        # Convert Word to PDF
+        convert(input_word_file, output_pdf_file)
+        # Handle the converted PDF
+        SAVED_FILE_RESPONSE = save_file_conversion(output_pdf_file, output_pdf_file, "application/pdf")
+        data = {
+            "media_url": SAVED_FILE_RESPONSE[0],
+            "media_type": "pdf",
+            "media_name": SAVED_FILE_RESPONSE[1]
+        }
+        serializer = CreateUpdateUploadMediaSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+        save_file_in_model = CategoryModel.objects.create(
+                                                            user_id=request.user.id,
+                                                            media_id=serializer.data["id"],
+                                                            category=6,
+                                                            sub_category=11
+                                                        )
+        # Save a copy of the output PDF file to a designated directory on your system
+        # designated_dir = os.path.join(settings.BASE_DIR, 'saved_pdf_files')
+        # os.makedirs(designated_dir, exist_ok=True)
+        # final_pdf_path = os.path.join(designated_dir, f"{base_name}.pdf")
+        
+        # Copy the PDF file to the designated directory
+        # with open(final_pdf_path, 'wb') as final_pdf_file:
+        #     with open(output_pdf_file, 'rb') as temp_pdf_file:
+        #         final_pdf_file.write(temp_pdf_file.read())
+
+        # Clean up temporary files
+        if os.path.exists(input_word_file):
+            os.remove(input_word_file)
+        if os.path.exists(output_pdf_file):
+            os.remove(output_pdf_file)
+
+        return {
+            "data": data,
+            "message": "done",
+            "status": 200
+        }
     
     def pdf_to_excel(self, pdf_path, excel_path):
         tables = tabula.read_pdf(pdf_path, pages='all', multiple_tables=True)
@@ -581,6 +675,106 @@ class CategoryService:
         #     return {"message":messages.CONVERT_SUCCESS, "status": 200}
         # except Exception as e:
         #     return {"message": str(e), "status": 400}
+
+    def ppt_to_pdf(self, request):
+        ppt_file = request.FILES.get("ppt_file")
+        file_name = ppt_file.name
+
+        # Generate a unique file save path
+        base_name = f"output_{random.randint(10000, 99999)}"
+        temp_dir = tempfile.gettempdir()
+        ppt_path = os.path.join(temp_dir, f"{base_name}.pptx")
+        pdf_path = os.path.join( f"{base_name}.pdf")
+
+        # Save the uploaded PPT file temporarily
+        with open(ppt_path, 'wb') as f:
+            for chunk in ppt_file.chunks():
+                f.write(chunk)
+
+        # Convert PPT to PDF using images
+        conversion_result = self.convert_ppt_to_pdf_with_images(ppt_path, pdf_path)
+
+        if conversion_result["status"] != 200:
+            return conversion_result
+        
+
+        # Handle the converted PDF
+        SAVED_FILE_RESPONSE = save_file_conversion(pdf_path, pdf_path, "application/pdf")
+        data = {
+            "media_url": SAVED_FILE_RESPONSE[0],
+            "media_type": "ppt",
+            "media_name": SAVED_FILE_RESPONSE[1]
+        }
+        save_file_in_model = CategoryModel.objects.create(
+                                                            user_id=request.user.id,
+                                                            media_id=serializer.data["id"],
+                                                            category=6,
+                                                            sub_category=17
+                                                        )
+        serializer = CreateUpdateUploadMediaSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+
+        # Save a copy of the output PDF file to a designated directory on your system
+        # designated_dir = os.path.join(tempfile.gettempdir(), 'saved_ppt_pdf_files')
+        # os.makedirs(designated_dir, exist_ok=True)
+        # final_pdf_path = os.path.join(designated_dir, f"{base_name}.pdf")
+        # with open(final_pdf_path, 'wb') as final_pdf_file:
+        #     with open(pdf_path, 'rb') as temp_pdf_file:
+        #         final_pdf_file.write(temp_pdf_file.read())
+
+        # Clean up temporary files
+        if os.path.exists(ppt_path):
+            os.remove(ppt_path)
+        if os.path.exists(pdf_path):
+            os.remove(pdf_path)
+
+        return {
+            "data": serializer.data,
+            "message": messages.CONVERT_SUCCESS,
+            "status": status.HTTP_200_OK
+        }
+
+    def convert_ppt_to_pdf_with_images(self, ppt_path, pdf_path):
+        try:
+            prs = Presentation(ppt_path)
+            temp_dir = tempfile.gettempdir()
+            slide_images = []
+
+            for slide in prs.slides:
+                slide_img_base = os.path.join(temp_dir, f"slide_{prs.slides.index(slide)}")
+                success = self.save_slide_as_image(slide, slide_img_base)
+                if success:
+                    slide_images.append(slide_img_base)
+
+            if slide_images:
+                first_image = Image.open(slide_images[0] + "_0.png")  # Assuming the first image's index is 0
+                first_image.save(pdf_path, save_all=True, append_images=[Image.open(f"{img}_0.png") for img in slide_images[1:]])
+
+            # Clean up temporary image files
+            for slide_img_base in slide_images:
+                for idx in range(len(slide.shapes)):
+                    os.remove(f"{slide_img_base}_{idx}.png")
+
+            return {"message": "Conversion successful", "status": 200}
+        except Exception as e:
+            return {"message": f"Conversion failed: {str(e)}", "status": 500}
+
+    def save_slide_as_image(self, slide, img_path_base):
+        try:
+            os.makedirs(os.path.dirname(img_path_base), exist_ok=True)
+            for idx, shape in enumerate(slide.shapes):
+                if not hasattr(shape, 'image'):
+                    continue
+                image = shape.image
+                image_bytes = image.blob
+                img_path = f"{img_path_base}_{idx}.png"
+                with open(img_path, 'wb') as img_file:
+                    img_file.write(image_bytes)
+            return True  # Indicate successful operation
+        except Exception as e:
+            print(f"Error saving slide as image: {str(e)}")
+            return False  # Indicate failure    
         
 
 
@@ -743,13 +937,18 @@ class CategoryService:
                     elif i["options"]:
                         i["question_type"] = 2
 
-                final_data= AssignmentModel.objects.create(
+                # image_info = upload_media_obj.upload_media(request)
+                image_info = upload_media_obj.upload_media(request)
+                print(image_info["data"],"333333333333333333333333333333333333333333")
+                # if image_info["status"] == 200:
+                final_data = AssignmentModel.objects.create(
                     user_id=request.user.id,
                     result = final_response
                 )
                 final_data.save()
-                return {"data": final_response, "message": "RESPONSE", "status": 200}
-       
+                # elif image_info["status"] == 400:
+                #     return {"data": image_info["data"], "message": "Something went wrong", "status": 400}
+                return {"data": final_response, "record_id": final_data.id, "message": "RESPONSE", "status": 200}
             except Exception as e:
                 return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
         except Exception as e:
@@ -767,14 +966,48 @@ class CategoryService:
 
     def update_download_file(self, request,id):
         try:
-            assignment = AssignmentModel.objects.get(id = id)
-            serializers = categorySerializer.CreateAssignmentSerializers(assignment,data=request.data)
-            if serializers.is_valid():
-                serializers.save()
-            return {"data":None,"message":messages.UPDATED,"status":200}
-
+            assignment = AssignmentModel.objects.get(id=id)
+            if request.data["type"] == 1:
+                file = self.html_to_pdf(request)
+                assignment.download_file = file    
+                assignment.save()
+            if request.data["type"] == 2:
+                file = self.html_to_doc(request)
+                assignment.download_file = file    
+                assignment.save()
+            elif request.data["type"] == 3:
+                file = self.html_to_pdf(request)
+                Thread(target=send_pdf_file_to_mail, args=(assignment.user.email, file)).start() 
+                return {"data":None, "message": "File send to your email successfully", "status":200}
+            return {"data": file, "message":messages.UPDATED,"status":200}
         except Exception as e:
             return {"data":None,"message":messages.WENT_WRONG,"status":400}
+
+    def html_to_pdf(self, request):
+        try:
+            html_text = request.data["html_text"]
+            path_to_wkhtmltopdf = 'C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe'  # Update this path as necessary
+            config = pdfkit.configuration(wkhtmltopdf=path_to_wkhtmltopdf)
+            file_name = f'{random.randint(10000, 99999)}_testing.pdf'
+            pdfkit.from_string(html_text, file_name, configuration=config)
+            saved_file = saveFile(file_name, "application/pdf")    
+            if os.path.exists(file_name):
+                os.remove(file_name)
+            return saved_file[0]
+        except Exception as e:
+            return {"data":None,"message":str(e),"status":status.HTTP_400_BAD_REQUEST}
+    
+    def html_to_doc(self, request):
+        try:
+            html_text = request.data["html_text"]
+            with open('input.html', 'w') as file:
+                file.write(html_text)
+                print(11111111111)
+                output = pypandoc.convert_file('input.html', 'docx', outputfile='output.docx')
+                print(22222222222)
+                return {"data":None,"message":""}
+        except Exception as e:
+            return {"data":None,"messages":str(e),"status":status.HTTP_400_BAD_REQUEST}
 
     def get_assignment_by_id(self, request, id):
         try:
@@ -784,7 +1017,7 @@ class CategoryService:
 
         serializer = categorySerializer.CreateAssignmentSerializers(data)
         return {"data":serializer.data, "message":messages.FETCH, "status":200}
-
+    
             
 
         
@@ -855,5 +1088,5 @@ class CategoryService:
         except Exception as e:
             return{"data":None,"message":messages.WENT_WRONG,"status":400}
 
-    
+
        

@@ -15,11 +15,13 @@ urlpatterns = [
 
     #### file conversions ####
     path("conversion/pdf-to-word/", categoryView.PdfToWordView.as_view()),
+    path("conversion/word-to-pdf/", categoryView.ConvertWordToPdfView.as_view()),
     path("conversion/pdf-to-excel/", categoryView.ConvertPdfToExcelView.as_view()),
 
     path("conversion/excel-to-pdf/", categoryView.ConvertExcelToPdfView.as_view()),
     path("conversion/pdf-to-image/", categoryView.ConvertPdfToImageView.as_view()),
     path("conversion/image-to-pdf/", categoryView.ConvertImageToPdfView.as_view()),
+    path("conversion/ppt-to-pdf/", categoryView.ConvertPptToPdfView.as_view()),
 
     #### Notes ####
     path("convert-voice-to-text/", categoryView.ConvertVoiceToTextView.as_view()),
@@ -38,7 +40,7 @@ urlpatterns = [
     #### assignment ####
     path("get-assignmnet-answer/", categoryView.GetAssignmentSolutionView.as_view()),
     path("fetch-all-assignment/",categoryView.GetAllAssginmentView.as_view()),
-    path("update-assignment/<int:id>/",categoryView.updateAssignmentView.as_view()),
+    path("update-assignment/<int:id>/", categoryView.updateAssignmentView.as_view()),
     path("get-assignment/<int:id>/",categoryView.GetAssigmentByIdView.as_view()),
 
     ##### setting app  ######

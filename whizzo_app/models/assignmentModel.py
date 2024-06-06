@@ -10,7 +10,7 @@ class AssignmentModel(BaseModel):
     media = models.ForeignKey(UploadMediaModel, on_delete=models.CASCADE, null=True , related_name="pdf_file")
     #others
     result = models.JSONField(default=list)
-    download_file = models.ForeignKey(UploadMediaModel, on_delete=models.CASCADE, null=True,  related_name="documentlink")
+    download_file = models.TextField(default="")
 
     class Meta:
         db_table = "Assignment"

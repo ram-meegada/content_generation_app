@@ -88,3 +88,8 @@ class CreateAssignmentSerializers(serializers.ModelSerializer):
     class Meta:
         model = AssignmentModel
         fields = ["id","user","result"]
+
+# class AssignmentSerializers(serializers.ModelSerializer):
+#     class Meta:
+#         model = AssignmentModel
+#         fields = ["id", "download_file"]
