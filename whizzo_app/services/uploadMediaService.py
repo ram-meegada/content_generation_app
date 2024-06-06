@@ -12,6 +12,7 @@ class UploadMediaService:
         try:
             response_data = []
             for img in images:
+                print(img.content_type, '------------------img.content_type')
                 image_response = save_image(img)
                 data = {
                     "media_url": image_response[0],

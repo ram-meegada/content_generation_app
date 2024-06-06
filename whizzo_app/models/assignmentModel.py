@@ -11,6 +11,7 @@ class AssignmentModel(BaseModel):
     #others
     result = models.JSONField(default=list)
     download_file = models.TextField(default="")
+    download_doc_file = models.TextField(default="")
 
     class Meta:
         db_table = "Assignment"

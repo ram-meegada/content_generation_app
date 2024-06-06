@@ -968,12 +968,16 @@ class CategoryService:
         try:
             assignment = AssignmentModel.objects.get(id=id)
             if request.data["type"] == 1:
+                if assignment.download_file:
+                    return {"data": assignment.download_file, "message":messages.UPDATED,"status":200}
                 file = self.html_to_pdf(request)
                 assignment.download_file = file    
                 assignment.save()
             if request.data["type"] == 2:
+                if assignment.download_doc_file:
+                    return {"data": assignment.download_doc_file, "message":messages.UPDATED,"status":200}
                 file = self.html_to_doc(request)
-                assignment.download_file = file    
+                assignment.download_doc_file = file    
                 assignment.save()
             elif request.data["type"] == 3:
                 file = self.html_to_pdf(request)
@@ -988,8 +992,11 @@ class CategoryService:
             html_text = request.data["html_text"]
             path_to_wkhtmltopdf = 'C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe'  # Update this path as necessary
             config = pdfkit.configuration(wkhtmltopdf=path_to_wkhtmltopdf)
-            file_name = f'{random.randint(10000, 99999)}_testing.pdf'
+            file_name = f'{random.randint(10000, 99999)}_file.pdf'
             pdfkit.from_string(html_text, file_name, configuration=config)
+            cv = Converter(file_name)
+            cv.convert("output_word_file.docx", start=0, end=None)
+            cv.close()
             saved_file = saveFile(file_name, "application/pdf")    
             if os.path.exists(file_name):
                 os.remove(file_name)
@@ -999,13 +1006,22 @@ class CategoryService:
     
     def html_to_doc(self, request):
         try:
+            delete_files = []
             html_text = request.data["html_text"]
-            with open('input.html', 'w') as file:
-                file.write(html_text)
-                print(11111111111)
-                output = pypandoc.convert_file('input.html', 'docx', outputfile='output.docx')
-                print(22222222222)
-                return {"data":None,"message":""}
+            path_to_wkhtmltopdf = 'C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe'  # Update this path as necessary
+            config = pdfkit.configuration(wkhtmltopdf=path_to_wkhtmltopdf)
+            file_name = f'{random.randint(10000, 99999)}_file.pdf'
+            doc_file_name = f'{random.randint(10000, 99999)}_file.docx'
+            delete_files = [file_name, doc_file_name]
+            pdfkit.from_string(html_text, file_name, configuration=config)
+            cv = Converter(file_name)
+            cv.convert(doc_file_name, start=0, end=None)
+            cv.close()
+            saved_file = saveFile(doc_file_name, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")    
+            for i in delete_files:
+                if os.path.exists(i):
+                    os.remove(i)
+            return saved_file[0]
         except Exception as e:
             return {"data":None,"messages":str(e),"status":status.HTTP_400_BAD_REQUEST}
 
