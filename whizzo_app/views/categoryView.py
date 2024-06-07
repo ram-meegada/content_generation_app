@@ -144,7 +144,11 @@ class GetAssignmentSolutionView(APIView):
     def post(self, request):
         result = category_obj.get_assignment_solution(request)
         return Response(result, status = result["status"])
-     
+    
+class GetAssignmentSolutionReviewView(APIView):
+    def post(self, request):
+        result = category_obj.get_assignment_solution_review(request)
+        return Response(result, status = result["status"])     
 
 class GetAllAssginmentView(APIView):
     def post(self, request):

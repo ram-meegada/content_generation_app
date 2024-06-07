@@ -413,7 +413,6 @@ class CategoryService:
             for page in pdf_reader.pages:
                 pdf_text += page.extract_text()
         return pdf_text
-        
     ############# FILE CONVERSIONS ###############
 
     # def word_to_pdf(self , request):
@@ -955,6 +954,20 @@ class CategoryService:
         result = to_markdown(response.content)
         return result
 
+    def gemini_solution_review(self, file_link):
+        llm = ChatGoogleGenerativeAI(model="gemini-pro")
+        text_data = self.extract_text(file_link)
+        message = HumanMessage(
+            content=[
+                {"type": "text",
+                    "text": "These are some question and answers you have generated for my assigment previously.Now just add another key explanation and give explanation of that answer. And make sure to keep that response as it is by just adding explanation key,lastly provide the answers in json list format (question no. ,question, options(this field will will only be there if options are present else no need ), correct answer,explaination"},
+                #  "text": f"list the answers for all questions present  in these given file's (don't leave any question ,even if there is breaks between questions)and provide in  json  format (questtions which have no options just give correct answers in concise manner) try writing answer in this way  (question no. ,question, options(this field will will only be there if options are present else no need ),correct answer) "},
+                {"type": "text", "text":text_data}
+            ]
+        )
+        response = llm.invoke([message])
+        result = to_markdown(response.content)
+        return result
 # assignment solution
     def get_assignment_solution(self, request):
         # try:
@@ -1033,6 +1046,54 @@ class CategoryService:
         except Exception as e:
             return {"data":None,"message":messages.WENT_WRONG,"status":400}
 
+    def get_assignment_solution_review(self, request):
+        file_link = request.FILES.get("file_link")
+        try:
+            result = self.gemini_solution_review(file_link)
+            # print(result, '-----------------------')
+            final_response = ""
+            try:
+                for i in range(len(result)-1, -1, -1):
+                    if result[i] == "}":
+                        break
+                final_response = result[result.index("["): i+1] + "]"
+                final_response = json.loads(final_response)
+            except:
+                pass
+            try:
+                for i in final_response:
+                    if not i.get("options"):
+                        i["question_type"] = 1
+                    elif not i["options"]:
+                        i["question_type"] = 1
+                    elif i["options"]:
+                        i["question_type"] = 2
+            except:
+                pass            
+            image_info = upload_media_obj.upload_media(request)
+            # final_data = AssignmentModel.objects.create(
+            #     user_id=request.user.id,
+            #     result = final_response
+            # )
+            # final_data.save()
+            if not final_response:
+                return {"data": None, "message": "Please try again", "status": 200}
+            return {"data": final_response, "record_id": "final_data.id", "message": "RESPONSE", "status": 200}
+        except Exception as e:
+            return{"data": str(e), "message": "Please try again 2", "status": 400}
+
+    def get_all_assignment(self, request):
+        try:
+            data = AssignmentModel.objects.all()
+            pagination_obj = CustomPagination()
+            search_keys = []
+            result = pagination_obj.custom_pagination(request, search_keys, categorySerializer.CreateAssignmentSerializers, data)
+            return {"data":result,"message":messages.FETCH,"status":200}
+        except Exception as e:
+            return {"data":None,"message":messages.WENT_WRONG,"status":400}
+
+
+
     def update_download_file(self, request,id):
         try:
             assignment = AssignmentModel.objects.get(id=id)
@@ -1063,9 +1124,9 @@ class CategoryService:
             config = pdfkit.configuration(wkhtmltopdf=path_to_wkhtmltopdf)
             file_name = f'{random.randint(10000, 99999)}_file.pdf'
             pdfkit.from_string(html_text, file_name, configuration=config)
-            cv = Converter(file_name)
-            cv.convert("output_word_file.docx", start=0, end=None)
-            cv.close()
+            # cv = Converter(file_name)
+            # cv.convert("output_word_file.docx", start=0, end=None)
+            # cv.close()
             saved_file = saveFile(file_name, "application/pdf")    
             if os.path.exists(file_name):
                 os.remove(file_name)
