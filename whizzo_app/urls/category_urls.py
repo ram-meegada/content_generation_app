@@ -10,6 +10,7 @@ urlpatterns = [
 
     ### file summarization ###
     path("file/summarization/", categoryView.FileSummarizationView.as_view()),
+    path("file/summarization-vocab/", categoryView.FileSummarizationVocabView.as_view()),
     path("file/history/", categoryView.FileSummaryHistoryView.as_view()),
     path("file/<int:file_id>/", categoryView.GetSummaryByIdView.as_view()),
 

@@ -29,6 +29,12 @@ class FileSummarizationView(APIView):
     def post(self, request):
         result = category_obj.generate_file_summary(request)
         return Response(result, status = result["status"])
+    
+
+class FileSummarizationVocabView(APIView):
+    def post(self, request):
+        result = category_obj.generate_file_important_vocabulary(request)
+        return Response(result, status = result["status"])
 
 class FileSummaryHistoryView(APIView):
     def get(self, request):

@@ -208,7 +208,10 @@ class UserService:
                 serializer = userSerializer.updateWithoutPPUserSerializer(user,data=request.data, context={"purpose":request.data["purpose"]})
                 if serializer.is_valid():
                     serializer.save( purpose_id=request.data["purpose"])
-                    return {"data": serializer.data, "message": "Profile updated successfully", "status": 200}
+                if user.profile_status==2:
+                    user.profile_status = 3
+                    user.save()
+                return {"data": serializer.data, "message": "Profile updated successfully", "status": 200}
         except Exception as e:
             return {"data": str(e), "message": "Something went wrong", "status": 400}
         

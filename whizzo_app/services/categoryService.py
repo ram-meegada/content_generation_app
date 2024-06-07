@@ -345,6 +345,8 @@ class CategoryService:
                                                     sub_category=5,
                                                     result=result
             )
+            # Store the result in the session or a temporary variable
+            request.session['file_summary_result'] = result
             return {"data": result, "message": messages.SUMMARY_GENERATED, "status": 200}
         except Exception as e:
             return {"error": str(e), "message": messages.WENT_WRONG, "status": 400}
@@ -372,8 +374,46 @@ class CategoryService:
             return {"data": None, "message": messages.RECORD_NOT_FOUND, "status": 400}
         serializer = categorySerializer.GetFileSummarizationIdSerializer(get_summary_obj)
         return {"data": serializer.data, "message": messages.SUMMARY_FETCHED, "status": 200}
-    
+        
+    def generate_file_important_vocabulary(self, request):
+            text_data = request.data.get('text_data')  # Get text_data from the request payload
+            if text_data is None:
+                text_data = request.session.get('file_summary_result')
+                if not text_data:
+                    return {"error": "No summary result found. Please provide text data or generate the summary first.", "message": messages.WENT_WRONG, "status": 400}
 
+            # file_link = request.FILES.get("file_link")
+            llm = ChatGoogleGenerativeAI(model="gemini-pro")
+            try:
+                # text_data = self.extract_text(file_link)
+                message = HumanMessage(
+                    content=[
+                        {"type": "text",
+                        # "text": f"generate a summary of this pdf file and the length of the summary should be strictly atleast 2000 words and give me only text no * and extra symbols"},
+                        "text": f"generate all the  vocabulary words you found in this pdf which uou consider to be important as a reference point to the pdf from this pdf file and give me only text no * and extra symbols"},
+
+                        {"type": "text", "text":text_data}
+                    ]
+                )
+                response = llm.invoke([message])
+                result = to_markdown(response.content)
+                save_file_summary_record = FileSumarizationModel.objects.create(
+                                                        user_id=request.user.id,
+                                                        sub_category=5,
+                                                        result=result
+                )
+                return {"data": result, "message": messages.SUMMARY_GENERATED, "status": 200}
+            except Exception as e:
+                return {"error": str(e), "message": messages.WENT_WRONG, "status": 400}
+    def extract_text(self, file_link):
+        pdf_text = ""
+        with file_link.open() as f:
+            pdf_stream = BytesIO(f.read())
+            pdf_reader = PdfReader(pdf_stream)
+            for page in pdf_reader.pages:
+                pdf_text += page.extract_text()
+        return pdf_text
+        
     ############# FILE CONVERSIONS ###############
 
     # def word_to_pdf(self , request):
