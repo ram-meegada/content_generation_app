@@ -103,15 +103,22 @@ class GeteditpurposeStatusSerializer(serializers.ModelSerializer):
         model = PurposeModel
         fields = ('id','is_active')
 
+
 class FeatureModelSerializer(serializers.ModelSerializer):
     class Meta:
         model = FeaturesModel
         fields = ['id', 'name']
 
 class SubscriptionSerializer(serializers.ModelSerializer):
+    plan_type = serializers.SerializerMethodField()
+    features = FeatureModelSerializer(many=True)
     class Meta:
         model = SubscriptionModel
-        fields = ['id', 'plan_type', 'price', 'features', 'status']
+        fields = ['id', 'plan_type', 'price', 'features']
+    def get_plan_type(self, obj):
+        return obj.get_plan_type_display()
+
+
 
 class FaqModelSerializer(serializers.ModelSerializer):
     class Meta:

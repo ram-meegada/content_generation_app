@@ -16,4 +16,9 @@ urlpatterns = [
 
     #### customer support
     path("send-query/",userView.QueryToAdminView.as_view()),
+    path("user-testimonial/",userView.GetAllTestimonialUserView.as_view()),
+    path("user-subscription/",userView.GetAllSubscriptionUserView.as_view()),
+
+
+    
 ]

@@ -274,7 +274,7 @@ class GetAllPurposeView(APIView):
 class AddFeaturesView(APIView):
     # permission_classes = [AllowAny]
     def post(self, request):
-        result = admin_obj.add_features(self,request)
+        result = admin_obj.add_features(request)
         return Response(result)
     
 class GetAllFeaturesView(APIView):

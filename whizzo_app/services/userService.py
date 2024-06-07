@@ -2,8 +2,10 @@ from re import search
 from tabnanny import check
 from rest_framework import status
 from whizzo_app.models.userModel import UserModel
+from whizzo_app.models.testimonialModel import TestimonialModel
+from whizzo_app.models.subscriptionModel import SubscriptionModel
 from whizzo_app.utils import messages
-from whizzo_app.serializers import userSerializer
+from whizzo_app.serializers import userSerializer,adminSerializer
 from django.contrib.auth.hashers import check_password
 from whizzo_app.utils import sendMail
 from datetime import datetime
@@ -268,3 +270,24 @@ class UserService:
             queries=request.data["query"],
         )
         return {"data": "", "message": "Query sent to admin successfully", "status": 200}
+    
+
+
+    def get_all_testimonial_for_user(self, request):
+        try:
+            Testimonial_obj = TestimonialModel.objects.all()
+        except TestimonialModel.DoesNotExist:
+            return {"data": None, "message": messages.RECORD_NOT_FOUND, "status": 400}
+        serializer = adminSerializer.GetTestimonialSerializer(Testimonial_obj, many=True)
+        serialized_data = serializer.data
+        return {'data': serialized_data, 'message': messages.FETCH, 'status': 200}
+
+    def get_all_subscriptions_for_user(self, request):
+        try:
+            subscription = SubscriptionModel.objects.all()
+        except SubscriptionModel.DoesNotExist:
+            return {"data": None, "message": messages.RECORD_NOT_FOUND, "status": 400}
+        serializer = adminSerializer.SubscriptionSerializer(subscription, many=True)
+        serialized_data = serializer.data
+        return {'data': serialized_data, 'message': messages.FETCH, 'status': 200}
+
