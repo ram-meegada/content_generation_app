@@ -60,6 +60,9 @@ from whizzo_app.utils.saveImage import saveFile
 from whizzo_app.services.uploadMediaService import UploadMediaService
 from whizzo_app.utils.sendMail import send_pdf_file_to_mail
 from threading import Thread
+import os
+from io import BytesIO
+from django.core.files import File
 
 upload_media_obj = UploadMediaService()
 
@@ -960,7 +963,7 @@ class CategoryService:
         message = HumanMessage(
             content=[
                 {"type": "text",
-                    "text": "These are some question and answers you have generated for my assigment previously.Now just add another key explanation and give explanation of that answer. And make sure to keep that response as it is by just adding explanation key,lastly provide the answers in json list format (question no. ,question, options(this field will will only be there if options are present else no need ), correct answer,explaination"},
+                    "text": "These are some question and answers you have generated for my assigment previously.Now just add another key explanation and give explanation of that answer. And make sure to keep that response as it is by just adding explanation key, lastly provide the answers in json list format (question no. ,question, options(this field will will only be there if options are present else no need ), correct answer, explaination"},
                 #  "text": f"list the answers for all questions present  in these given file's (don't leave any question ,even if there is breaks between questions)and provide in  json  format (questtions which have no options just give correct answers in concise manner) try writing answer in this way  (question no. ,question, options(this field will will only be there if options are present else no need ),correct answer) "},
                 {"type": "text", "text":text_data}
             ]
@@ -1046,10 +1049,23 @@ class CategoryService:
         except Exception as e:
             return {"data":None,"message":messages.WENT_WRONG,"status":400}
 
-    def get_assignment_solution_review(self, request):
-        file_link = request.FILES.get("file_link")
+    def get_assignment_solution_review(self, request, id):
+        # file_link = request.FILES.get("file_link")
+        file = self.get_assignment_solution_review_func(request)
         try:
-            result = self.gemini_solution_review(file_link)
+            with open(file, 'rb') as f:
+                file_content = f.read()
+                in_memory_file = BytesIO(file_content)
+        
+        # Wrap the BytesIO object with Django's File class
+            django_file = File(in_memory_file, name=os.path.basename(file))
+            print(django_file, type(django_file), '=================')
+            # with open(file, 'rb') as image:
+            # if os.path.exists(django_file):
+            result = self.gemini_solution_review(django_file)
+            # else:
+            #     return {"data":None, "message":"File doesnot exists","status":400}
+
             # print(result, '-----------------------')
             final_response = ""
             try:
@@ -1069,18 +1085,40 @@ class CategoryService:
                     elif i["options"]:
                         i["question_type"] = 2
             except:
-                pass            
-            image_info = upload_media_obj.upload_media(request)
-            # final_data = AssignmentModel.objects.create(
-            #     user_id=request.user.id,
-            #     result = final_response
-            # )
+                pass
+            try:
+                for i in final_response:
+                    i["correct_answer"] = i["explanation"]
+            except Exception as err:
+                print(err, '--------------')
+                pass
+
+            # image_info = upload_media_obj.upload_media(request)
+            # final_data = AssignmentModel.objects.get(id=id)
+            if os.path.exists(file):
+                os.remove(file)
             # final_data.save()
             if not final_response:
-                return {"data": None, "message": "Please try again", "status": 200}
-            return {"data": final_response, "record_id": "final_data.id", "message": "RESPONSE", "status": 200}
+                return {"data": None, "message": "Please upload the file again", "status": 200}
+            return {"data": final_response, "message": "Review generated successfully", "status": 200}
         except Exception as e:
-            return{"data": str(e), "message": "Please try again 2", "status": 400}
+            return{"data": str(e), "message": "Please upload the file again", "status": 400}
+        
+    def get_assignment_solution_review_func(self, request):
+        html_text = request.data["html_text"]
+        path_to_wkhtmltopdf = 'C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe'  # Update this path as necessary
+        config = pdfkit.configuration(wkhtmltopdf=path_to_wkhtmltopdf)
+        file_name = f'{random.randint(10000, 99999)}_file.pdf'
+        pdfkit.from_string(html_text, file_name, configuration=config)
+        return file_name
+
+        # cv = Converter(file_name)
+        # cv.convert("output_word_file.docx", start=0, end=None)
+        # cv.close()
+        # saved_file = saveFile(file_name, "application/pdf")
+        # if os.path.exists(file_name):
+        #     os.remove(file_name)
+        # return saved_file[0]    
 
     def get_all_assignment(self, request):
         try:
@@ -1097,13 +1135,21 @@ class CategoryService:
     def update_download_file(self, request,id):
         try:
             assignment = AssignmentModel.objects.get(id=id)
+
             if request.data["type"] == 1:
+                if request.data["new"] is True:
+                    file = self.html_to_pdf(request)
+                    return {"data": file, "message": "pdf generated successfully", "status":200}
                 if assignment.download_file:
                     return {"data": assignment.download_file, "message":messages.UPDATED,"status":200}
                 file = self.html_to_pdf(request)
+                print(file, '-------------------')
                 assignment.download_file = file    
                 assignment.save()
             if request.data["type"] == 2:
+                if request.data["new"] is True:
+                    file = self.html_to_doc(request)
+                    return {"data": file, "message": "pdf generated successfully", "status":200}
                 if assignment.download_doc_file:
                     return {"data": assignment.download_doc_file, "message":messages.UPDATED,"status":200}
                 file = self.html_to_doc(request)
