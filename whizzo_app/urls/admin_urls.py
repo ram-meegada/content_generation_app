@@ -90,5 +90,6 @@ urlpatterns = [
 
 
     path("add/notification/",adminView.AddNotificationView.as_view()),
+    path("all-notifications/",adminView.AllNotificationView.as_view()),
 
 ]
