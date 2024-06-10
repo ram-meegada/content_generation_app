@@ -954,7 +954,9 @@ class CategoryService:
         message = HumanMessage(
             content=[
                 {"type": "text",
-                    "text": "I am an invligator to mark the questions i need correct answers ,provide me correct answers for these questions and when needed diagrams and figures or explanations just give concise answers and give answers to remaining questions,lastly provide the answers in json list format (question no. ,question, options(this field will will only be there if options are present else no need ), correct answer),But if somehow you dont get proper pdf then fetch the words and give answer regarding words and dont give random response"},
+                    "text": "I am an invligator to mark the questions i need correct answers ,provide me correct answers for these questions and when needed diagrams and figures or explanations just give concise answers and give answers to remaining questions,lastly provide the answers in json list format (question no. ,question, options(this field will will only be there if options are present else no need ), correct answer),But if somehow you dont get proper pdf then fetch the words and give answer regarding words and dont give random response.but if its an scan image then extract text from it and provide solution regarding it"},
+                    # "text": "I am an invligator i will give you scaned pdf of images. Whatever you find text in images give question and answer regarding them.And dont give random answers"},
+
                     
                     # "text": "I am an invligator to mark the questions i need correct answers ,provide me correct answers for these questions and when needed diagrams and figures or explanations just give concise answers and give answers to remaining questions,lastly provide the answers in json list format (question no. ,question, options(this field will will only be there if options are present else no need ), correct answer)"},
                 {"type": "text", "text":text_data}
@@ -1036,6 +1038,7 @@ class CategoryService:
             # elif image_info["status"] == 400:
             #     return {"data": image_info["data"], "message": "Something went wrong", "status": 400}
             if not final_response:
+                print(1111111111111111111)
                 return {"data": None, "message": "Please upload the file again", "status": 200}
             return {"data": final_response, "record_id": final_data.id, "message": "RESPONSE", "status": 200}
         except Exception as e:
