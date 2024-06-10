@@ -61,6 +61,9 @@ urlpatterns = [
 
     path("send-file-to-mail/",categoryView.SendFileToMailByToken.as_view()),
 
+
+
+    path("article/",categoryView.ArticleView.as_view()),
 ]
 
 

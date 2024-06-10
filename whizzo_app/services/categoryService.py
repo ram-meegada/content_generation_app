@@ -1,3 +1,4 @@
+import ast
 from ssl import SSL_ERROR_EOF
 from typing import final
 from django.http import JsonResponse
@@ -393,19 +394,24 @@ class CategoryService:
                     content=[
                         {"type": "text",
                         # "text": f"generate a summary of this pdf file and the length of the summary should be strictly atleast 2000 words and give me only text no * and extra symbols"},
-                        "text": f"generate all the  vocabulary words you found in this pdf which uou consider to be important as a reference point to the pdf from this pdf file and give me only text no * and extra symbols"},
-
+                        "text": f"Generate all the  vocabulary words you found in this pdf which you consider to be important as a reference point to the pdf from this pdf file. Format should be python list."},
                         {"type": "text", "text":text_data}
                     ]
                 )
                 response = llm.invoke([message])
                 result = to_markdown(response.content)
-                save_file_summary_record = FileSumarizationModel.objects.create(
-                                                        user_id=request.user.id,
-                                                        sub_category=5,
-                                                        result=result
-                )
-                return {"data": result, "message": messages.SUMMARY_GENERATED, "status": 200}
+                print(result, '========')
+                start = result.index("[")
+                end = result.index("]")
+                final_response = result[start: end+1]
+                print(final_response, 'final response')
+                final_response = ast.literal_eval(final_response)
+                # save_file_summary_record = FileSumarizationModel.objects.create(
+                #                                         user_id=request.user.id,
+                #                                         sub_category=5,
+                #                                         result=result
+                # )
+                return {"data": final_response, "message": messages.SUMMARY_GENERATED, "status": 200}
             except Exception as e:
                 return {"error": str(e), "message": messages.WENT_WRONG, "status": 400}
     def extract_text(self, file_link):
@@ -1249,19 +1255,37 @@ class CategoryService:
 
     def get_article_response(self, request):
         
-        # topic = request.data.get("topic")
-        # words = request.data.get("words")
-        # language = request.data.get("language")
-        # region = request.data.get("region")
-        # tone = request.data.get("tone")
-        # pronouns = request.data.get("pronouns")
-        image_link = request.data.get("image_link")
+        topic = request.data.get("topic")
+        words = request.data.get("words")
+        language = request.data.get("language")
+        region = request.data.get("region")
+        tone_of_voice = request.data.get("tone")
+        pov = request.data.get("pronouns")
 
-        data=f"i want all the data from pdf link {image_link} in json"
-        query = data
+        # data=f"i want all the data from pdf link {image_link} in json"
+        # query = data
         llm = ChatGoogleGenerativeAI(model="gemini-pro")
         try:
-            response = llm.invoke(query)
+            # message = HumanMessage(
+            #         content=[
+            #             {"type": "text",
+            #             "text": f"Generate an article on {topic}in {tone_of_voice} tone of voice from a {pov} pont of view in {language} language for a person from {region} in {words} words and give me only text no * and extra symbols"},
+            #             # "text": f"Generate all the  vocabulary words you found in this pdf which you consider to be important as a reference point to the pdf from this pdf file. Format should be python list."},
+            #             # {"type": "text", "text":text_data}
+            #         ]
+            #     )
+            message_content = (
+                f"Generate an article on {topic} in {tone_of_voice} tone of voice from a {pov} point of view "
+                f"in {language} language for a person from {region} in {words} words and give me only text "
+                "no * and extra symbols"
+            )
+            message = HumanMessage(
+                content=[
+                    {"type": "text", "text": message_content}
+                ]
+            )
+            
+            response = llm.invoke([message])
             result = to_markdown(response.content)
             return{"data":result,"message":messages.FETCH,"status":200}
         except Exception as e:

@@ -32,6 +32,7 @@ class FileSummarizationView(APIView):
     
 
 class FileSummarizationVocabView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         result = category_obj.generate_file_important_vocabulary(request)
         return Response(result, status = result["status"])
@@ -202,4 +203,12 @@ class SendFileToMailByToken(APIView):
     permission_classes =[AllowAny]
     def get(self, request):
         result = category_obj.send_file_to_mail(request)
+        return Response(result, status = result["status"])
+    
+
+
+class ArticleView(APIView):
+    permission_classes = [AllowAny]
+    def post(self, request):
+        result = category_obj.get_article_response(request)
         return Response(result, status = result["status"])
