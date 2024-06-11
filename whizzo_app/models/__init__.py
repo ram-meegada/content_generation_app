@@ -21,3 +21,4 @@ from .assignmentModel import AssignmentModel
 from .researchModel  import ReseaerchModel
 from .customerSupportModel import CustomerSupportModel
 from .notificationModel import NotificationModel
+from .fileConversionModel import FileConversationModel
