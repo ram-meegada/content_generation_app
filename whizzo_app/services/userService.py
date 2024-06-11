@@ -125,7 +125,8 @@ class UserService:
         try:
             if "email" in request.data:
                 user = UserModel.objects.get(email=request.data["email"])
-                Thread(target=sendMail.send_otp_to_mail, args=[request.data["email"], otp]).start()
+                Thread(target=sendMail.send_otp_to_mail, args=[request.data["email"], otp, user.username]).start()
+                # Thread(target=sendMail.send_otp_to_mail, args=[request.data["email"], otp]).start()
             elif "phone_no" in request.data:
                 user = UserModel.objects.get(phone_no=request.data["phone_no"])
             else:
@@ -176,7 +177,9 @@ class UserService:
                 return {"data": None, "message": "Email not provided", "status": 400}
         except UserModel.DoesNotExist:
             return {"data": None, "message":  'USER_NOT_FOUND', "status": 400}
-        Thread(target=sendMail.send_otp_to_mail, args=[request.data["email"], otp]).start()
+        # Thread(target=sendMail.send_otp_to_mail, args=[request.data["email"], otp]).start()
+        Thread(target=sendMail.send_otp_to_mail, args=[ request.data["email"], otp,user.username]).start()
+
         user.otp_sent_time= datetime.now(tz=pytz.UTC)
         user.otp = otp
         user.save()

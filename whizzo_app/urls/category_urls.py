@@ -7,6 +7,9 @@ urlpatterns = [
     path("testing/pdf/", categoryView.GenerateTestingCategoryResponseViewPdf.as_view()),
     path("testing/result/", categoryView.SubmitTestAndUpdateResultView.as_view()),
     path("testing/past-tests/", categoryView.TestingCategoryPastListingView.as_view()),
+    path("testing/ablities/",categoryView.AbilitesCategory.as_view()),
+    path("testing/achievement/",categoryView.AchievementSubCategoryView.as_view()),
+    path("testing/download-questions-without-answers/",categoryView.downloadQuestionWithoutAnswerView.as_view()),
 
     ### file summarization ###
     path("file/summarization/", categoryView.FileSummarizationView.as_view()),
@@ -24,6 +27,8 @@ urlpatterns = [
     path("conversion/pdf-to-image/", categoryView.ConvertPdfToImageView.as_view()),
     path("conversion/image-to-pdf/", categoryView.ConvertImageToPdfView.as_view()),
     path("conversion/ppt-to-pdf/", categoryView.ConvertPptToPdfView.as_view()),
+    path("conversion/pdf-to-ppt/", categoryView.ConvertPdfToPptView.as_view()),
+
 
     #### Notes ####
     path("convert-voice-to-text/", categoryView.ConvertVoiceToTextView.as_view()),

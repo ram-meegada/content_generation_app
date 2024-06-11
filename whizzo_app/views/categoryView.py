@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from whizzo_app.services.categoryService import CategoryService
 from rest_framework.permissions import AllowAny
+from django.http import JsonResponse
 
 category_obj = CategoryService()
 
@@ -82,6 +83,11 @@ class ConvertPptToPdfView(APIView):
         result = category_obj.ppt_to_pdf(request)
         return Response(result, status = result["status"])    
     
+class ConvertPdfToPptView(APIView):
+    # permission_classes =[AllowAny]
+    def post(self, request):
+        result = category_obj.pdf_to_ppt(request)
+        return Response(result, status = result["status"])  
 
 
 # note
@@ -218,3 +224,22 @@ class ArticleView(APIView):
     def post(self, request):
         result = category_obj.get_article_response(request)
         return Response(result, status = result["status"])
+    
+
+class AbilitesCategory(APIView):
+    permission_classes = [AllowAny]
+    def post(self, request):
+        result = category_obj.ability_by_AI_and_self(request)
+        return Response(result, status=result["status"])
+
+class AchievementSubCategoryView(APIView):
+    permission_classes = [AllowAny]
+    def post(self, request):
+        result = category_obj.achievement_by_AI_and_self(request)
+        return Response(result, status=result["status"])
+
+class downloadQuestionWithoutAnswerView(APIView):
+    permission_classes = [AllowAny]
+    def post(self, request, id):
+        result = category_obj.download_file_without_answer(request, id)
+        return Response(result, status=result["status"])

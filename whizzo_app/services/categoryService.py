@@ -3,6 +3,8 @@ from ssl import SSL_ERROR_EOF
 from typing import final
 from django.http import JsonResponse
 from whizzo_app.models.assignmentModel import AssignmentModel
+from whizzo_app.models.achievementModel import AchievementModel
+from whizzo_app.models.abilityModel import AbilityModel
 from whizzo_app.models.categoryModel import CategoryModel
 from whizzo_project import settings
 from langchain.vectorstores import FAISS
@@ -845,6 +847,110 @@ class CategoryService:
         
 
 
+    def pdf_to_ppt(self, request):
+        pdf_file = request.FILES.get("pdf_file")
+        # file_name = pdf_file.name
+
+        # Generate a unique file save path
+        base_name = f"output_{random.randint(10000, 99999)}"
+        temp_dir = tempfile.gettempdir()
+        pdf_path = os.path.join(temp_dir, f"{base_name}.pdf")
+        ppt_path = os.path.join( f"{base_name}.pptx")
+
+        # Save the uploaded PDF file temporarily
+        with open(pdf_path, 'wb') as f:
+            for chunk in pdf_file.chunks():
+                f.write(chunk)
+
+        # Convert PDF to PPT
+        conversion_result = self.convert_pdf_to_ppt(pdf_path, ppt_path)
+
+        if conversion_result["status"] != 200:
+            return conversion_result
+
+        # Handle the converted PPT
+        SAVED_FILE_RESPONSE = save_file_conversion(ppt_path, ppt_path, "application/vnd.openxmlformats-officedocument.presentationml.presentation")
+        data = {
+            "media_url": SAVED_FILE_RESPONSE[0],
+            "media_type": "pdf",
+            "media_name": SAVED_FILE_RESPONSE[1]
+        }
+
+        serializer = CreateUpdateUploadMediaSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+
+        # # Save a copy of the output PPTX file to a designated directory on your system
+        # designated_dir = os.path.join(settings.BASE_DIR, 'saved_pptx_files')
+        # os.makedirs(designated_dir, exist_ok=True)
+        # final_ppt_path = os.path.join(designated_dir, f"{base_name}.pptx")
+        # with open(final_ppt_path, 'wb') as final_ppt_file:
+        #     with open(ppt_path, 'rb') as temp_ppt_file:
+        #         final_ppt_file.write(temp_ppt_file.read())
+
+        if os.path.exists(pdf_path):
+            os.remove(pdf_path)
+        if os.path.exists(ppt_path):
+            os.remove(ppt_path)
+
+        return {
+            "data": serializer.data,
+            "message": messages.CONVERT_SUCCESS,
+            "status": status.HTTP_200_OK
+        }
+
+    def convert_pdf_to_ppt(self, pdf_path, ppt_path):
+        try:
+            # Open the PDF file
+            pdf_document = fitz.open(pdf_path)
+            temp_dir = tempfile.gettempdir()
+
+            prs = Presentation()
+            for page_num in range(len(pdf_document)):
+                page = pdf_document.load_page(page_num)
+
+                # Convert PDF page to image
+                pix = page.get_pixmap()
+                img_path = os.path.join(temp_dir, f"page_{page_num}.png")
+                pix.save(img_path)
+
+                # Create two images from one PDF page
+                img = Image.open(img_path)
+                width, height = img.size
+                half_height = height // 2
+
+                top_half_path = os.path.join(temp_dir, f"page_{page_num}_top.png")
+                bottom_half_path = os.path.join(temp_dir, f"page_{page_num}_bottom.png")
+
+                top_half = img.crop((0, 0, width, half_height))
+                bottom_half = img.crop((0, half_height, width, height))
+
+                top_half.save(top_half_path)
+                bottom_half.save(bottom_half_path)
+
+                # Add the top half image to a slide
+                slide_layout = prs.slide_layouts[5]  # Use a blank slide layout
+                slide = prs.slides.add_slide(slide_layout)
+                slide.shapes.add_picture(top_half_path, Inches(0), Inches(0), width=prs.slide_width, height=prs.slide_height)
+
+                # Add the bottom half image to another slide
+                slide = prs.slides.add_slide(slide_layout)
+                slide.shapes.add_picture(bottom_half_path, Inches(0), Inches(0), width=prs.slide_width, height=prs.slide_height)
+
+                # Remove the temporary image files
+                os.remove(img_path)
+                os.remove(top_half_path)
+                os.remove(bottom_half_path)
+
+            # Save the presentation
+            prs.save(ppt_path)
+
+            return {"message": "Conversion successful", "status": 200}
+        except Exception as e:
+            return {"message": f"Conversion failed: {str(e)}", "status": 500}
+
+
+
 # note
     def voice_to_text(self, request):
         try:
@@ -1314,7 +1420,7 @@ class CategoryService:
             
             response = llm.invoke([message])
             result = to_markdown(response.content)
-            return{"data":result,"message":messages.FETCH,"status":200}
+            return{"data":result,"message":"Article generated successfully.","status":200}
         except Exception as e:
             return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
 
@@ -1333,4 +1439,127 @@ class CategoryService:
             return{"data":None,"message":messages.WENT_WRONG,"status":400}
 
 
-       
+#testing
+# articles and achievement 
+
+###ablities 
+
+    def ability_by_AI_and_self(self, request):
+        sub_category = request.data["sub_category"]
+        type = request.data["type"]  # type is ai =1  or self=2
+        if type == 1:
+            try:
+                data = AbilityModel.objects.all()
+                result = adminSerializer.CreateAbilitySerializer(data, many = True)
+                return {"data":result.data,"message":messages.FETCH,"status":200}
+            except Exception as e:
+                return {"data":None,"message":messages.WENT_WRONG,"status":400}
+        elif type == 2:
+            try:
+                key = request.data["key"] # pdf=1 or image=2
+                if key == "image":
+                    final_response=[]
+                    # if file_link in request:
+                    file_link = request.data["file_link"]
+                    print(file_link,"kasklfjhalsdkjhflksdjhlaksjdhf")
+                    # media_id = []
+                    # media_detials = UploadMediaModel.objects.filter(media_url__in=file_link)
+                    # for i in media_detials:
+                    #     media_id.append(i.id)
+
+                    # print(media_id,"12345678902345678sdfghxcvbsdfgh123456sdfghxcvbasdfghj12345678")
+                    for file in file_link:
+                        query = f"generate {settings.NUMBER_OF_QUESTIONS} mcqs with options and answers for this image and make in python json list format."
+                        result = image_processing(file, query)
+                        json_result = self.jsonify_response(result)
+                        final_response += json_result
+                        print(final_response,"sdkhfalkshdflakjhdslfkjashdflk")
+                    create_category = CategoryModel.objects.create(user_id=request.user.id, 
+                                                        category=1, #static because this api is for testing category
+                                                        #    media = media_detials.id,
+                                                        sub_category=request.data["sub_category"],
+                                                        result=final_response
+                                                        )     
+                    print(final_response,"1234567888888888888888888888888888888888")       
+                    return {"data": final_response, "message": messages.MCQ_GENERATED, "status": 200}
+                elif key == "pdf":
+                    final_response=[]
+                    file_link = request.data["file_link"]
+                    for file in file_link:
+                        query = f"generate important mcqs with options and answers for this image and make in python json list format."
+                        result = pdf_processing(file , query)
+                        json_result = self.jsonify_response(result)
+                        final_response += json_result
+                    create_category = CategoryModel.objects.create(user_id=request.user.id, 
+                                                           category=1, #static because this api is for testing category
+                                                        #    media = media_detials.id,
+                                                           sub_category=request.data["sub_category"],
+                                                           result=final_response
+                                                           )  
+                    return {"data": final_response, "message": messages.MCQ_GENERATED, "status": 200}
+            except Exception as e:
+                return {"data":None,"message":str(e),"status":400}
+
+
+##achivement
+
+    def achievement_by_AI_and_self(self, request):
+        sub_category = request.data["sub_category"]
+        type = request.data["type"]  # type is ai =1  or self=2
+        if type == 1:
+            try:
+                subject = request.data["subject"]
+                data = AchievementModel.objects.filter(subject=subject)
+                result = adminSerializer.CreateAcheivementSerializer(data, many = True)
+                return {"data":result.data,"message":messages.FETCH,"status":200}
+            except Exception as e:
+                return {"data":None,"message":messages.WENT_WRONG,"status":400}
+        elif type == 2:
+            try:
+                key = request.data["key"] # pdf=1 or image=2
+                if key == "image":
+                    final_response=[]
+                    file_link = request.data["file_link"]
+                    # media_id = []
+                    # media_detials = UploadMediaModel.objects.filter(media_url__in=file_link)
+                    # for i in media_detials:
+                    #     media_id.append(i.id)
+
+                    # print(media_id,"12345678902345678sdfghxcvbsdfgh123456sdfghxcvbasdfghj12345678")
+                    for file in file_link:
+                        query = f"generate {settings.NUMBER_OF_QUESTIONS} mcqs with options and answers for this image and make in python json list format."
+                        result = image_processing(file, query)
+                        json_result = self.jsonify_response(result)
+                        final_response += json_result
+                    create_category = CategoryModel.objects.create(user_id=request.user.id, 
+                                                           category=1, #static because this api is for testing category
+                                                        #    media = media_detials.id,
+                                                           sub_category=request.data["sub_category"],
+                                                           result=final_response
+                                                           )            
+                    return {"data": final_response, "message": messages.MCQ_GENERATED, "status": 200}
+                elif key == "pdf":
+                    final_response=[]
+                    file_link = request.data["file_link"]
+                    for file in file_link:
+                        query = f"generate important mcqs with options and answers for this image and make in python json list format."
+                        result = pdf_processing(file , query)
+                        json_result = self.jsonify_response(result)
+                        final_response += json_result
+                    create_category = CategoryModel.objects.create(user_id=request.user.id, 
+                                                           category=1, #static because this api is for testing category
+                                                        #    media = media_detials.id,
+                                                           sub_category=request.data["sub_category"],
+                                                           result=final_response
+                                                           )  
+                    return {"data":final_response,"message":messages.MCQ_GENERATED ,"status":200}
+            except Exception as e:
+                return {"data":None,"message":str(e),"status":400}
+
+    def download_file_without_answer(self, request,id):
+        sub_category = request.data["sub_category"]
+        data = CategoryModel.objects.get(id = id).result
+        questions = []
+        for i in data:
+            questions.append[{"question":i["question"]}]
+        return {"data":questions, "message":messages.FETCH,"status":200}
