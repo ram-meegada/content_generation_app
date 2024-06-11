@@ -487,6 +487,12 @@ class CategoryService:
         for file in delete_files:
             if os.path.exists(file):
                 os.remove(file)
+        save_file_in_model = CategoryModel.objects.create(
+                                                            user_id=request.user.id,
+                                                            media_id=serializer.data["id"],
+                                                            category=6,
+                                                            sub_category=10
+                                                        )        
         return {"data": data, "message": messages.PDF_TO_WORD, "status": 200}
 
     def convert_pdf_to_excel(self , request):
