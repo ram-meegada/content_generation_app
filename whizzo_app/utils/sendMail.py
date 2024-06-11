@@ -3,19 +3,30 @@ from whizzo_project import settings
 from django.template.loader import render_to_string
 from django.core.mail import EmailMultiAlternatives
 import threading
+from whizzo_app.models.uploadMediaModel import UploadMediaModel
 
-
-def send_otp_to_mail(email, otp):
-    print(otp,"22222222222222222222222222222222222222")
+def send_otp_to_mail(email, otp,name="User"):
     try:
-        context = {"otp": otp}
+        context = {"name":name,"otp": otp, "logo_link":"https://enilcon.s3.ap-south-1.amazonaws.com/213448_logo.svg"}
         temp = render_to_string("sendOtpToMail.html", context=context)
         msg = EmailMultiAlternatives("Dont reply" ,temp, settings.DEFAULT_FROM_EMAIL, [email])
         msg.content_subtype = "html"
         msg.send()
         print(settings.DEFAULT_FROM_EMAIL,"########## sent ###########")
     except Exception as error:
-        print(error, "----------error---------")    
+        print(error, "----------error---------")  
+
+# def send_otp_to_mail(email, otp):
+#     print(otp,"22222222222222222222222222222222222222")
+#     try:
+#         context = {"otp": otp}
+#         temp = render_to_string("sendOtpToMail.html", context=context)
+#         msg = EmailMultiAlternatives("Dont reply" ,temp, settings.DEFAULT_FROM_EMAIL, [email])
+#         msg.content_subtype = "html"
+#         msg.send()
+#         print(settings.DEFAULT_FROM_EMAIL,"########## sent ###########")
+#     except Exception as error:
+#         print(error, "----------error---------")    
 
 def generate_otp():
     # otp = random.randint(0000, 9999)
@@ -50,7 +61,7 @@ class EmailThread(threading.Thread):
         self.message = message
         threading.Thread.__init__(self)
     def run(self):
-        context = {'message':self.message}
+        context = {'message':self.message, 'title':self.title}
         temp = render_to_string('notification.html', context)
         msg = EmailMultiAlternatives(f"{self.title}", temp, settings.DEFAULT_FROM_EMAIL, [self.recipient_list])
         msg.content_subtype = 'html'

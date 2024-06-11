@@ -42,7 +42,7 @@ PDF_TO_WORD = "Pdf file converted to word successfully"
 PDF_TO_EXCEL = "Pdf file converted to excel successfully"
 
 CONVERT_SUCCESS ="Converted sucessfully"
-
+MCQ_GENERATED = "Mcq Generate successfully."
 
 ########### admin ###########
 ABILITY_ADDED="Abilty added successfully"
@@ -90,4 +90,9 @@ SUBSCRIPTION_DELETED="Subscription deleted successfully"
 FAQ_ADDED="Faq added successfully"
 FAQ_UPDATED="Faq updated successfully"
 FAQ_DELETED="Faq deleted successfully"
+
+
+
+
+
 
