@@ -989,10 +989,12 @@ class CategoryService:
         message = HumanMessage(
             content=[
                 {"type": "text",
-                    "text": "I am an invligator to mark the questions i need correct answers ,provide me correct answers for these questions and when needed diagrams and figures or explanations just give concise answers and give answers to remaining questions,lastly provide the answers in json list format (question no. ,question, options(this field will will only be there if options are present else no need ), correct answer),But if somehow you dont get proper pdf then fetch the words and give answer regarding words and dont give random response.but if its an scan image then extract text from it and provide solution regarding it"},
+                    ## existing
+                    # "text": "I am an invligator to mark the questions i need correct answers ,provide me correct answers for these questions and when needed diagrams and figures or explanations just give concise answers and give answers to remaining questions,lastly provide the answers in json list format (question no. ,question, options(this field will will only be there if options are present else no need ), correct answer),But if somehow you dont get proper pdf then fetch the words and give answer regarding words and dont give random response.but if its an scan image then extract text from it and provide solution regarding it"},
+                    ## old ###
                     # "text": "I am an invligator i will give you scaned pdf of images. Whatever you find text in images give question and answer regarding them.And dont give random answers"},
-
-                    
+                    ### new ####
+                    "text": "You are a teacher. Generate questions and answers based on the data I provide to you. Format should be proper Python Javascript object notation list of dictionaries where every dictionary contains keys as 'question', 'answer' and 'options'(if available)."},
                     # "text": "I am an invligator to mark the questions i need correct answers ,provide me correct answers for these questions and when needed diagrams and figures or explanations just give concise answers and give answers to remaining questions,lastly provide the answers in json list format (question no. ,question, options(this field will will only be there if options are present else no need ), correct answer)"},
                 {"type": "text", "text":text_data}
             ]
@@ -1018,39 +1020,80 @@ class CategoryService:
     
 ##### assignment solution
     def get_assignment_solution(self, request):
-        file_link = request.FILES.get("file_link")
+        if int(request.data["type"]) == 1:
+            file_link = request.FILES.get("file_link")
+            try:
+                result = self.gemini_solution(file_link)
+                print(result, '----------result----------')
+                final_response = ""
+                try:
+                    for i in range(len(result)-1, -1, -1):
+                        if result[i] == "}":
+                            break
+                    final_response = result[result.index("["): i+1] + "]"
+                    final_response = json.loads(final_response)
+                except:
+                    pass
+                try:
+                    for i in final_response:
+                        if not i.get("options"):
+                            i["question_type"] = 1
+                        elif not i["options"]:
+                            i["question_type"] = 1
+                        elif i["options"]:
+                            i["question_type"] = 2
+                except:
+                    pass            
+                # image_info = upload_media_obj.upload_media(request)
+                final_data = AssignmentModel.objects.create(
+                    user_id=request.user.id,
+                    result = final_response
+                )
+                final_data.save()
+                if not final_response:
+                    return {"data": None, "message": "Please upload the file again", "status": 200}
+                return {"data": final_response, "record_id": final_data.id, "message": "RESPONSE", "status": 200}
+            except Exception as e:
+                return{"data": str(e), "message": "Please upload the file again", "status": 400}
+        if int(request.data["type"]) == 2:
+            images = dict(request.data)["media"]
+            gemini_result = []
+            for file_image in images:
+                text_data = self.extract_text_from_image(file_image)
+                message = HumanMessage(
+                    content=[
+                        {"type": "text",
+                            "text": "You are a teacher. Generate questions and answers based on the data I provide to you. Format should be proper Python Javascript object notation list of dictionaries where every dictionary contains keys as 'question', 'answer' and 'options'(if available)."},
+                        {"type": "text", "text":text_data}
+                    ]
+                )
+                response = llm.invoke([message])
+                result = to_markdown(response.content)
+                temp = self.format_final_response(result)
+                gemini_result += temp
+
+
+    def format_final_response(self, result):
+        final_response = ""
         try:
-            result = self.gemini_solution(file_link)
-            final_response = ""
-            try:
-                for i in range(len(result)-1, -1, -1):
-                    if result[i] == "}":
-                        break
-                final_response = result[result.index("["): i+1] + "]"
-                final_response = json.loads(final_response)
-            except:
-                pass
-            try:
-                for i in final_response:
-                    if not i.get("options"):
-                        i["question_type"] = 1
-                    elif not i["options"]:
-                        i["question_type"] = 1
-                    elif i["options"]:
-                        i["question_type"] = 2
-            except:
-                pass            
-            image_info = upload_media_obj.upload_media(request)
-            final_data = AssignmentModel.objects.create(
-                user_id=request.user.id,
-                result = final_response
-            )
-            final_data.save()
-            if not final_response:
-                return {"data": None, "message": "Please upload the file again", "status": 200}
-            return {"data": final_response, "record_id": final_data.id, "message": "RESPONSE", "status": 200}
-        except Exception as e:
-            return{"data": str(e), "message": "Please upload the file again", "status": 400}
+            for i in range(len(result)-1, -1, -1):
+                if result[i] == "}":
+                    break
+            final_response = result[result.index("["): i+1] + "]"
+            final_response = json.loads(final_response)
+        except:
+            pass
+        try:
+            for i in final_response:
+                if not i.get("options"):
+                    i["question_type"] = 1
+                elif not i["options"]:
+                    i["question_type"] = 1
+                elif i["options"]:
+                    i["question_type"] = 2
+        except:
+            pass    
+        return final_response        
 
     def get_all_assignment(self, request):
         try:

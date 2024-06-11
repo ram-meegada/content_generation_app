@@ -48,10 +48,9 @@ class GetNoteListSerializer(serializers.ModelSerializer):
 
 
 class GetFileSumarizationSerializer(serializers.ModelSerializer):
-    media = CreateUpdateUploadMediaSerializer()
     class Meta:
         model = FileSumarizationModel
-        fields = ["id", "created_at", "media"]    
+        fields = ["id", "created_at", "result"]    
 
 
 class GetFileSummarizationIdSerializer(serializers.ModelSerializer):
