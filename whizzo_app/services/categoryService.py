@@ -331,29 +331,35 @@ class CategoryService:
 # filesumarization
 
     def generate_file_summary(self, request):
-        file_link = request.FILES.get("file_link")
         llm = ChatGoogleGenerativeAI(model="gemini-pro")
-        try:
+        if int(request.data["type"]) == 1:
+            file_link = request.FILES.get("file_link")
+            try:
+                text_data = self.extract_text(file_link)
+                message = HumanMessage(
+                    content=[
+                        {"type": "text",
+                        "text": f"generate a summary of this pdf file and the length of the summary should be strictly atleast 2000 words and give me only text no * and extra symbols"},
+                        {"type": "text", "text":text_data}
+                    ]
+                )
+                response = llm.invoke([message])
+                result = to_markdown(response.content)
+                save_file_summary_record = FileSumarizationModel.objects.create(
+                                                        user_id=request.user.id,
+                                                        sub_category=5,
+                                                        result=result
+                )
+                # Store the result in the session or a temporary variable
+                request.session['file_summary_result'] = result
+                return {"data": result, "record_id": save_file_summary_record.id, "message": messages.SUMMARY_GENERATED, "status": 200}
+            except Exception as e:
+                return {"error": str(e), "message": messages.WENT_WRONG, "status": 400}
+        elif int(request.data["type"]) == 2:
+            images = dict(request.data)["file_link"]
             text_data = self.extract_text(file_link)
-            message = HumanMessage(
-                content=[
-                    {"type": "text",
-                    "text": f"generate a summary of this pdf file and the length of the summary should be strictly atleast 2000 words and give me only text no * and extra symbols"},
-                    {"type": "text", "text":text_data}
-                ]
-            )
-            response = llm.invoke([message])
-            result = to_markdown(response.content)
-            save_file_summary_record = FileSumarizationModel.objects.create(
-                                                    user_id=request.user.id,
-                                                    sub_category=5,
-                                                    result=result
-            )
-            # Store the result in the session or a temporary variable
-            request.session['file_summary_result'] = result
-            return {"data": result, "record_id": save_file_summary_record.id, "message": messages.SUMMARY_GENERATED, "status": 200}
-        except Exception as e:
-            return {"error": str(e), "message": messages.WENT_WRONG, "status": 400}
+            print(images, '-----------------')
+            
     def extract_text(self, file_link):
         pdf_text = ""
         with file_link.open() as f:
@@ -368,8 +374,10 @@ class CategoryService:
             user_id=request.user.id,
             sub_category=5
         )
-        serializer = categorySerializer.GetFileSumarizationSerializer(summary_history_objects, many=True)
-        return {"data": serializer.data, "message": messages.TESTING_CATEGORY_PAST_TESTS, "status": 200}
+        pagination_obj = CustomPagination()
+        search_keys = []
+        result = pagination_obj.custom_pagination(request, search_keys, categorySerializer.GetFileSumarizationSerializer, summary_history_objects)
+        return {"data":result,"message":messages.FETCH,"status":200}
     
     def get_file_summary_by_id(self, request, file_id):
         try:
@@ -980,28 +988,12 @@ class CategoryService:
         response = llm.invoke([message])
         result = to_markdown(response.content)
         return result
-# assignment solution
+    
+##### assignment solution
     def get_assignment_solution(self, request):
-        # try:
-            # file_link = request.data.get("file_link")
         file_link = request.FILES.get("file_link")
-        print(request.data,"kdfahlkjsdhflakjshdflakjshdflkjh")
-        # llm = ChatGoogleGenerativeAI(model="gemini-pro")
         try:
-            # text_data = self.extract_text(file_link)
-            # message = HumanMessage(
-            #     content=[
-            #         {"type": "text",
-            #          "text": "I am an invligator to mark the questions i need correct answers ,provide me correct answers for these questions and when needed diagrams and figures or explanations just give concise answers and give answers to remaining questions,lastly provide the answers in json list format (question no. ,question, options(this field will will only be there if options are present else no need ), correct answer)"},
-            #         #  "text": f"list the answers for all questions present  in these given file's (don't leave any question ,even if there is breaks between questions)and provide in  json  format (questtions which have no options just give correct answers in concise manner) try writing answer in this way  (question no. ,question, options(this field will will only be there if options are present else no need ),correct answer) "},
-            #         {"type": "text", "text":text_data}
-            #     ]
-            # )
-            # response = llm.invoke([message])
-            # result = to_markdown(response.content)
             result = self.gemini_solution(file_link)
-            print(result, '--------result------------')
-            # data = self.jsonify_response(result)
             final_response = ""
             try:
                 for i in range(len(result)-1, -1, -1):
@@ -1011,11 +1003,6 @@ class CategoryService:
                 final_response = json.loads(final_response)
             except:
                 pass
-                # for i in range(len(result)-1, -1, -1):
-                #     if result[i] == "}":
-                #         break
-                # final_response = result[result.index("["): i+1] + "]"
-                # final_response = json.loads(final_response)
             try:
                 for i in final_response:
                     if not i.get("options"):
@@ -1026,28 +1013,17 @@ class CategoryService:
                         i["question_type"] = 2
             except:
                 pass            
-            # image_info = upload_media_obj.upload_media(request)
             image_info = upload_media_obj.upload_media(request)
-            print(image_info["data"],"333333333333333333333333333333333333333333")
-            # if image_info["status"] == 200:
             final_data = AssignmentModel.objects.create(
                 user_id=request.user.id,
                 result = final_response
             )
             final_data.save()
-            # elif image_info["status"] == 400:
-            #     return {"data": image_info["data"], "message": "Something went wrong", "status": 400}
             if not final_response:
-                print(1111111111111111111)
                 return {"data": None, "message": "Please upload the file again", "status": 200}
             return {"data": final_response, "record_id": final_data.id, "message": "RESPONSE", "status": 200}
         except Exception as e:
-            print(e, type(e), '-------error-------------')
-            # result = self.gemini_solution(file_link)
             return{"data": str(e), "message": "Please upload the file again", "status": 400}
-        # except Exception as e:
-        #     print(e, '-------error-------------')
-        #     return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
 
     def get_all_assignment(self, request):
         try:
