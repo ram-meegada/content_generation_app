@@ -194,7 +194,6 @@ def image_processing(image_link , query):
     )
     response = llm.invoke([message])
     result_qu = to_markdown(response.content)
-    print(result_qu,"asdfkhaskdfjhalskfjdh")
     return result_qu
 
 def pdf_processing(pdf_file , query):
@@ -232,7 +231,6 @@ def pdf_processing(pdf_file , query):
             # Process the message
             response = llm.invoke([message])
             result = to_markdown(response.content)
-            print(result,"hellasjdhfkajhsdflkjahslkdfjhalskjfhdalksjhflakjs")
             return result
         except Exception as e:
             return (str(e))
@@ -287,7 +285,6 @@ class CategoryService:
                         result = pdf_processing(file , query)
                         json_result = self.jsonify_response(result)
                         final_response.append(json_result)
-                        print(result, '-----result----')
                     elif  sub_category == 2:
                         query = f"generate {settings.NUMBER_OF_QUESTIONS} flashcards for this image and make in python json list format. make a name is frontside and backside not any other name for this and give me only one answer for this."
                         result = pdf_processing(file , query)
@@ -400,7 +397,7 @@ class CategoryService:
         summary_history_objects = FileSumarizationModel.objects.filter(
             user_id=request.user.id,
             sub_category=5
-        )
+        ).order_by("-created_at")
         pagination_obj = CustomPagination()
         search_keys = []
         result = pagination_obj.custom_pagination(request, search_keys, categorySerializer.GetFileSumarizationSerializer, summary_history_objects)
@@ -420,8 +417,6 @@ class CategoryService:
                 text_data = request.session.get('file_summary_result')
                 if not text_data:
                     return {"error": "No summary result found. Please provide text data or generate the summary first.", "message": messages.WENT_WRONG, "status": 400}
-
-            # file_link = request.FILES.get("file_link")
             llm = ChatGoogleGenerativeAI(model="gemini-pro")
             try:
                 # text_data = self.extract_text(file_link)
@@ -435,17 +430,10 @@ class CategoryService:
                 )
                 response = llm.invoke([message])
                 result = to_markdown(response.content)
-                print(result, '========')
                 start = result.index("[")
                 end = result.index("]")
                 final_response = result[start: end+1]
-                print(final_response, 'final response')
                 final_response = ast.literal_eval(final_response)
-                # save_file_summary_record = FileSumarizationModel.objects.create(
-                #                                         user_id=request.user.id,
-                #                                         sub_category=5,
-                #                                         result=result
-                # )
                 return {"data": final_response, "message": messages.SUMMARY_GENERATED, "status": 200}
             except Exception as e:
                 return {"error": str(e), "message": messages.WENT_WRONG, "status": 400}
@@ -545,15 +533,6 @@ class CategoryService:
             for chunk in word_file.chunks():
                 f.write(chunk)
 
-        print(f"Input Word file path: {input_word_file}")
-
-        # # Convert Word to PDF
-        # doc = aw.Document(input_word_file)
-        # doc.save(output_pdf_file)
-        # print(f"Output PDF file path: {output_pdf_file}")
-
-
-        # Read the Word document and extract its contents
         document = Document(input_word_file)
         content = []
         for paragraph in document.paragraphs:
@@ -856,7 +835,6 @@ class CategoryService:
                     img_file.write(image_bytes)
             return True  # Indicate successful operation
         except Exception as e:
-            print(f"Error saving slide as image: {str(e)}")
             return False  # Indicate failure    
         
 
@@ -1024,7 +1002,6 @@ class CategoryService:
             file_link = request.FILES.get("file_link")
             try:
                 result = self.gemini_solution(file_link)
-                print(result, '----------result----------')
                 final_response = ""
                 try:
                     for i in range(len(result)-1, -1, -1):
@@ -1052,11 +1029,12 @@ class CategoryService:
                 final_data.save()
                 if not final_response:
                     return {"data": None, "message": "Please upload the file again", "status": 200}
-                return {"data": final_response, "record_id": final_data.id, "message": "RESPONSE", "status": 200}
+                return {"data": final_response, "record_id": final_data.id, "message": "Assignment solution generated successfully", "status": 200}
             except Exception as e:
                 return{"data": str(e), "message": "Please upload the file again", "status": 400}
         if int(request.data["type"]) == 2:
-            images = dict(request.data)["media"]
+            llm = ChatGoogleGenerativeAI(model="gemini-pro")
+            images = dict(request.data)["file_link"]
             gemini_result = []
             for file_image in images:
                 text_data = self.extract_text_from_image(file_image)
@@ -1067,10 +1045,17 @@ class CategoryService:
                         {"type": "text", "text":text_data}
                     ]
                 )
+                # result = self.gemini_solution(file_link)
                 response = llm.invoke([message])
                 result = to_markdown(response.content)
                 temp = self.format_final_response(result)
                 gemini_result += temp
+            final_data = AssignmentModel.objects.create(
+                    user_id=request.user.id,
+                    result = gemini_result
+                )
+            final_data.save()    
+            return {"data": gemini_result, "record_id": final_data.id, "message": "Assignment solution generated successfully", "status": 200}
 
 
     def format_final_response(self, result):
@@ -1095,15 +1080,15 @@ class CategoryService:
             pass    
         return final_response        
 
-    def get_all_assignment(self, request):
-        try:
-            data = AssignmentModel.objects.all()
-            pagination_obj = CustomPagination()
-            search_keys = []
-            result = pagination_obj.custom_pagination(request, search_keys, categorySerializer.CreateAssignmentSerializers, data)
-            return {"data":result,"message":messages.FETCH,"status":200}
-        except Exception as e:
-            return {"data":None,"message":messages.WENT_WRONG,"status":400}
+    # def get_all_assignment(self, request):
+    #     try:
+    #         data = AssignmentModel.objects.all()
+    #         pagination_obj = CustomPagination()
+    #         search_keys = []
+    #         result = pagination_obj.custom_pagination(request, search_keys, categorySerializer.CreateAssignmentSerializers, data)
+    #         return {"data":result,"message":messages.FETCH,"status":200}
+    #     except Exception as e:
+    #         return {"data":None,"message":messages.WENT_WRONG,"status":400}
 
     def get_assignment_solution_review(self, request, id):
         # file_link = request.FILES.get("file_link")
@@ -1115,14 +1100,7 @@ class CategoryService:
         
         # Wrap the BytesIO object with Django's File class
             django_file = File(in_memory_file, name=os.path.basename(file))
-            print(django_file, type(django_file), '=================')
-            # with open(file, 'rb') as image:
-            # if os.path.exists(django_file):
             result = self.gemini_solution_review(django_file)
-            # else:
-            #     return {"data":None, "message":"File doesnot exists","status":400}
-
-            # print(result, '-----------------------')
             final_response = ""
             try:
                 for i in range(len(result)-1, -1, -1):
@@ -1146,14 +1124,10 @@ class CategoryService:
                 for i in final_response:
                     i["correct_answer"] = i["explanation"]
             except Exception as err:
-                print(err, '--------------')
                 pass
 
-            # image_info = upload_media_obj.upload_media(request)
-            # final_data = AssignmentModel.objects.get(id=id)
             if os.path.exists(file):
                 os.remove(file)
-            # final_data.save()
             if not final_response:
                 return {"data": None, "message": "Please upload the file again", "status": 200}
             return {"data": final_response, "message": "Review generated successfully", "status": 200}
@@ -1168,25 +1142,15 @@ class CategoryService:
         pdfkit.from_string(html_text, file_name, configuration=config)
         return file_name
 
-        # cv = Converter(file_name)
-        # cv.convert("output_word_file.docx", start=0, end=None)
-        # cv.close()
-        # saved_file = saveFile(file_name, "application/pdf")
-        # if os.path.exists(file_name):
-        #     os.remove(file_name)
-        # return saved_file[0]    
-
     def get_all_assignment(self, request):
         try:
-            data = AssignmentModel.objects.all()
+            data = AssignmentModel.objects.all().order_by("-created_at")
             pagination_obj = CustomPagination()
             search_keys = []
             result = pagination_obj.custom_pagination(request, search_keys, categorySerializer.CreateAssignmentSerializers, data)
             return {"data":result,"message":messages.FETCH,"status":200}
         except Exception as e:
             return {"data":None,"message":messages.WENT_WRONG,"status":400}
-
-
 
     def update_download_file(self, request,id):
         try:
@@ -1198,7 +1162,6 @@ class CategoryService:
                 if assignment.download_file:
                     return {"data": assignment.download_file, "message":messages.UPDATED,"status":200}
                 file = self.html_to_pdf(request)
-                print(file, '-------------------')
                 assignment.download_file = file    
                 assignment.save()
             if request.data["type"] == 2:
@@ -1241,8 +1204,6 @@ class CategoryService:
         except Exception as err:    
             return {"data": str(err), "message": messages.WENT_WRONG, "status": 400}
 
-
-
     def html_to_pdf(self, request):
         try:
             html_text = request.data["html_text"]
@@ -1250,9 +1211,6 @@ class CategoryService:
             config = pdfkit.configuration(wkhtmltopdf=path_to_wkhtmltopdf)
             file_name = f'{random.randint(10000, 99999)}_file.pdf'
             pdfkit.from_string(html_text, file_name, configuration=config)
-            # cv = Converter(file_name)
-            # cv.convert("output_word_file.docx", start=0, end=None)
-            # cv.close()
             saved_file = saveFile(file_name, "application/pdf")    
             if os.path.exists(file_name):
                 os.remove(file_name)
@@ -1335,18 +1293,8 @@ class CategoryService:
         tone_of_voice = request.data.get("tone")
         pov = request.data.get("pronouns")
 
-        # data=f"i want all the data from pdf link {image_link} in json"
-        # query = data
         llm = ChatGoogleGenerativeAI(model="gemini-pro")
         try:
-            # message = HumanMessage(
-            #         content=[
-            #             {"type": "text",
-            #             "text": f"Generate an article on {topic}in {tone_of_voice} tone of voice from a {pov} pont of view in {language} language for a person from {region} in {words} words and give me only text no * and extra symbols"},
-            #             # "text": f"Generate all the  vocabulary words you found in this pdf which you consider to be important as a reference point to the pdf from this pdf file. Format should be python list."},
-            #             # {"type": "text", "text":text_data}
-            #         ]
-            #     )
             message_content = (
                 f"Generate an article on {topic} in {tone_of_voice} tone of voice from a {pov} point of view "
                 f"in {language} language for a person from {region} in {words} words and give me only text "
