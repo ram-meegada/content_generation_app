@@ -261,9 +261,12 @@ class DecryptionMiddleware:
                 #     pass
 
                 # Convert the date-time string to a timestamp
-                appkey_datetime_str = data_dict.get('appkey', '')
-                appkey_datetime = datetime.strptime(appkey_datetime_str, '%Y-%m-%dT%H:%M:%S.%fZ')
-                code_time_stamp = int(appkey_datetime.timestamp())
+                try:
+                    appkey_datetime_str = data_dict.get('appkey', '')
+                    appkey_datetime = datetime.strptime(appkey_datetime_str, '%Y-%m-%dT%H:%M:%S.%fZ')
+                    code_time_stamp = int(appkey_datetime.timestamp())
+                except:
+                    pass    
 
                 if request.method in ["POST", "PUT"]:
                     try:

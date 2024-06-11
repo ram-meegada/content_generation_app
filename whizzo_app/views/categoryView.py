@@ -161,6 +161,12 @@ class updateAssignmentView(APIView):
     def post(self, request, id):
         result = category_obj.update_download_file(request, id)
         return Response(result, status=result["status"])
+
+class DownloadFileSummaryView(APIView):
+    # permission_classes = [AllowAny]
+    def post(self, request, id):
+        result = category_obj.file_summary_download(request, id)
+        return Response(result, status=result["status"])
     
 class GetAssigmentByIdView(APIView):
     def get(self, request, id):

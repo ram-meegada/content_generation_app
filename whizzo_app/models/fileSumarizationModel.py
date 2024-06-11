@@ -13,6 +13,8 @@ class FileSumarizationModel(BaseModel):
     #integer fields
     sub_category = models.IntegerField(choices=SUB_CATEGORY_CHOICES, default=0)
     # correct_answers = models.IntegerField(blank=True, null=True)
+    download_file = models.TextField(default="")
+    download_highlighted_file = models.TextField(default="")
 
     #others
     result = models.JSONField(default=list)

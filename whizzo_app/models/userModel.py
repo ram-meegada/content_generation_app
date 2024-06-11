@@ -28,5 +28,8 @@ class UserModel(AbstractUser, BaseModel):
     role = models.IntegerField(choices = USER_ROLE_CHOICES, default=0) 
     sub_role = models.ForeignKey(SubRoleModel, on_delete=models.CASCADE, null=True)
 
+    def __str__(self):
+        return str(self.id)
+
     class Meta:
         db_table = "User"

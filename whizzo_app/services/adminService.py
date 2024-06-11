@@ -154,7 +154,7 @@ class AdminService:
             user_obj = UserModel.objects.get(pk=user_id)
         except UserModel.DoesNotExist:
             return {"data": None,"message": messages.USER_NOT_FOUND, "status": 404}
-        user_obj.delete()
+        user_obj.is_deleted = True
         return {"data": None,"message": messages.USER_DELETED, "status": 200}
     
 # testimonial

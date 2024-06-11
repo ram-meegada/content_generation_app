@@ -13,6 +13,7 @@ urlpatterns = [
     path("file/summarization-vocab/", categoryView.FileSummarizationVocabView.as_view()),
     path("file/history/", categoryView.FileSummaryHistoryView.as_view()),
     path("file/<int:file_id>/", categoryView.GetSummaryByIdView.as_view()),
+    path("download-file-summary/<int:id>/", categoryView.DownloadFileSummaryView.as_view()),
 
     #### file conversions ####
     path("conversion/pdf-to-word/", categoryView.PdfToWordView.as_view()),

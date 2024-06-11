@@ -351,7 +351,7 @@ class CategoryService:
             )
             # Store the result in the session or a temporary variable
             request.session['file_summary_result'] = result
-            return {"data": result, "message": messages.SUMMARY_GENERATED, "status": 200}
+            return {"data": result, "record_id": save_file_summary_record.id, "message": messages.SUMMARY_GENERATED, "status": 200}
         except Exception as e:
             return {"error": str(e), "message": messages.WENT_WRONG, "status": 400}
     def extract_text(self, file_link):
@@ -1145,7 +1145,6 @@ class CategoryService:
     def update_download_file(self, request,id):
         try:
             assignment = AssignmentModel.objects.get(id=id)
-
             if request.data["type"] == 1:
                 if request.data["new"] is True:
                     file = self.html_to_pdf(request)
@@ -1170,8 +1169,33 @@ class CategoryService:
                 Thread(target=send_pdf_file_to_mail, args=(assignment.user.email, file)).start() 
                 return {"data":None, "message": "File send to your email successfully", "status":200}
             return {"data": file, "message":messages.UPDATED,"status":200}
+        except AssignmentModel.DoesNotExist:
+            return {"data": None, "message": "Record not found","status":400}
         except Exception as e:
             return {"data": str(e),"message":messages.WENT_WRONG,"status":400}
+        
+    def file_summary_download(self, request, id):
+        try:
+            file_summary = FileSumarizationModel.objects.get(id=id)
+            if request.data["type"] == 2: 
+                if file_summary.download_file:
+                    return {"data": file_summary.download_file, "message":messages.UPDATED,"status":200}    
+                else:    
+                    file = self.html_to_pdf(request)
+                    file_summary.download_file = file    
+                    file_summary.save()
+            elif request.data["type"] == 3:
+                if file_summary.download_highlighted_file:
+                    return {"data": file_summary.download_highlighted_file, "message":messages.UPDATED,"status":200}    
+                else:    
+                    file = self.html_to_pdf(request)
+                    file_summary.download_highlighted_file = file    
+                    file_summary.save()
+            return {"data": file, "message":messages.UPDATED,"status":200}
+        except Exception as err:    
+            return {"data": str(err), "message": messages.WENT_WRONG, "status": 400}
+
+
 
     def html_to_pdf(self, request):
         try:

@@ -58,6 +58,8 @@ class UserService:
             password = request.data["password"]
             try:
                 user = UserModel.objects.get(email = email, role=2)
+                if user.is_deleted is True:
+                    return {"data": None, "message": "Your account is temporarily blocked by admin", "status": 400}
             except UserModel.DoesNotExist:
                 return {"data": None, "message": messages.EMAIL_NOT_FOUND, "status": 400}
             verify_password = check_password(password, user.password)
