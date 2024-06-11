@@ -64,6 +64,9 @@ from threading import Thread
 import os
 from io import BytesIO
 from django.core.files import File
+import pytesseract
+
+pytesseract.pytesseract.tesseract_cmd = 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
 
 upload_media_obj = UploadMediaService()
 
@@ -357,9 +360,33 @@ class CategoryService:
                 return {"error": str(e), "message": messages.WENT_WRONG, "status": 400}
         elif int(request.data["type"]) == 2:
             images = dict(request.data)["file_link"]
-            text_data = self.extract_text(file_link)
-            print(images, '-----------------')
+            try:
+                text_data = ""
+                for img in images:
+                    text_data += self.extract_text_from_image(img)
+                message = HumanMessage(
+                    content=[
+                        {"type": "text",
+                        "text": f"You are summary provider. Generate a summary of text I provide you and the length of the summary should be strictly atleast 2000 words and give me only text no * and extra symbols"},
+                        {"type": "text", "text":text_data}
+                    ]
+                )
+                response = llm.invoke([message])
+                result = to_markdown(response.content)
+                save_file_summary_record = FileSumarizationModel.objects.create(
+                                                        user_id=request.user.id,
+                                                        sub_category=5,
+                                                        result=result
+                )
+                return {"data": result, "record_id": save_file_summary_record.id, "message": messages.SUMMARY_GENERATED, "status": 200}
+            except Exception as err:
+                return {"error": str(err), "message": messages.WENT_WRONG, "status": 400}
             
+    def extract_text_from_image(self, file_link):
+        image = Image.open(file_link)
+        text = pytesseract.image_to_string(image)
+        return text        
+
     def extract_text(self, file_link):
         pdf_text = ""
         with file_link.open() as f:
