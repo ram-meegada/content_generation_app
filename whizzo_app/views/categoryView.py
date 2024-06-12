@@ -69,7 +69,6 @@ class ConvertExcelToPdfView(APIView):
         return Response(result, status = result["status"])
 
 class ConvertPdfToImageView(APIView):
-    permission_classes =[AllowAny]
     def post(self, request):
         result = category_obj.convert_pdf_to_image(request)
         return Response(result, status = result["status"])

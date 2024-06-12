@@ -3,6 +3,7 @@ from whizzo_app.models.assignmentModel import AssignmentModel
 from whizzo_app.models.categoryModel import CategoryModel
 from whizzo_app.models import FileSumarizationModel, NoteModel, ReseaerchModel, FileConversationModel
 from whizzo_app.serializers.uploadMediaSerializer import CreateUpdateUploadMediaSerializer
+from whizzo_app.models.uploadMediaModel import UploadMediaModel
 
 class GetPreviousTestSerializer(serializers.ModelSerializer):
     sub_category = serializers.SerializerMethodField()
@@ -91,6 +92,7 @@ class CreateAssignmentSerializers(serializers.ModelSerializer):
 class FileConversionlistingSerializer(serializers.ModelSerializer):
     converted_media = CreateUpdateUploadMediaSerializer()
     sub_category = serializers.SerializerMethodField()
+    images = serializers.SerializerMethodField()
     class Meta:
         model = FileConversationModel
         fields = ["id", "converted_media", "images", "sub_category"]
@@ -98,4 +100,11 @@ class FileConversionlistingSerializer(serializers.ModelSerializer):
         try:
             return obj.get_sub_category_display()
         except:
-            return obj.sub_category    
+            return obj.sub_category
+    def get_images(self, obj):
+        try:
+            image_objs = UploadMediaModel.objects.filter(id__in=obj.images)
+            serializer = CreateUpdateUploadMediaSerializer(image_objs, many=True)
+            return serializer.data
+        except:
+            return obj.images

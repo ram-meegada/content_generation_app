@@ -25,6 +25,7 @@ def save_image(image):
 
 
 def save_file_conversion(file, image_name, content_type):
+    # image_name = f"{random.randint(10000, 99999)}_{image_name}"
     s3 = boto3.client("s3", aws_access_key_id=access_key_id, aws_secret_access_key=secret_access_key)
     acl = "public-read"
     url = s3.upload_file(

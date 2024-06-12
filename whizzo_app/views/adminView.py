@@ -124,7 +124,6 @@ class DeleteAchievementView(APIView):
         return Response(result, status=result["status"])
     
 class GetAllAchivementVeiw(APIView):
-    permission_classes=(AllowAny,)
     def post(self, request):
         result = admin_obj.get_all_achievement(request)
         return Response(result, status=result["status"])

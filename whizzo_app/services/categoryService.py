@@ -620,6 +620,7 @@ class CategoryService:
     def excel_to_pdf(self , request):
         excel_file  = request.FILES.get("excel_file")
         file_name = excel_file.name
+        file_name = file_name.replace(" ", "")
 
         # excel_path = str(excel_file)
         file_save_path= f"{file_name}_{random.randint(10000, 99999)}.pdf"
@@ -709,7 +710,7 @@ class CategoryService:
         base_name = f"output_{random.randint(10000, 99999)}"
         temp_dir = tempfile.gettempdir()
         pdf_path = os.path.join( f"{base_name}.pdf")
-        image_base_path = os.path.join( base_name)
+        image_base_path = os.path.join(base_name)
 
         # Save the uploaded PDF file temporarily
         with open(pdf_path, 'wb') as f:
@@ -731,11 +732,12 @@ class CategoryService:
                 "media_type": "image",
                 "media_name": SAVED_FILE_RESPONSE[1]
             })
-
+        images_ids = []
         for data in saved_file_responses:
             serializer = CreateUpdateUploadMediaSerializer(data=data)
             if serializer.is_valid():
-                serializer.save()
+                img_obj = serializer.save()
+                images_ids.append(img_obj.id)
 
         if os.path.exists(pdf_path):
             os.remove(pdf_path)
@@ -743,6 +745,11 @@ class CategoryService:
             if os.path.exists(img_path):
                 os.remove(img_path)
 
+        save_file_in_model = FileConversationModel.objects.create(
+                                                            user_id=request.user.id,
+                                                            images=images_ids,
+                                                            sub_category=12
+                                                        )        
         return {
             "data": saved_file_responses,
             "message": messages.CONVERT_SUCCESS,
@@ -784,6 +791,7 @@ class CategoryService:
             image_file = request.FILES.get("image")
             fs = FileSystemStorage()
             f_name= image_file.name
+            f_name= f_name.replace(" ", "")
             input_image_file = fs.save(f_name, image_file)
             
             # Create a new Aspose Words document
@@ -803,7 +811,7 @@ class CategoryService:
 
             # Generate the URL for the PDF file
             # pdf_url = fs.url(output_pdf_file)
-            SAVED_FILE_RESPONSE = save_file_conversion(file_save_path, file_save_path, "application/pdf")
+            SAVED_FILE_RESPONSE = save_file_conversion(output_pdf_file, output_pdf_file, "application/pdf")
             data = {
                     "media_url": SAVED_FILE_RESPONSE[0],
                     "media_type": "pdf",
@@ -812,6 +820,8 @@ class CategoryService:
             serializer = CreateUpdateUploadMediaSerializer(data = data)
             if os.path.exists(file_save_path):
                 os.remove(file_save_path)
+            if os.path.exists(f_name):
+                os.remove(f_name)
             if serializer.is_valid():
                 serializer.save()
             save_file_in_model = FileConversationModel.objects.create(

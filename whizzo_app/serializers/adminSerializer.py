@@ -9,14 +9,14 @@ from whizzo_app.serializers.uploadMediaSerializer import CreateUpdateUploadMedia
 class CreateAbilitySerializer(serializers.ModelSerializer):
     class Meta:
         model = AbilityModel
-        fields = ["id", "question", "answer_option","corect_answer","is_mcq", "is_active"]
+        fields = ["id", "question", "answer_option","corect_answer","is_mcq", "is_active", "created_at"]
 
 
 
 class CreateAcheivementSerializer(serializers.ModelSerializer):
     class Meta:
         model = AchievementModel
-        fields = ["id", "question", "answer_option","subject","corect_answer","is_mcq"]
+        fields = ["id", "question", "answer_option","subject","corect_answer","is_mcq", "created_at"]
 
 
 class CreateSubjectSerializer(serializers.ModelSerializer):
