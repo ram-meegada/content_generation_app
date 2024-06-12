@@ -268,6 +268,13 @@ class GetAllPurposeView(APIView):
     def post(self, request):
         result = admin_obj.get_all_purpose(request)
         return Response(result, status=result["status"])
+
+class GetAllPurposeListingView(APIView):
+    # permission_classes = [AllowAny]
+    def get(self, request):
+        result = admin_obj.get_purpose_listing(request)
+        return Response(result, status=result["status"]) 
+    
     
 
 

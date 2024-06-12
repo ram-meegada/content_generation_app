@@ -261,6 +261,14 @@ class AdminService:
         search_keys = ["name__icontains"]
         result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.PurposeSerializer, purpose_obj)
         return{'data': result,'message':  messages.FETCH, 'status': 200}
+    
+    def get_purpose_listing(self, request):
+        try:
+            purpose = PurposeModel.objects.all()
+        except PurposeModel.DoesNotExist:
+            return {"data": None, "message": messages.RECORD_NOT_FOUND, "status": 400}
+        serializer = adminSerializer.PurposeSerializer(purpose, many=True)
+        return {"data": serializer.data, "message": messages.FETCH, "status": 200}
 
 #features
 
