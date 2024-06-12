@@ -521,6 +521,11 @@ class CategoryService:
             serializer.save()
         if os.path.exists(output_path):
             os.remove(output_path)
+        save_file_in_model = FileConversationModel.objects.create(
+                                                            user_id=request.user.id,
+                                                            converted_media_id=serializer.data["id"],
+                                                            sub_category=14
+                                                        )    
         return {"data": data, "message": messages.PDF_TO_EXCEL, "status": 200}
     
     def word_to_pdf(self, request):
@@ -563,10 +568,9 @@ class CategoryService:
         serializer = CreateUpdateUploadMediaSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
-        save_file_in_model = CategoryModel.objects.create(
+        save_file_in_model = FileConversationModel.objects.create(
                                                             user_id=request.user.id,
-                                                            media_id=serializer.data["id"],
-                                                            category=6,
+                                                            converted_media_id=serializer.data["id"],
                                                             sub_category=11
                                                         )
         # Save a copy of the output PDF file to a designated directory on your system
@@ -632,6 +636,11 @@ class CategoryService:
             serializer.save()
         if os.path.exists(file_save_path):
             os.remove(file_save_path)
+        save_file_in_model = FileConversationModel.objects.create(
+                                                            user_id=request.user.id,
+                                                            converted_media_id=serializer.data["id"],
+                                                            sub_category=15
+                                                        )    
         return {"data": serializer.data, "message": messages.CONVERT_SUCCESS, "status": 200}                
     
     def Excel_To_Pdf(self, excel_file, pdf_file):
@@ -728,6 +737,11 @@ class CategoryService:
                 os.remove(file_save_path)
             if serializer.is_valid():
                 serializer.save()
+            save_file_in_model = FileConversationModel.objects.create(
+                                                            user_id=request.user.id,
+                                                            converted_media_id=serializer.data["id"],
+                                                            sub_category=13
+                                                        )    
             return {"data":serializer.data,"status":200}
 
         except Exception as e:
@@ -775,16 +789,14 @@ class CategoryService:
             "media_type": "ppt",
             "media_name": SAVED_FILE_RESPONSE[1]
         }
-        save_file_in_model = CategoryModel.objects.create(
-                                                            user_id=request.user.id,
-                                                            media_id=serializer.data["id"],
-                                                            category=6,
-                                                            sub_category=17
-                                                        )
         serializer = CreateUpdateUploadMediaSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
-
+        save_file_in_model = FileConversationModel.objects.create(
+                                                            user_id=request.user.id,
+                                                            converted_media_id=serializer.data["id"],
+                                                            sub_category=17
+                                                        )
         # Save a copy of the output PDF file to a designated directory on your system
         # designated_dir = os.path.join(tempfile.gettempdir(), 'saved_ppt_pdf_files')
         # os.makedirs(designated_dir, exist_ok=True)
@@ -849,8 +861,6 @@ class CategoryService:
 
     def pdf_to_ppt(self, request):
         pdf_file = request.FILES.get("pdf_file")
-        # file_name = pdf_file.name
-
         # Generate a unique file save path
         base_name = f"output_{random.randint(10000, 99999)}"
         temp_dir = tempfile.gettempdir()
@@ -880,13 +890,11 @@ class CategoryService:
         if serializer.is_valid():
             serializer.save()
 
-        # # Save a copy of the output PPTX file to a designated directory on your system
-        # designated_dir = os.path.join(settings.BASE_DIR, 'saved_pptx_files')
-        # os.makedirs(designated_dir, exist_ok=True)
-        # final_ppt_path = os.path.join(designated_dir, f"{base_name}.pptx")
-        # with open(final_ppt_path, 'wb') as final_ppt_file:
-        #     with open(ppt_path, 'rb') as temp_ppt_file:
-        #         final_ppt_file.write(temp_ppt_file.read())
+        save_file_in_model = FileConversationModel.objects.create(
+                                                            user_id=request.user.id,
+                                                            converted_media_id=serializer.data["id"],
+                                                            sub_category=16
+                                                        )    
 
         if os.path.exists(pdf_path):
             os.remove(pdf_path)
@@ -949,6 +957,16 @@ class CategoryService:
         except Exception as e:
             return {"message": f"Conversion failed: {str(e)}", "status": 500}
 
+    def file_conversions_history(self, request):
+        try:
+            all_objs = FileConversationModel.objects.filter(user=request.user.id).order_by("-created_at")
+            pagination_obj = CustomPagination()
+            search_keys = []
+            result = pagination_obj.custom_pagination(request, search_keys, categorySerializer.FileConversionlistingSerializer, all_objs)
+            return {"data":result,"message":messages.FETCH,"status":200}
+        except:    
+            return {"data": None, "message": "Something went wrong", "status": 400}
+        
 
 
 # note

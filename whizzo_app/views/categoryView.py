@@ -89,6 +89,11 @@ class ConvertPdfToPptView(APIView):
         result = category_obj.pdf_to_ppt(request)
         return Response(result, status = result["status"])  
 
+class FileConversionHistoryView(APIView):
+    def post(self, request):
+        result = category_obj.file_conversions_history(request)
+        return Response(result, status = result["status"])  
+
 
 # note
 class ConvertVoiceToTextView(APIView):

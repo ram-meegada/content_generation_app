@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from whizzo_app.models.assignmentModel import AssignmentModel
 from whizzo_app.models.categoryModel import CategoryModel
-from whizzo_app.models import FileSumarizationModel, NoteModel, ReseaerchModel
+from whizzo_app.models import FileSumarizationModel, NoteModel, ReseaerchModel, FileConversationModel
 from whizzo_app.serializers.uploadMediaSerializer import CreateUpdateUploadMediaSerializer
 
 class GetPreviousTestSerializer(serializers.ModelSerializer):
@@ -88,7 +88,14 @@ class CreateAssignmentSerializers(serializers.ModelSerializer):
         model = AssignmentModel
         fields = ["id","user","result"]
 
-# class AssignmentSerializers(serializers.ModelSerializer):
-#     class Meta:
-#         model = AssignmentModel
-#         fields = ["id", "download_file"]
+class FileConversionlistingSerializer(serializers.ModelSerializer):
+    converted_media = CreateUpdateUploadMediaSerializer()
+    sub_category = serializers.SerializerMethodField()
+    class Meta:
+        model = FileConversationModel
+        fields = ["id", "converted_media", "images", "sub_category"]
+    def get_sub_category(self, obj):
+        try:
+            return obj.get_sub_category_display()
+        except:
+            return obj.sub_category    

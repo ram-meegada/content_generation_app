@@ -28,6 +28,7 @@ urlpatterns = [
     path("conversion/image-to-pdf/", categoryView.ConvertImageToPdfView.as_view()),
     path("conversion/ppt-to-pdf/", categoryView.ConvertPptToPdfView.as_view()),
     path("conversion/pdf-to-ppt/", categoryView.ConvertPdfToPptView.as_view()),
+    path("conversion/history/", categoryView.FileConversionHistoryView.as_view()),
 
 
     #### Notes ####
