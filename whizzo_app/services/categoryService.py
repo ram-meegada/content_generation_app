@@ -664,44 +664,121 @@ class CategoryService:
         # Add table to PDF
         doc.build([table])
 
+    # def convert_pdf_to_image(self, request):
+    #     pdf_file = request.FILES.get("pdf_file")
+    #     file_name = "".join(str(pdf_file).split(" "))
+    #     # file_save_path= f"image_{random.randint(10000, 99999)}.jpg"
+    #     file_name = f"{random.randint(10000, 99999)}_{file_name}"
+    #     input_pdf_file = f"{random.randint(10000, 99999)}_{file_name}"
+    #     # input_pdf_file = f"{input_name}"
+        
+    #     fs = FileSystemStorage()
+    #     fs.save(input_pdf_file, pdf_file)
+    #     image_path_prefix = file_name.replace("pdf", "jpg")
+    #     saved_files = self.pdf_to_image(input_pdf_file, image_path_prefix)
+    #     if os.path.exists(input_pdf_file):
+    #         os.remove(input_pdf_file)
+    #     return {"data": saved_files, "message": messages.CONVERT_SUCCESS, "status": 200}
+
+    # def pdf_to_image(self, pdf_path, image_path_prefix):
+    #     # Convert PDF to a list of PIL Image objects
+    #     images = convert_from_path(pdf_path)
+    #     images_data = []
+    #     # Save each page as an image
+    #     for i, image in enumerate(images):
+    #         image_path = f"{random.randint(10000, 99999)}_{image_path_prefix}"  # Change the extension as needed
+    #         image.save(image_path, 'JPEG')  # Change the format as needed
+    #         SAVED_FILE_RESPONSE = save_file_conversion(image_path, image_path, "jpg")
+    #         data = {
+    #                     "media_url": SAVED_FILE_RESPONSE[0],
+    #                     "media_type": "image",
+    #                     "media_name": SAVED_FILE_RESPONSE[1]
+    #                 }
+    #         serializer = CreateUpdateUploadMediaSerializer(data = data)
+    #         if serializer.is_valid():
+    #             serializer.save()
+    #             images_data.append(serializer.data)
+    #         if os.path.exists(image_path):
+    #             os.remove(image_path)
+    #     return images_data    
+    
     def convert_pdf_to_image(self, request):
         pdf_file = request.FILES.get("pdf_file")
-        file_name = "".join(str(pdf_file).split(" "))
-        # file_save_path= f"image_{random.randint(10000, 99999)}.jpg"
-        file_name = f"{random.randint(10000, 99999)}_{file_name}"
-        input_pdf_file = f"{random.randint(10000, 99999)}_{file_name}"
-        # input_pdf_file = f"{input_name}"
-        
-        fs = FileSystemStorage()
-        fs.save(input_pdf_file, pdf_file)
-        image_path_prefix = file_name.replace("pdf", "jpg")
-        saved_files = self.pdf_to_image(input_pdf_file, image_path_prefix)
-        if os.path.exists(input_pdf_file):
-            os.remove(input_pdf_file)
-        return {"data": saved_files, "message": messages.CONVERT_SUCCESS, "status": 200}
 
-    def pdf_to_image(self, pdf_path, image_path_prefix):
-        # Convert PDF to a list of PIL Image objects
-        images = convert_from_path(pdf_path)
-        images_data = []
-        # Save each page as an image
-        for i, image in enumerate(images):
-            image_path = f"{random.randint(10000, 99999)}_{image_path_prefix}"  # Change the extension as needed
-            image.save(image_path, 'JPEG')  # Change the format as needed
-            SAVED_FILE_RESPONSE = save_file_conversion(image_path, image_path, "jpg")
-            data = {
-                        "media_url": SAVED_FILE_RESPONSE[0],
-                        "media_type": "image",
-                        "media_name": SAVED_FILE_RESPONSE[1]
-                    }
-            serializer = CreateUpdateUploadMediaSerializer(data = data)
+        # Generate a unique file save path
+        base_name = f"output_{random.randint(10000, 99999)}"
+        temp_dir = tempfile.gettempdir()
+        pdf_path = os.path.join( f"{base_name}.pdf")
+        image_base_path = os.path.join( base_name)
+
+        # Save the uploaded PDF file temporarily
+        with open(pdf_path, 'wb') as f:
+            for chunk in pdf_file.chunks():
+                f.write(chunk)
+
+        # Convert PDF to images
+        conversion_result = self.convert_pdf_to_image2(pdf_path, image_base_path)
+        if conversion_result["status"] != 200:
+            return conversion_result
+
+        # Handle the converted images
+        image_paths = conversion_result["image_paths"]
+        saved_file_responses = []
+        for img_path in image_paths:
+            SAVED_FILE_RESPONSE = save_file_conversion(img_path, img_path, "image/png")
+            saved_file_responses.append({
+                "media_url": SAVED_FILE_RESPONSE[0],
+                "media_type": "image",
+                "media_name": SAVED_FILE_RESPONSE[1]
+            })
+
+        for data in saved_file_responses:
+            serializer = CreateUpdateUploadMediaSerializer(data=data)
             if serializer.is_valid():
                 serializer.save()
-                images_data.append(serializer.data)
-            if os.path.exists(image_path):
-                os.remove(image_path)
-        return images_data    
-    
+
+        if os.path.exists(pdf_path):
+            os.remove(pdf_path)
+        for img_path in image_paths:
+            if os.path.exists(img_path):
+                os.remove(img_path)
+
+        return {
+            "data": saved_file_responses,
+            "message": messages.CONVERT_SUCCESS,
+            "status": status.HTTP_200_OK
+        }
+
+    def convert_pdf_to_image2(self, pdf_path, image_base_path):
+        try:
+            # Open the PDF file
+            pdf_document = fitz.open(pdf_path)
+            image_paths = []
+
+            for page_num in range(len(pdf_document)):
+                page = pdf_document.load_page(page_num)
+
+                # Convert PDF page to image
+                pix = page.get_pixmap()
+                img_path = os.path.join( f"{image_base_path}_page_{page_num}.png")
+                pix.save(img_path)
+                image_paths.append(img_path)
+
+            return {
+                "message": "Conversion successful",
+                "status": 200,
+                "image_paths": image_paths
+            }
+        except Exception as e:
+            return {
+                "message": f"Conversion failed: {str(e)}",
+                "status": 500,
+                "image_paths": []
+            }
+
+
+
+
     def image_to_pdf(self , request):
         try:
             image_file = request.FILES.get("image")
