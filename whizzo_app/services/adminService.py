@@ -309,7 +309,7 @@ class AdminService:
             subscription = SubscriptionModel.objects.get(id=subscription_id)
         except SubscriptionModel.DoesNotExist:
             return {"data": None, "message": messages.RECORD_NOT_FOUND, "status": 400}
-        serializer = adminSerializer.SubscriptionSerializer(subscription)
+        serializer = adminSerializer.GetSubscriptionSerializer(subscription)
         return {"data": serializer.data, "message": messages.FETCH, "status": 200}
     
     def update_subscription(self, request, subscription_id):
@@ -338,7 +338,7 @@ class AdminService:
             return {"data": None, "message": messages.RECORD_NOT_FOUND, "status": 400}
         pagination_obj = CustomPagination()
         search_keys = ["plan_type__icontains"]
-        result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.SubscriptionSerializer, subscription)
+        result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.GetSubscriptionSerializer, subscription)
         return {"data":result,"message":messages.FETCH,"status":200}
 
 
