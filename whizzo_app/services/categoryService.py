@@ -1354,10 +1354,10 @@ class CategoryService:
             if os.path.exists(file):
                 os.remove(file)
             if not final_response:
-                return {"data": None, "message": "Please upload the file again", "status": 200}
+                return {"data": None, "message": "Please try again", "status": 200}
             return {"data": final_response, "message": "Review generated successfully", "status": 200}
         except Exception as e:
-            return{"data": str(e), "message": "Please upload the file again", "status": 400}
+            return{"data": str(e), "message": "Please try again", "status": 400}
         
     def get_assignment_solution_review_func(self, request):
         html_text = request.data["html_text"]

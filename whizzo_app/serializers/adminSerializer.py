@@ -16,7 +16,7 @@ class CreateAbilitySerializer(serializers.ModelSerializer):
 class CreateAcheivementSerializer(serializers.ModelSerializer):
     class Meta:
         model = AchievementModel
-        fields = ["id", "question", "answer_option","subject","corect_answer","is_mcq", "created_at"]
+        fields = ["id", "question", "answer_option","subject","corect_answer","is_mcq", "created_at", "is_active"]
 
 
 class CreateSubjectSerializer(serializers.ModelSerializer):
