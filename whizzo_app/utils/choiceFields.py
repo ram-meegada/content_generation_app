@@ -65,7 +65,8 @@ USER_ROLE_CHOICES = [
 
 
 PLAN_CHOICES = [
-      (1, "basic"),
-      (2, "intermediate"),
-      (3, "advanced")
+      (1, "Free Trial"),
+      (2, "Monthly"),
+      (3, "Quaterly"),
+      (4, "Yearly")
 ]
