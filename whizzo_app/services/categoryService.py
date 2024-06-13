@@ -854,8 +854,9 @@ class CategoryService:
         # Generate a unique file save path
         base_name = f"output_{random.randint(10000, 99999)}"
         temp_dir = tempfile.gettempdir()
-        ppt_path = os.path.join(temp_dir, f"{base_name}.pptx")
-        pdf_path = os.path.join( f"{base_name}.pdf")
+        # ppt_path = os.path.join(temp_dir, f"{base_name}.pptx")
+        ppt_path = f"{base_name}.pptx"
+        pdf_path = os.path.join(f"{base_name}.pdf")
 
         # Save the uploaded PPT file temporarily
         with open(ppt_path, 'wb') as f:
@@ -911,11 +912,15 @@ class CategoryService:
             slide_images = []
 
             for slide in prs.slides:
-                slide_img_base = os.path.join(temp_dir, f"slide_{prs.slides.index(slide)}")
+                print(prs.slides.index(slide), '-------------', prs)
+                # slide_img_base = os.path.join(temp_dir, f"slide_{prs.slides.index(slide)}")
+                slide_img_base = f"slide_{prs.slides.index(slide)}"
                 success = self.save_slide_as_image(slide, slide_img_base)
                 if success:
                     slide_images.append(slide_img_base)
-
+                else:    
+                    return {"message": "Error while converting.", "status": 400}
+            print(slide_images, '----------slide images-------------')
             if slide_images:
                 first_image = Image.open(slide_images[0] + "_0.png")  # Assuming the first image's index is 0
                 first_image.save(pdf_path, save_all=True, append_images=[Image.open(f"{img}_0.png") for img in slide_images[1:]])
@@ -931,7 +936,8 @@ class CategoryService:
 
     def save_slide_as_image(self, slide, img_path_base):
         try:
-            os.makedirs(os.path.dirname(img_path_base), exist_ok=True)
+            # os.makedirs(os.path.dirname(img_path_base), exist_ok=True)
+            print(slide.shapes, '--------slide1111111111111')
             for idx, shape in enumerate(slide.shapes):
                 if not hasattr(shape, 'image'):
                     continue
@@ -939,9 +945,11 @@ class CategoryService:
                 image_bytes = image.blob
                 img_path = f"{img_path_base}_{idx}.png"
                 with open(img_path, 'wb') as img_file:
+                    print("came here-------------")
                     img_file.write(image_bytes)
             return True  # Indicate successful operation
         except Exception as e:
+            print(e, '-----error-----------')
             return False  # Indicate failure    
         
 
@@ -1012,7 +1020,7 @@ class CategoryService:
                 # Create two images from one PDF page
                 img = Image.open(img_path)
                 width, height = img.size
-                half_height = height // 2
+                half_height = height // 1.5
 
                 top_half_path = os.path.join(temp_dir, f"page_{page_num}_top.png")
                 bottom_half_path = os.path.join(temp_dir, f"page_{page_num}_bottom.png")

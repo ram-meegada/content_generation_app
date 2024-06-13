@@ -6,6 +6,7 @@ EMAIL_NOT_FOUND = "User with this email not found"
 PHONE_NOT_FOUND = "User with this phone no not found"
 USER_LOGGED_IN = "Logged In successfully"
 OTP_SENT_PHONE = "We have sent otp to your phone no"
+WRONG_EMAIL = "Email is unacceptable. Please check again."
 
 PASSWORD_WRONG = "Incorrect password"
 USER_NOT_FOUND = "User not found"

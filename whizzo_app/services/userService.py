@@ -21,6 +21,8 @@ class UserService:
         phone_no = request.data.get("phone_no")
         country_code = request.data.get("country_code")
         country_name = request.data.get("country_name")
+        if "@" not in email or ".com" not in email:
+            return {"data": None, "message": messages.WRONG_EMAIL, "status": 400}
         if "email" in request.data:
             check_user = UserModel.objects.filter(email = email)
             if check_user.exists() and check_user.first().profile_status > 1:
