@@ -206,11 +206,11 @@ class DeleteUserAppView(APIView):
 
 
 # articles
-class GetArticlesView(APIView):
-    permission_classes = [AllowAny]
-    def post(self, request):
-        result = category_obj.get_article_response(request)
-        return Response(result, status = result["status"])
+# class GetArticlesView(APIView):
+#     permission_classes = [AllowAny]
+#     def post(self, request):
+#         result = category_obj.get_article_response(request)
+#         return Response(result, status = result["status"])
 
 
 

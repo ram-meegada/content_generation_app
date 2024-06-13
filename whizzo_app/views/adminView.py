@@ -1,3 +1,4 @@
+from django.http import JsonResponse
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from whizzo_app.services.adminService import AdminService
@@ -34,6 +35,12 @@ class GetAllManageUserView(APIView):
     def post(self, request):
         result = admin_obj.get_all_user_admin(request)
         return Response(result, status=result["status"])
+    
+class ExportUsersCsvView(APIView):
+    permission_classes = [AllowAny]
+    def get(self, request):
+        result = admin_obj.export_users_to_csv()
+        return JsonResponse(result, status=result["status"])
     
 class GetManageUserByIdView(APIView):
     # permission_classes = [AllowAny]

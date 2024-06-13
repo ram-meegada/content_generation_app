@@ -73,11 +73,13 @@ class QueryToAdminView(APIView):
         return Response(result, status=result["status"])
     
 class GetAllTestimonialUserView(APIView):
+    permission_classes = [AllowAny]
     def get(self, request):
         result = user_obj.get_all_testimonial_for_user(request)
         return Response(result, status=result["status"])
 
 class GetAllSubscriptionUserView(APIView):
+    permission_classes = [AllowAny]
     def get(self, request):
         result = user_obj.get_all_subscriptions_for_user(request)
         return Response(result, status=result["status"])  

@@ -60,7 +60,7 @@ urlpatterns = [
     
 
     # #### articles #####
-    path("get-articles-response/", categoryView.GetArticlesView.as_view()),
+    # path("get-articles-response/", categoryView.GetArticlesView.as_view()),
 
 
 

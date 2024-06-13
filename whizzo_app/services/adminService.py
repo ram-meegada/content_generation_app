@@ -1,3 +1,4 @@
+from django.http import HttpResponse
 from whizzo_app.utils import messages
 from whizzo_app.serializers import adminSerializer, userSerializer
 from whizzo_app.models import AbilityModel, AchievementModel, SubjectModel,NotificationModel, SubRoleModel, CustomerSupportModel, UserModel, PermissionModel, PurposeModel, FeaturesModel, ModuleModel, \
@@ -8,7 +9,11 @@ from whizzo_app.utils.sendMail import SendOtpToMail
 from django.contrib.auth.hashers import check_password
 from django.utils import timezone
 import pytz
+import csv
+from io import StringIO
 from datetime import datetime
+from whizzo_app.utils.saveImage import save_file_conversion_csv
+
 from whizzo_app.utils.sendMail import send_notification_to_mail
 
 class AdminService:
@@ -938,3 +943,37 @@ class AdminService:
         return {"data": result, "message": "retrieved successfully", "status": 200}
     
 
+#===============================================================================
+
+    def export_users_to_csv(self):
+        try:
+            users = UserModel.objects.filter(role=3)
+            serializer = adminSerializer.UsersCsvSerializer(users, many=True)
+            if not serializer.data:
+                return {"data": "", "message": "No users found", "status": 404}
+
+            header = ["S.No"] + list(serializer.data[0].keys())
+
+            output = StringIO()
+            writer = csv.writer(output)
+
+            writer.writerow(header)
+            for idx, user_data in enumerate(serializer.data, start=1):
+                row = [idx] + list(user_data.values())
+                writer.writerow(row)
+
+            output.seek(0)
+            csv_data = output.getvalue().encode('utf-8')
+
+            # Save the CSV file using save_file_conversion
+            SAVED_FILE_RESPONSE = save_file_conversion_csv(csv_data, 'users.csv', "text/csv")
+            data = {
+                "media_url": SAVED_FILE_RESPONSE[0],
+                "media_type": "csv",
+                "media_name": SAVED_FILE_RESPONSE[1]
+            }
+
+            return {"data": data, "message": "Users exported successfully", "status": 200}
+
+        except Exception as e:
+            return {"data": "", "message": str(e), "status": 500}
