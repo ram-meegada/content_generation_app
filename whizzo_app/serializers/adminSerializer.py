@@ -246,3 +246,8 @@ class NotificationListSerializer(serializers.ModelSerializer):
     class Meta:
         model = NotificationModel
         fields = ['title',  'message', 'notification_for']
+
+class UsersCsvSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserModel
+        fields = ['id', 'name', 'email', 'phone_no'] 

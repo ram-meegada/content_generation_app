@@ -1,6 +1,10 @@
 import boto3
 import random
 from whizzo_project.settings import AWS_ACCESS_KEY_ID, AWS_SECRET_KEY, AWS_BUCKET_NAME
+import os
+from django.conf import settings
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
 
 access_key_id = AWS_ACCESS_KEY_ID
 secret_access_key = AWS_SECRET_KEY
@@ -41,6 +45,26 @@ def save_file_conversion(file, image_name, content_type):
     
     return "{}{}".format(s3_location, image_name), image_name
 
+
+def save_file_conversion_for_csv(file, filename, content_type):
+    s3 = boto3.client("s3", aws_access_key_id=access_key_id, aws_secret_access_key=secret_access_key)
+    acl = "public-read"
+    s3.upload_fileobj(
+        file,
+        bucket_name,
+        filename,
+        ExtraArgs={
+            "ACL": acl,
+            "ContentType": content_type
+        }
+    )
+    s3_location = f"https://{bucket_name}.s3.amazonaws.com/"
+    return f"{s3_location}{filename}", filename
+
+def save_file_conversion_csv(file_content, filename, content_type):
+    file_like_object = ContentFile(file_content)    
+    media_url, saved_filename = save_file_conversion_for_csv(file_like_object, filename, content_type)
+    return media_url, saved_filename
 
 def saveFile(image_path, file_type):
     image_name = f"{random.randint(1000, 9999)}_{image_path}"
