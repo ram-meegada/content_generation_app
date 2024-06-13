@@ -294,7 +294,7 @@ class UserService:
             subscription = SubscriptionModel.objects.all()
         except SubscriptionModel.DoesNotExist:
             return {"data": None, "message": messages.RECORD_NOT_FOUND, "status": 400}
-        serializer = adminSerializer.SubscriptionSerializer(subscription, many=True)
+        serializer = adminSerializer.GetSubscriptionSerializer(subscription, many=True)
         serialized_data = serializer.data
         return {'data': serialized_data, 'message': messages.FETCH, 'status': 200}
 

@@ -111,13 +111,21 @@ class FeatureModelSerializer(serializers.ModelSerializer):
 
 class SubscriptionSerializer(serializers.ModelSerializer):
     plan_type = serializers.SerializerMethodField()
-    features = FeatureModelSerializer(many=True)
+    # features = FeatureModelSerializer(many=True)
     class Meta:
         model = SubscriptionModel
         fields = ['id', 'plan_type', 'price', 'features']
     def get_plan_type(self, obj):
         return obj.get_plan_type_display()
 
+class GetSubscriptionSerializer(serializers.ModelSerializer):
+    plan_type = serializers.SerializerMethodField()
+    features = FeatureModelSerializer(many=True)
+    class Meta:
+        model = SubscriptionModel
+        fields = ['id', 'plan_type', 'price', 'features']
+    def get_plan_type(self, obj):
+        return obj.get_plan_type_display()
 
 
 class FaqModelSerializer(serializers.ModelSerializer):
