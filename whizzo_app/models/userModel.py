@@ -11,6 +11,7 @@ from whizzo_app.utils.choiceFields import PROFILE_STATUS_OPTIONS,USER_ROLE_CHOIC
 
 
 class UserModel(AbstractUser, BaseModel):
+    email = models.CharField(max_length=100, blank=True, null=True)
 
     profile_picture = models.ForeignKey(UploadMediaModel, on_delete=models.SET_NULL, null=True)
     purpose = models.ForeignKey(PurposeModel, on_delete=models.SET_NULL, null=True)
