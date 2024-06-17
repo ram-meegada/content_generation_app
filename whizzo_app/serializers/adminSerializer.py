@@ -134,12 +134,22 @@ class FaqModelSerializer(serializers.ModelSerializer):
         fields = ['id', 'question', 'answer']
 
 
-
 class GetAdminSerializer(serializers.ModelSerializer):
     profile_picture = CreateUpdateUploadMediaSerializer()
+    role_permission = serializers.SerializerMethodField()
     class Meta:
         model = UserModel
-        fields = ['id', 'email', 'name', 'phone_no',  'country_code', 'profile_picture']
+        fields = ['id', 'email', 'name', 'phone_no',  'country_code', 'profile_picture',"role","role_permission"]
+
+    def get_role_permission(self, obj):
+        try:
+            roles_permissions = PermissionModel.objects.filter(user_id = obj.id)
+            serializer = GetRolePermissionSubAdminSerializer(roles_permissions, many = True)
+            return serializer.data
+        except:
+            return []
+
+
 
 class UpdateAdminSerializer(serializers.ModelSerializer):
     # profile_picture = CreateUpdateUploadMediaSerializer()
