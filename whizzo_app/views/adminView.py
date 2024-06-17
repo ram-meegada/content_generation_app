@@ -15,6 +15,8 @@ class LoginAdminView(APIView):
         return Response(result, status=result["status"])
 
 class GetAdminDetailByTokenView(APIView):
+    # permission_classes = [AllowAny]
+
     def get(self, request):
         result = admin_obj.get_admin_profile(request)
         return Response(result, status=result["status"])
@@ -456,3 +458,16 @@ class AllNotificationView(APIView):
     def post(self, request):
         result = admin_obj.get_all_notifications(request)
         return Response(result, status=result["status"])
+    
+class DeleteNotificationByIdView(APIView):
+    def delete(self, request, id):
+        result = admin_obj.DeleteNotificationByIdView(request, id)
+        return Response(result, status=result["status"])
+    
+
+class GenerateAbilityQuestionsFromPDFViewPdf(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        result = admin_obj.generate_questions_for_ability_in_admin(request)
+        return Response(result, status = result["status"])

@@ -24,10 +24,10 @@ class UserService:
         if "@" not in email or ".com" not in email:
             return {"data": None, "message": messages.WRONG_EMAIL, "status": 400}
         if "email" in request.data:
-            check_user = UserModel.objects.filter(email = email)
-            if check_user.exists() and check_user.first().profile_status > 1:
+            check_user = UserModel.objects.filter(email = email , role=2)
+            if check_user.exists() and check_user.first().profile_status > 1 :
                 return {"data": None, "message": messages.EMAIL_ALREADY_EXISTS, "status": 400}
-            elif check_user.exists() and check_user.first().profile_status == 1:
+            elif check_user.exists() and check_user.first().profile_status == 1 :
                 check_user.first().delete()
             user = UserModel(email=email)
             user.role = 2
@@ -95,9 +95,9 @@ class UserService:
         GIVE_LOGIN_TOKEN = False
         try:
             if "email" in request.data:
-                user = UserModel.objects.get(email=request.data["email"])
+                user = UserModel.objects.get(email=request.data["email"] , role__in = request.data["role"])
             elif "phone_no" in request.data:
-                user = UserModel.objects.get(phone_no=request.data["phone_no"])
+                user = UserModel.objects.get(phone_no=request.data["phone_no"] , role__in = request.data["role"])
             else:
                 return {"data": None, "message": "Email or phone number not provided", "status": 400}
         except UserModel.DoesNotExist:
@@ -126,11 +126,11 @@ class UserService:
         otp = sendMail.generate_otp()
         try:
             if "email" in request.data:
-                user = UserModel.objects.get(email=request.data["email"])
+                user = UserModel.objects.get(email=request.data["email"] , role__in = request.data["role"])
                 Thread(target=sendMail.send_otp_to_mail, args=[request.data["email"], otp, user.username]).start()
                 # Thread(target=sendMail.send_otp_to_mail, args=[request.data["email"], otp]).start()
             elif "phone_no" in request.data:
-                user = UserModel.objects.get(phone_no=request.data["phone_no"])
+                user = UserModel.objects.get(phone_no=request.data["phone_no"] , role = request.data["role"])
             else:
                 return {"data": None, "message": "Email or phone number not provided", "status": 400}
         except UserModel.DoesNotExist:
@@ -174,7 +174,7 @@ class UserService:
         otp = sendMail.generate_otp()
         try:
             if "email" in request.data:
-                user = UserModel.objects.get(email=request.data["email"])
+                user = UserModel.objects.get(email=request.data["email"],role__in=request.data["role"])
             else:
                 return {"data": None, "message": "Email not provided", "status": 400}
         except UserModel.DoesNotExist:
@@ -189,7 +189,7 @@ class UserService:
     
     def reset_password(self, request):
         try:
-            user = UserModel.objects.get(email=request.data["email"])
+            user = UserModel.objects.get(email=request.data["email"],role__in=request.data["role"])
         except UserModel.DoesNotExist:
             return {
                 "data": None,

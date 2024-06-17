@@ -18,7 +18,6 @@ import textwrap
 import urllib.request as urlopener
 from PyPDF2 import PdfReader
 from io import BytesIO
-import json
 from whizzo_app.models import FaqModel,CmsModel, UserModel, FileSumarizationModel, NoteModel
 from whizzo_app.utils import messages
 from whizzo_app.serializers import categorySerializer, adminSerializer
