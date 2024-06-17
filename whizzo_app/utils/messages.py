@@ -16,7 +16,8 @@ FILE_LINK_SEND = "File Link send to your email, Please check."
 PASSWORD_NOT_SAME = "Old Password and New Password should not be same."
 
 ROLE_DELETE = "Role Delete."
-
+NOTIFICATION_NOT_FOUND ="Notification not found"
+NOTIFICATION_DELETED ="Notification deleted"
 #### otp #####
 OTP_EXPIRED = "Otp expired."
 RESENT_OTP = "Otp send successfully"

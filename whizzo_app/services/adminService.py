@@ -2,19 +2,28 @@ from django.http import HttpResponse
 from whizzo_app.utils import messages
 from whizzo_app.serializers import adminSerializer, userSerializer
 from whizzo_app.models import AbilityModel, AchievementModel, SubjectModel,NotificationModel, SubRoleModel, CustomerSupportModel, UserModel, PermissionModel, PurposeModel, FeaturesModel, ModuleModel, \
-    SubscriptionModel, FaqModel, CmsModel, TestimonialModel
+    SubscriptionModel, FaqModel, CmsModel, TestimonialModel,CategoryModel
 from whizzo_app.utils.customPagination import CustomPagination
 from whizzo_app.utils.otp import generate_password
 from whizzo_app.utils.sendMail import SendOtpToMail
 from django.contrib.auth.hashers import check_password
 from django.utils import timezone
 import pytz
+from whizzo_app.services import categoryService
 import csv
 from io import StringIO
+from whizzo_project import settings
+import json
 from datetime import datetime
 from whizzo_app.utils.saveImage import save_file_conversion_csv
-
 from whizzo_app.utils.sendMail import send_notification_to_mail
+from langchain_core.messages import HumanMessage
+from langchain_google_genai import ChatGoogleGenerativeAI
+from io import BytesIO
+from PyPDF2 import PdfReader
+import textwrap
+
+
 
 class AdminService:
 # onboarding
@@ -117,7 +126,7 @@ class AdminService:
 # manage user
 
     def get_all_user_admin(self, request):
-        sub_obj = UserModel.objects.filter(role=2).order_by("created_at")
+        sub_obj = UserModel.objects.filter(role=2).order_by("-created_at")
         pagination_obj = CustomPagination()
         search_keys = ["first_name__icontains", "email__icontains"]
         result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.GetAdminManageUserSerializer, sub_obj)
@@ -208,7 +217,7 @@ class AdminService:
         return {"data": None, "message": messages.TESTIMONIAL_DELETED, "status": 200}
     
     def get_all_testimonial(self, request):
-        Testimonial_obj = TestimonialModel.objects.all()
+        Testimonial_obj = TestimonialModel.objects.all().order_by("-created_at")
         pagination_obj = CustomPagination()
         search_keys = ["first_name__icontains"]
         result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.GetTestimonialSerializer, Testimonial_obj)
@@ -289,7 +298,7 @@ class AdminService:
         
     def get_all_features(self, request):
         try:
-            faqs_obj = FeaturesModel.objects.filter(is_active=True).order_by("created_at")
+            faqs_obj = FeaturesModel.objects.filter(is_active=True).order_by("-created_at")
             serializer = adminSerializer.FaqModelSerializer(faqs_obj, many=True)
             return {'data': serializer.data, 'message': messages.FETCH, "status": 200}
         except FeaturesModel.DoesNotExist:
@@ -333,7 +342,7 @@ class AdminService:
     
     def get_all_subscriptions(self, request):
         try:
-            subscription = SubscriptionModel.objects.all()
+            subscription = SubscriptionModel.objects.all().order_by("-created_at")
         except SubscriptionModel.DoesNotExist:
             return {"data": None, "message": messages.RECORD_NOT_FOUND, "status": 400}
         pagination_obj = CustomPagination()
@@ -346,7 +355,7 @@ class AdminService:
 
     def get_all_ability(self, request):
         try:
-            data = AbilityModel.objects.all()
+            data = AbilityModel.objects.all().order_by("-created_at")
             pagination_obj = CustomPagination()
             search_keys = ["question__icontains", "answer_option__icontains"]
             result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.CreateAbilitySerializer, data)
@@ -430,7 +439,7 @@ class AdminService:
     
     def get_all_subject(self, request):
         try:   
-            sub_obj = SubjectModel.objects.all()
+            sub_obj = SubjectModel.objects.all().order_by("-created_at")
         except:
             return {"data": None, "message": messages.RECORD_NOT_FOUND, "status": 400}
         pagination_obj = CustomPagination()
@@ -494,7 +503,7 @@ class AdminService:
     
     def get_all_achievement(self, request):
         try:
-            data = AchievementModel.objects.all()
+            data = AchievementModel.objects.all().order_by("-created_at")
             pagination_obj = CustomPagination()
             search_keys = [ "question__icontains","corect_answer__icontains"]
             result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.CreateAcheivementSerializer, data)
@@ -527,7 +536,7 @@ class AdminService:
 
     def get_role_sub_admin(self,request):
         try:
-            role_obj = SubRoleModel.objects.order_by("created_at")
+            role_obj = SubRoleModel.objects.order_by("-created_at")
         except SubRoleModel.DoesNotExist:
             return {"data":None,"message": messages.RECORD_NOT_FOUND, "status": 400}
         serializer = adminSerializer.CreateRoleSubAdminSerializer(role_obj, many=True)
@@ -617,7 +626,7 @@ class AdminService:
 
 
     def get_all_sub_admin(self, request):
-        sub_obj = UserModel.objects.filter(role=3).order_by("created_at")
+        sub_obj = UserModel.objects.filter(role=3).order_by("-created_at")
         pagination_obj = CustomPagination()
         search_keys = ["username__icontains", "email__icontains"]
         result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.GetSubAdminSerializer, sub_obj)
@@ -670,7 +679,7 @@ class AdminService:
 
     def get_all_faqs(self, request):
         try:
-            faqs_obj = FaqModel.objects.filter(is_active=True).order_by("created_at")
+            faqs_obj = FaqModel.objects.filter(is_active=True).order_by("-created_at")
             pagination_obj = CustomPagination()
             search_keys = ["question__icontains"]
             result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.FaqModelSerializer, faqs_obj)
@@ -814,7 +823,7 @@ class AdminService:
 ##########CUSTOMER SUPPORT
     
     def get_all_customer_support(self,request):
-        customer_support = CustomerSupportModel.objects.all()
+        customer_support = CustomerSupportModel.objects.all().order_by("-created_at")
         pagination_obj = CustomPagination()
         search_keys = ["username__icontains", "email__icontains"]
         result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.CustomerSupportListSerializer, customer_support)
@@ -936,18 +945,25 @@ class AdminService:
 
 
     def get_all_notifications(self,request):
-        notifications = NotificationModel.objects.all()
+        notifications = NotificationModel.objects.all().order_by("-created_at")
         pagination_obj = CustomPagination()
         search_keys = ["username__icontains", "email__icontains"]
         result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.NotificationListSerializer, notifications)
         return {"data": result, "message": "retrieved successfully", "status": 200}
     
 
+    def delete_notification_by_id(self,request, id):
+        try:
+            notifications = NotificationModel.objects.get(pk=id)
+        except UserModel.DoesNotExist:
+            return {"data": None,"message": messages.NOTIFICATION_NOT_FOUND, "status": 404}
+        notifications.is_deleted = True
+        return {"data": None,"message": messages.NOTIFICATION_DELETED, "status": 200}
 #===============================================================================
 
     def export_users_to_csv(self):
         try:
-            users = UserModel.objects.filter(role=3)
+            users = UserModel.objects.filter(role=2)
             serializer = adminSerializer.UsersCsvSerializer(users, many=True)
             if not serializer.data:
                 return {"data": "", "message": "No users found", "status": 404}
@@ -977,3 +993,74 @@ class AdminService:
 
         except Exception as e:
             return {"data": "", "message": str(e), "status": 500}
+#=================================================================================================================
+#=======================================================================
+
+    def generate_questions_for_ability_in_admin(self, request):
+            file_link = request.FILES.get("file_link")
+            try:
+                result = self.gemini_solution_admin(file_link)
+                final_response = ""
+                try:
+                    for i in range(len(result)-1, -1, -1):
+                        if result[i] == "}":
+                            break
+                    final_response = result[result.index("["): i+1] + "]"
+                    final_response = json.loads(final_response)
+                except:
+                    pass
+                try:
+                    for i in final_response:
+                        if not i.get("answer_option"):
+                            i["question_type"] = True
+                        elif not i["answer_option"]:
+                            i["question_type"] = True
+                        elif i["answer_option"]:
+                            i["question_type"] = False
+                        final_data = AbilityModel.objects.create(
+                            question=i["question"],
+                            answer_option=i["answer_options"],
+                            corect_answer=i["correct_answer"],
+                            is_mcq=i["question_type"]  
+                        )
+                        final_data.save()
+                except:
+                    pass         
+                if not final_response:
+                    return {"data": None, "message": "Please upload the file again", "status": 200}
+                return {"data": final_response, "message": "Assignment solution generated successfully", "status": 200}
+            except Exception as e:
+                return{"data": str(e), "message": "Please upload the file again", "status": 400}
+        
+
+
+    def gemini_solution_admin(self, file_link):
+        llm = ChatGoogleGenerativeAI(model="gemini-pro")
+        text_data = self.extract_text_admin(file_link)
+        message = HumanMessage(
+            content=[
+                {"type": "text",
+                    "text": "generate 20 multiple choice questions with  four different options to choose and correct answers for this document and make in python json list format with these keys (question , answer_option ,correct_answer(make sure the spellings remain same as here for keys ))"},
+                {"type": "text", "text":text_data}
+            ]
+        )
+        response = llm.invoke([message])
+        print(response.content)
+        # result = self.to_markdown_admin(response.content)
+        return response.content
+    
+    def extract_text_admin(self, file_link):
+        pdf_text = ""
+        with file_link.open() as f:
+            pdf_stream = BytesIO(f.read())
+            pdf_reader = PdfReader(pdf_stream)
+            for page in pdf_reader.pages:
+                pdf_text += page.extract_text()
+        return pdf_text
+
+
+
+    # def to_markdown_admin(text):
+    #     text = text.replace('*', '')
+    #     intent_text=(textwrap.indent(text, '', predicate=lambda _: True))
+    #     return intent_text
