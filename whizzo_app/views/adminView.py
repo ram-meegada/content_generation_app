@@ -461,7 +461,7 @@ class AllNotificationView(APIView):
     
 class DeleteNotificationByIdView(APIView):
     def delete(self, request, id):
-        result = admin_obj.DeleteNotificationByIdView(request, id)
+        result = admin_obj.delete_notification_by_id(request, id)
         return Response(result, status=result["status"])
     
 
@@ -471,3 +471,4 @@ class GenerateAbilityQuestionsFromPDFViewPdf(APIView):
     def post(self, request):
         result = admin_obj.generate_questions_for_ability_in_admin(request)
         return Response(result, status = result["status"])
+

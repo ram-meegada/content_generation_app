@@ -91,11 +91,8 @@ urlpatterns = [
     path("delete-query/<int:cs_id>/", adminView.DeleteQueryByIdView.as_view()),
 
 
-    path("add/notification/",adminView.AddNotificationView.as_view()),
-    path("all-notifications/",adminView.AllNotificationView.as_view()),
-    path("delete-notification/<int:id>/", adminView.DeleteNotificationByIdView.as_view()),
-    path("ability/pdf/", adminView.GenerateAbilityQuestionsFromPDFViewPdf.as_view()),
-
+    path("add/notification/", adminView.AddNotificationView.as_view()),
+    path("all-notifications/", adminView.AllNotificationView.as_view()),
 
     path("csv-users/",adminView.ExportUsersCsvView.as_view()),
 

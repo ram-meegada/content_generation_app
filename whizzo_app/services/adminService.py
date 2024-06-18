@@ -23,6 +23,9 @@ from io import BytesIO
 from PyPDF2 import PdfReader
 import textwrap
 
+import urllib.request as urlopener
+from PyPDF2 import PdfReader
+from io import BytesIO
 
 
 class AdminService:
@@ -913,8 +916,6 @@ class AdminService:
                     #     device_tokens.append(UserSession.objects.get(user_id=i.id).device_token)
                     # except:
                     #     pass
-
-
             for email in all_email_to_send:
                 title=request.data['notification_title']
                 message=request.data["notification_message"]
@@ -941,13 +942,10 @@ class AdminService:
             #         notification_for=request.data["notification_for"]
             #     )
             #     if len(starting_id_of_push_model) < 1: starting_id_of_push_model.append(create_notification_obj.id)
-         
-            
             return {'data':None, 'message':"NOTIFICATION_SENT", 'status':200}
         except Exception as e:
             return {'data':None, 'message':f"{e}", 'status':400}
-
-
+        
     def get_all_notifications(self,request):
         notifications = NotificationModel.objects.all().order_by("-created_at")
         pagination_obj = CustomPagination()
@@ -962,43 +960,18 @@ class AdminService:
         except UserModel.DoesNotExist:
             return {"data": None,"message": messages.NOTIFICATION_NOT_FOUND, "status": 404}
         notifications.is_deleted = True
-        return {"data": None,"message": messages.NOTIFICATION_DELETED, "status": 200}
-#===============================================================================
+        return {"data": None,"message": messages.NOTIFICATION_DELETED, "status": 200}    
 
-    def export_users_to_csv(self):
-        try:
-            users = UserModel.objects.filter(role=2)
-            serializer = adminSerializer.UsersCsvSerializer(users, many=True)
-            if not serializer.data:
-                return {"data": "", "message": "No users found", "status": 404}
 
-            header = ["S.No"] + list(serializer.data[0].keys())
+    def extract_text(self, file_link):
+        pdf_text = ""
+        with file_link.open() as f:
+            pdf_stream = BytesIO(f.read())
+            pdf_reader = PdfReader(pdf_stream)
+            for page in pdf_reader.pages:
+                pdf_text += page.extract_text()
+        return pdf_text
 
-            output = StringIO()
-            writer = csv.writer(output)
-
-            writer.writerow(header)
-            for idx, user_data in enumerate(serializer.data, start=1):
-                row = [idx] + list(user_data.values())
-                writer.writerow(row)
-
-            output.seek(0)
-            csv_data = output.getvalue().encode('utf-8')
-
-            # Save the CSV file using save_file_conversion
-            SAVED_FILE_RESPONSE = save_file_conversion_csv(csv_data, 'users.csv', "text/csv")
-            data = {
-                "media_url": SAVED_FILE_RESPONSE[0],
-                "media_type": "csv",
-                "media_name": SAVED_FILE_RESPONSE[1]
-            }
-
-            return {"data": data, "message": "Users exported successfully", "status": 200}
-
-        except Exception as e:
-            return {"data": "", "message": str(e), "status": 500}
-#=================================================================================================================
-#=======================================================================
 
     def generate_questions_for_ability_in_admin(self, request):
             file_link = request.FILES.get("file_link")
@@ -1061,10 +1034,3 @@ class AdminService:
             for page in pdf_reader.pages:
                 pdf_text += page.extract_text()
         return pdf_text
-
-
-
-    # def to_markdown_admin(text):
-    #     text = text.replace('*', '')
-    #     intent_text=(textwrap.indent(text, '', predicate=lambda _: True))
-    #     return intent_text

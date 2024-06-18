@@ -18,6 +18,8 @@ class FileSumarizationModel(BaseModel):
 
     #others
     result = models.JSONField(default=list)
+    arabic_result = models.TextField(default="")
+
 
     class Meta:
         db_table = "FileSumarization"

@@ -248,3 +248,8 @@ class downloadQuestionWithoutAnswerView(APIView):
     def post(self, request, id):
         result = category_obj.download_file_without_answer(request, id)
         return Response(result, status=result["status"])
+
+class NewServiceView(APIView):
+    def post(self, request):
+        result = category_obj.new_service(request)
+        return Response(result, status=result["status"])

@@ -67,6 +67,13 @@ from io import BytesIO
 from django.core.files import File
 import pytesseract
 from whizzo_app.models.fileConversionModel import FileConversationModel
+from pptx.enum.shapes import MSO_SHAPE_TYPE
+from pptx.util import Inches
+from PIL import Image
+from PIL import Image, ImageDraw
+from googletrans import Translator
+from spire.presentation.common import *
+from spire.presentation import *
 
 pytesseract.pytesseract.tesseract_cmd = 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
 
@@ -377,9 +384,21 @@ class CategoryService:
                                                         sub_category=5,
                                                         result=result
                 )
+                self.translate_text_for_file_summarization(result, save_file_summary_record)
                 return {"data": result, "record_id": save_file_summary_record.id, "message": messages.SUMMARY_GENERATED, "status": 200}
             except Exception as err:
                 return {"error": str(err), "message": messages.WENT_WRONG, "status": 400}
+
+    def translate_text_for_file_summarization(self, text, save_file_summary_record):
+        text_list = text.split(" ")
+        translator = Translator()
+        translations = []
+        for text in text_list:
+            translation = translator.translate(text, src="en", dest="ar")
+            translations.append(translation.text)
+        save_file_summary_record.arabic_result = " ".join(translations)
+        save_file_summary_record.save()
+        return None            
             
     def extract_text_from_image(self, file_link):
         image = Image.open(file_link)
@@ -911,18 +930,20 @@ class CategoryService:
             slide_images = []
 
             for slide in prs.slides:
-                print(prs.slides.index(slide), '-------------', prs)
+                print(slide, '-------------', prs)
                 # slide_img_base = os.path.join(temp_dir, f"slide_{prs.slides.index(slide)}")
-                slide_img_base = f"slide_{prs.slides.index(slide)}"
-                success = self.save_slide_as_image(slide, slide_img_base)
+                slide_path = f"slide_{prs.slides.index(slide)}"
+                success = self.save_slide_as_image(slide, slide_path)
                 if success:
                     slide_images.append(slide_img_base)
                 else:    
                     return {"message": "Error while converting.", "status": 400}
-            print(slide_images, '----------slide images-------------')
+                # return {"message": "slide saved", "status": 400}
             if slide_images:
-                first_image = Image.open(slide_images[0] + "_0.png")  # Assuming the first image's index is 0
+                print(slide_images[0], 'if slide_images111')
+                first_image = Image.open(slide_images[0] + "_0.jpg")  # Assuming the first image's index is 0
                 first_image.save(pdf_path, save_all=True, append_images=[Image.open(f"{img}_0.png") for img in slide_images[1:]])
+                print("if slide end222222")
 
             # Clean up temporary image files
             for slide_img_base in slide_images:
@@ -933,23 +954,49 @@ class CategoryService:
         except Exception as e:
             return {"message": f"Conversion failed: {str(e)}", "status": 500}
 
-    def save_slide_as_image(self, slide, img_path_base):
+    def save_slide_as_image(self, slide, output_path):
+        """
+        Save a PowerPoint slide as an image.
+
+        Args:
+            slide (pptx.slide.Slide): The slide to save as an image.
+            output_path (str): The file path to save the image.
+            width (int, optional): The width of the output image. Defaults to 1024.
+            height (int, optional): The height of the output image. Defaults to 768.
+        """
         try:
-            # os.makedirs(os.path.dirname(img_path_base), exist_ok=True)
-            print(slide.shapes, '--------slide1111111111111')
-            for idx, shape in enumerate(slide.shapes):
-                if not hasattr(shape, 'image'):
-                    continue
-                image = shape.image
-                image_bytes = image.blob
-                img_path = f"{img_path_base}_{idx}.png"
-                with open(img_path, 'wb') as img_file:
-                    print("came here-------------")
-                    img_file.write(image_bytes)
-            return True  # Indicate successful operation
-        except Exception as e:
-            print(e, '-----error-----------')
-            return False  # Indicate failure    
+            img = Image.new(mode="RGB", size=(1024, 768))
+            img_draw = ImageDraw.Draw(img)
+            print(slide, '---- slide ----')
+            for shape in slide.shapes:
+                if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
+                    img.paste(shape.image, (shape.left, shape.top))
+                else:
+                    img_draw.text((shape.left, shape.top), shape.text, fill='white')
+                img.save(f"{output_path}.jpg")    
+            return True
+        except Exception as err:
+            print(err, '-----err------err-----err------')
+            return False
+
+    # def save_slide_as_image(self, slide, img_path_base):
+    #     try:
+    #         # os.makedirs(os.path.dirname(img_path_base), exist_ok=True)
+    #         print(slide.shapes, '--------slide1111111111111')
+    #         for idx, shape in enumerate(slide.shapes):
+    #             if not hasattr(shape, 'image'):
+    #                 continue
+    #             image = shape.image
+    #             image_bytes = image.blob
+    #             img_path = f"{img_path_base}_{idx}.png"
+    #             with open(img_path, 'wb') as img_file:
+    #                 print("came here-------------")
+    #                 img_file.write(image_bytes)
+    #         return True  # Indicate successful operation
+    #     except Exception as e:
+    #         print(e, '-----error-----------')
+    #         return False  # Indicate failure    
+    
         
 
 
@@ -1019,7 +1066,7 @@ class CategoryService:
                 # Create two images from one PDF page
                 img = Image.open(img_path)
                 width, height = img.size
-                half_height = height // 1.5
+                half_height = height // 1.1
 
                 top_half_path = os.path.join(temp_dir, f"page_{page_num}_top.png")
                 bottom_half_path = os.path.join(temp_dir, f"page_{page_num}_bottom.png")
@@ -1675,3 +1722,70 @@ class CategoryService:
         for i in data:
             questions.append[{"question":i["question"]}]
         return {"data":questions, "message":messages.FETCH,"status":200}
+    
+    def emu_to_pixels(self, emu):
+    # Convert EMUs to pixels
+        return int(emu * 96 / 914400)
+    
+    def draw_text(self, draw, text_frame, left, top):
+        from PIL import Image, ImageDraw, ImageFont
+        font = ImageFont.load_default()
+        current_top = top
+        for paragraph in text_frame.paragraphs:
+            text = paragraph.text
+            draw.text((left, current_top), text, fill='black', font=font)
+            current_top += 15  # Move down for the next line
+
+    def new_service(self, request):
+        # import comtypes.client
+        # try:
+        #     powerpoint = comtypes.client.CreateObject("Powerpoint.Application")
+        #     powerpoint.Visible = 1
+        #     outputFileName = f"{random.randint(1000, 9999)}_outputFileName.pdf"
+        #     deck = powerpoint.Presentations.Open("SykeIndia.pptx")
+        #     deck.SaveAs(outputFileName, 32) # formatType = 32 for ppt to pdf
+        #     deck.Close()
+        #     powerpoint.Quit()
+
+        #     return {"data": "", "message": "done", "status": 200}        
+        # except Exception as err:
+        #     return {"data": str(err), "message": "went wrong", "status": 400} 
+        try:       
+            import aspose.slides as slides
+            file = request.FILES.get("ppt_file")    
+            fs = FileSystemStorage()
+            input_pdf_file = f"{random.randint(1000, 9999)}_{file.name}.pdf"
+            fs.save(input_pdf_file, file)
+            presentation = slides.Presentation(input_pdf_file)
+
+            # Saves the presentation as a PDF
+            output = f"{random.randint(1000, 9999)}_PPT-to-PDF.pdf"
+            presentation.save(output, slides.export.SaveFormat.PDF)
+            SAVED_FILE_RESPONSE = save_file_conversion(output, output, "application/pdf")
+            data = {
+                "media_url": SAVED_FILE_RESPONSE[0],
+                "media_type": "pdf",
+                "media_name": SAVED_FILE_RESPONSE[1]
+            }
+            serializer = CreateUpdateUploadMediaSerializer(data=data)
+            if serializer.is_valid():
+                serializer.save()
+            save_file_in_model = FileConversationModel.objects.create(
+                                                                user_id=request.user.id,
+                                                                converted_media_id=serializer.data["id"],
+                                                                sub_category=17
+                                                            )
+
+            # Clean up temporary files
+            if os.path.exists(output):
+                os.remove(output)
+            if os.path.exists(input_pdf_file):
+                os.remove(input_pdf_file)
+
+            return {
+                "data": serializer.data,
+                "message": messages.CONVERT_SUCCESS,
+                "status": status.HTTP_200_OK
+            }
+        except Exception as err:
+            return {"data": str(err), "message": "Something went wrong", "status": 400}
