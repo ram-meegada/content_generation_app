@@ -64,8 +64,12 @@ class AdminService:
     def verify_admin_otp(self, request):
         GIVE_LOGIN_TOKEN = False
         try:
+            role =request.data.get("role")
             if "email" in request.data:
-                user = UserModel.objects.get(email=request.data["email"])
+                if role ==2:
+                    user = UserModel.objects.get(email=request.data["email"],role=role)
+                else:
+                    user = UserModel.objects.filter(email =request.data["email"]).exclude(role=2).first()
             elif "phone_number" in request.data:
                 user = UserModel.objects.get(phone_no=request.data["phone_number"])
             else:
@@ -572,7 +576,7 @@ class AdminService:
     def add_sub_admin(self, request):
         try:
             data = request.data
-            if UserModel.objects.filter(email=data["email"]).first():
+            if UserModel.objects.filter(email=data["email"],role=3).first():
                 return {'data': None, 'message': "Email already taken", 'status': 400}
 
             user_serializer = adminSerializer.CreateSubAdminSerializer(data=data)
