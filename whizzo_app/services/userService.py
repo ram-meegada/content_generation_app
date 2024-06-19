@@ -230,9 +230,12 @@ class UserService:
         }
     
     def update_profile(self, request):
+        EMAIL_CHANGED = False
         check_email = UserModel.objects.filter(email=request.data["email"], role=2)
-        if check_email:
-            return {'data': None, 'message': messages.EMAIL_ALREADY_EXISTS, 'status': 400}
+        if request.user.email != request.data["email"]:
+            EMAIL_CHANGED = True
+            if check_email:
+                return {'data': None, 'message': messages.EMAIL_ALREADY_EXISTS, 'status': 400}
         try:
             user  = UserModel.objects.get(id = request.user.id)
             if request.data.get("profile_picture"):
@@ -247,7 +250,7 @@ class UserService:
                 if user.profile_status==2:
                     user.profile_status = 3
                     user.save()
-                return {"data": serializer.data, "message": "Profile updated successfully", "status": 200}
+                return {"data": serializer.data, "EMAIL_CHANGED": EMAIL_CHANGED, "message": "Profile updated successfully", "status": 200}
         except Exception as e:
             return {"data": str(e), "message": "Something went wrong", "status": 400}
         
