@@ -353,3 +353,86 @@ class UserService:
         except:
             return {'data': None, 'message': messages.WENT_WRONG, 'status': 400}
 
+    def word_to_pdf(self, request):
+        import random
+        import os
+        from whizzo_app.models.fileConversionModel import FileConversationModel
+        import tempfile
+        from docx import Document
+        from reportlab.platypus import SimpleDocTemplate, Paragraph
+        from reportlab.lib.pagesizes import letter
+        from reportlab.lib.styles import getSampleStyleSheet
+        from docx2pdf import convert
+        from whizzo_app.utils.saveImage import save_file_conversion
+        from whizzo_app.serializers.uploadMediaSerializer import CreateUpdateUploadMediaSerializer
+        from django.core.files.uploadedfile import UploadedFile
+        import win32com.client
+
+        word_file: UploadedFile = request.FILES.get("word_file")
+        if not word_file:
+            return {"message": "No Word file provided", "status": 400}
+
+        # Generate unique file names
+        file_name = "".join((word_file.name).split(" "))
+        base_name = f"output_{random.randint(10000, 99999)}"
+        temp_dir = tempfile.gettempdir()
+        input_word_file = os.path.join(temp_dir, f"{base_name}.docx")
+        output_pdf_file = os.path.join(f"{base_name}.pdf")
+
+        # Save the uploaded Word file temporarily
+        with open(input_word_file, 'wb') as f:
+            for chunk in word_file.chunks():
+                f.write(chunk)
+
+        # Convert Word to PDF using win32com.client
+        try:
+            word = win32com.client.Dispatch("Word.Application")
+            word.Visible = False
+            doc = word.Documents.Open(input_word_file)
+            doc.SaveAs(output_pdf_file, FileFormat=17)  # 17 represents the PDF format
+            doc.Close()
+            word.Quit()
+        except Exception as e:
+            # if os.path.exists(input_word_file):
+            #     os.remove(input_word_file)
+            return {"message": f"Error converting Word to PDF: {e}", "status": 500}
+
+        # Generate PDF using ReportLab
+        try:
+            document = Document(input_word_file)
+            content = [paragraph.text for paragraph in document.paragraphs]
+            doc = SimpleDocTemplate(output_pdf_file, pagesize=letter)
+            styles = getSampleStyleSheet()
+            paragraphs = [Paragraph(text, styles["Normal"]) for text in content]
+            doc.build(paragraphs)
+        except Exception as e:
+            if os.path.exists(input_word_file):
+                os.remove(input_word_file)
+            if os.path.exists(output_pdf_file):
+                os.remove(output_pdf_file)
+            return {"message": f"Error generating PDF: {e}", "status": 500}
+
+        # Handle the converted PDF
+        try:
+            SAVED_FILE_RESPONSE = save_file_conversion(output_pdf_file, output_pdf_file, "application/pdf")
+            data = {
+                "media_url": SAVED_FILE_RESPONSE[0],
+                "media_type": "pdf",
+                "media_name": SAVED_FILE_RESPONSE[1]
+            }
+            serializer = CreateUpdateUploadMediaSerializer(data=data)
+            if serializer.is_valid():
+                serializer.save()
+            save_file_in_model = FileConversationModel.objects.create(
+                user_id=request.user.id,
+                converted_media_id=serializer.data["id"],
+                sub_category=11
+            )
+        finally:
+            # Clean up temporary files
+            if os.path.exists(input_word_file):
+                os.remove(input_word_file)
+            if os.path.exists(output_pdf_file):
+                os.remove(output_pdf_file)
+
+        return {"data": data, "message": "done", "status": 200}

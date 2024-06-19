@@ -1,10 +1,12 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from whizzo_app.services.categoryService import CategoryService
+from whizzo_app.services.userService import UserService
 from rest_framework.permissions import AllowAny
 from django.http import JsonResponse
 
 category_obj = CategoryService()
+user_obj = UserService()
 
 class GenerateTestingCategoryResponseView(APIView):
     def post(self, request):
@@ -60,7 +62,7 @@ class ConvertPdfToExcelView(APIView):
 
 class ConvertWordToPdfView(APIView):
     def post(self, request):
-        result = category_obj.word_to_pdf(request)
+        result = user_obj.word_to_pdf(request)
         return Response(result, status = result["status"])
     
 class ConvertExcelToPdfView(APIView):

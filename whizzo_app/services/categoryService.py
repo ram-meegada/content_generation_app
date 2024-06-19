@@ -363,31 +363,41 @@ class CategoryService:
                 request.session['file_summary_result'] = result
                 return {"data": result, "record_id": save_file_summary_record.id, "message": messages.SUMMARY_GENERATED, "status": 200}
             except Exception as e:
-                return {"error": str(e), "message": messages.WENT_WRONG, "status": 400}
+                return {"error": str(e), "message": messages.PLEASE_UPLOAD_AGAIN, "status": 400}
         elif int(request.data["type"]) == 2:
             images = dict(request.data)["file_link"]
+            query = "You are summary provider. Generate a summary of text I provide you and the length of the summary should be strictly atleast 2000 words and give me only text no * and extra symbols"
             try:
                 text_data = ""
-                for img in images:
-                    text_data += self.extract_text_from_image(img)
-                message = HumanMessage(
-                    content=[
-                        {"type": "text",
-                        "text": f"You are summary provider. Generate a summary of text I provide you and the length of the summary should be strictly atleast 2000 words and give me only text no * and extra symbols"},
-                        {"type": "text", "text":text_data}
-                    ]
-                )
-                response = llm.invoke([message])
-                result = to_markdown(response.content)
+                gemini_result = []
+                for file_image in images:
+                    img = save_image(file_image)
+                    result = self.image_processing_assignment_solution(img[0], query)
+                    # text_data = self.extract_text_from_image(file_image)
+                    # message = HumanMessage(
+                    #     content=[
+                    #         {"type": "text",
+                    #             "text": "You are a teacher. Generate questions and answers based on the data I provide to you. Format should be proper Python Javascript object notation list of dictionaries where every dictionary contains keys as 'question', 'answer' and 'options'(if available)."},
+                    #         {"type": "text", "text":text_data}
+                    #     ]
+                    # )
+                    # # result = self.gemini_solution(file_link)
+                    # response = llm.invoke([message])
+                    # result = to_markdown(response.content)
+                    temp = self.format_final_response(result)
+                    gemini_result += temp
                 save_file_summary_record = FileSumarizationModel.objects.create(
                                                         user_id=request.user.id,
                                                         sub_category=5,
                                                         result=result
                 )
-                self.translate_text_for_file_summarization(result, save_file_summary_record)
+                try:
+                    self.translate_text_for_file_summarization(result, save_file_summary_record)
+                except:
+                    pass    
                 return {"data": result, "record_id": save_file_summary_record.id, "message": messages.SUMMARY_GENERATED, "status": 200}
             except Exception as err:
-                return {"error": str(err), "message": messages.WENT_WRONG, "status": 400}
+                return {"error": str(err), "message": messages.PLEASE_UPLOAD_AGAIN, "status": 400}
 
     def translate_text_for_file_summarization(self, text, save_file_summary_record):
         text_list = text.split(" ")
@@ -401,6 +411,7 @@ class CategoryService:
         return None            
             
     def extract_text_from_image(self, file_link):
+        from PIL import Image
         image = Image.open(file_link)
         text = pytesseract.image_to_string(image)
         return text        
@@ -639,6 +650,7 @@ class CategoryService:
         excel_file  = request.FILES.get("excel_file")
         file_name = excel_file.name
         file_name = file_name.replace(" ", "")
+        file_name = file_name.replace("%", "")
 
         # excel_path = str(excel_file)
         file_save_path= f"{file_name}_{random.randint(10000, 99999)}.pdf"
@@ -1049,6 +1061,8 @@ class CategoryService:
         }
 
     def convert_pdf_to_ppt(self, pdf_path, ppt_path):
+        from PIL import Image
+        from pptx import Presentation
         try:
             # Open the PDF file
             pdf_document = fitz.open(pdf_path)
@@ -1066,7 +1080,7 @@ class CategoryService:
                 # Create two images from one PDF page
                 img = Image.open(img_path)
                 width, height = img.size
-                half_height = height // 1.1
+                half_height = height // 1.5
 
                 top_half_path = os.path.join(temp_dir, f"page_{page_num}_top.png")
                 bottom_half_path = os.path.join(temp_dir, f"page_{page_num}_bottom.png")
@@ -1306,19 +1320,22 @@ class CategoryService:
         if int(request.data["type"]) == 2:
             llm = ChatGoogleGenerativeAI(model="gemini-pro")
             images = dict(request.data)["file_link"]
+            query = "You are a teacher. Generate questions and answers based on the data I provide to you. Format should be proper Python Javascript object notation list of dictionaries where every dictionary contains keys as 'question', 'correct_answer' and 'options'(if available)."
             gemini_result = []
             for file_image in images:
-                text_data = self.extract_text_from_image(file_image)
-                message = HumanMessage(
-                    content=[
-                        {"type": "text",
-                            "text": "You are a teacher. Generate questions and answers based on the data I provide to you. Format should be proper Python Javascript object notation list of dictionaries where every dictionary contains keys as 'question', 'answer' and 'options'(if available)."},
-                        {"type": "text", "text":text_data}
-                    ]
-                )
-                # result = self.gemini_solution(file_link)
-                response = llm.invoke([message])
-                result = to_markdown(response.content)
+                img = save_image(file_image)
+                result = self.image_processing_assignment_solution(img[0], query)
+                # text_data = self.extract_text_from_image(file_image)
+                # message = HumanMessage(
+                #     content=[
+                #         {"type": "text",
+                #             "text": "You are a teacher. Generate questions and answers based on the data I provide to you. Format should be proper Python Javascript object notation list of dictionaries where every dictionary contains keys as 'question', 'answer' and 'options'(if available)."},
+                #         {"type": "text", "text":text_data}
+                #     ]
+                # )
+                # # result = self.gemini_solution(file_link)
+                # response = llm.invoke([message])
+                # result = to_markdown(response.content)
                 temp = self.format_final_response(result)
                 gemini_result += temp
             final_data = AssignmentModel.objects.create(
@@ -1327,6 +1344,25 @@ class CategoryService:
                 )
             final_data.save()    
             return {"data": gemini_result, "record_id": final_data.id, "message": "Assignment solution generated successfully", "status": 200}
+        
+    def image_processing_assignment_solution(self, image_link , query):
+        '''processing the image and generate the mcq with options and answer 
+            image_link is the s3 bucket link of image and query is string 
+            which we use to generate the mcq of flashcards'''
+        llm = ChatGoogleGenerativeAI(model="gemini-pro-vision")
+            # example
+        message = HumanMessage(
+            content=[
+                {
+                    "type": "text",
+                    "text": query,
+                },
+                {"type": "image_url", "image_url": str(image_link)},
+            ]
+        )
+        response = llm.invoke([message])
+        result_qu = to_markdown(response.content)
+        return result_qu    
 
 
     def format_final_response(self, result):
@@ -1788,4 +1824,5 @@ class CategoryService:
                 "status": status.HTTP_200_OK
             }
         except Exception as err:
+            print(err, '----errore============')
             return {"data": str(err), "message": "Something went wrong", "status": 400}

@@ -97,4 +97,4 @@ FAQ_DELETED="Faq deleted successfully"
 
 
 
-
+PLEASE_UPLOAD_AGAIN = "Please upload file again.There may be some issue with network"
