@@ -14,6 +14,10 @@ urlpatterns = [
     path("user-details/", userView.UserDetailsByTokenView.as_view()),
     path("delete-user/",userView.DeleteAccountByTokenView.as_view()),
 
+    path("send-otp-to-new-mail/", userView.SendOtpToNewMailView.as_view()),
+    path("verify-new-mail/", userView.VerifyNewMailView.as_view()),
+
+
     #### customer support
     path("send-query/",userView.QueryToAdminView.as_view()),
     path("user-testimonial/",userView.GetAllTestimonialUserView.as_view()),

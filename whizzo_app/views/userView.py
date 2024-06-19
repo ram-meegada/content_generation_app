@@ -83,3 +83,13 @@ class GetAllSubscriptionUserView(APIView):
     def get(self, request):
         result = user_obj.get_all_subscriptions_for_user(request)
         return Response(result, status=result["status"])  
+
+class SendOtpToNewMailView(APIView):
+    def post(self, request):
+        result = user_obj.send_otp_to_new_mail(request)
+        return Response(result, status=result["status"])  
+
+class VerifyNewMailView(APIView):
+    def post(self, request):
+        result = user_obj.verify_new_mail_otp(request)
+        return Response(result, status=result["status"])  

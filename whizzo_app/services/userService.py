@@ -4,10 +4,9 @@ from rest_framework import status
 from whizzo_app.models.userModel import UserModel
 from whizzo_app.models.testimonialModel import TestimonialModel
 from whizzo_app.models.subscriptionModel import SubscriptionModel
-from whizzo_app.utils import messages
+from whizzo_app.utils import messages, otp, sendMail
 from whizzo_app.serializers import userSerializer,adminSerializer
 from django.contrib.auth.hashers import check_password
-from whizzo_app.utils import sendMail
 from datetime import datetime
 from threading import Thread
 import pytz
@@ -231,6 +230,9 @@ class UserService:
         }
     
     def update_profile(self, request):
+        check_email = UserModel.objects.filter(email=request.data["email"], role=2)
+        if check_email:
+            return {'data': None, 'message': messages.EMAIL_ALREADY_EXISTS, 'status': 400}
         try:
             user  = UserModel.objects.get(id = request.user.id)
             if request.data.get("profile_picture"):
@@ -322,4 +324,29 @@ class UserService:
         serializer = adminSerializer.GetSubscriptionSerializer(subscription, many=True)
         serialized_data = serializer.data
         return {'data': serialized_data, 'message': messages.FETCH, 'status': 200}
+
+    def send_otp_to_new_mail(self, request):
+        OTP = otp.generate_otp()
+        check_email = UserModel.objects.filter(email=request.data["email"], role=2)
+        if check_email:
+            return {'data': None, 'message': messages.EMAIL_ALREADY_EXISTS, 'status': 400}
+        try:
+            user = UserModel.objects.get(id=request.user.id)
+            Thread(target=sendMail.send_otp_to_mail, args=(request.data["email"], OTP)).start()
+            user.otp = OTP
+            user.otp_sent_time = datetime.now(tz=pytz.UTC)
+            user.save()
+            return {'data': None, 'message': messages.OTP_SENT_AFTER_REGISTRATION, 'status': 200}
+        except Exception as err:
+            return {'data': str(err), 'message': messages.WENT_WRONG, 'status': 400}
+
+    def verify_new_mail_otp(self, request):
+        try:
+            user = UserModel.objects.get(id=request.user.id)
+            if user.otp == request.data["otp"]:
+                return {'data': None, 'message': messages.OTP_VERIFIED, 'status': 200}
+            elif user.otp != request.data["otp"]:
+                return {'data': None, 'message': messages.WRONG_OTP, 'status': 400}
+        except:
+            return {'data': None, 'message': messages.WENT_WRONG, 'status': 400}
 

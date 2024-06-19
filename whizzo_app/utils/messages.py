@@ -20,7 +20,7 @@ NOTIFICATION_NOT_FOUND ="Notification not found"
 NOTIFICATION_DELETED ="Notification deleted"
 #### otp #####
 OTP_EXPIRED = "Otp expired."
-RESENT_OTP = "Otp send successfully"
+RESENT_OTP = "Otp sent successfully"
 WRONG_OTP = "The otp you entered is incorrect"
 OTP_NOT_SENT="Otp not sent yet"
 OTP_VERIFIED="Otp verified successfully"
