@@ -88,13 +88,16 @@ def generate_file_name(name):
     for i in name:
         if i not in char:
             name = name.replace(i, '')
-    for j in range(len(name)-1, -1, -1):
-        if name[j] == ".":
-            extension = name[j+1:]
-            file_name = name[:j]
-            break
-    result = [file_name, extension]    
-    return result
+    try:
+        for j in range(len(name)-1, -1, -1):
+            if name[j] == ".":
+                extension = name[j+1:]
+                file_name = name[:j]
+                break
+        result = [file_name, extension]    
+        return result
+    except:
+        return [name, None]   
 
 
 def to_markdown(text):
@@ -1072,6 +1075,7 @@ class CategoryService:
 
     def pdf_to_ppt(self, request):
         pdf_file = request.FILES.get("pdf_file")
+        print(pdf_file, type(pdf_file), '------------------------')
         # Generate a unique file save path
         OUTPUT_FILE_NAME = generate_file_name(pdf_file.name)[0] + ".pptx"
         base_name = f"output_{random.randint(10000, 99999)}"
