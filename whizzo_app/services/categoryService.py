@@ -1906,18 +1906,35 @@ class CategoryService:
     def new_doc_to_pdf_service(self, request):
         from docx2pdf import convert
 
-        file = request.FILES.get("file")
-        generate_name = generate_file_name(file.name)
-        FILE_NAME = generate_name[0]
-        EXTENSION = generate_name[1]
-        name = f"{random.randint(1000, 9999)}_{FILE_NAME}"
-        output_path = os.path.join(os.getcwd(), f"{name}.pdf")
-        input_path = os.path.join(os.getcwd(), f"{name}.{EXTENSION}")
-        fs = FileSystemStorage()
-        fs.save(input_path, file)
-        convert(input_path=input_path, output_path=output_path)
-        if os.path.exists(input_path):
-            os.remove(input_path)
-        if os.path.exists(output_path):
-            os.remove(output_path)
-        return {"data": "", "message": "File converted successfully", "status": 200} 
+        try:
+            file = request.FILES.get("word_file")
+            generate_name = generate_file_name(file.name)
+            FILE_NAME = generate_name[0]
+            OUTPUT_FILE_NAME = generate_name[0] + ".pdf"
+            name = f"{random.randint(1000, 9999)}_{FILE_NAME}"
+            output_path = os.path.join(os.getcwd(), f"{random.randint(1000, 9999)}{name}.pdf")
+            input_path = os.path.join(os.getcwd(), f"{random.randint(1000, 9999)}{name}.docx")
+            fs = FileSystemStorage()
+            fs.save(input_path, file)
+            convert(input_path=input_path, output_path=output_path)
+            SAVED_FILE_RESPONSE = save_file_conversion(output_path, OUTPUT_FILE_NAME, "application/pdf")
+            data = {
+                "media_url": SAVED_FILE_RESPONSE[0],
+                "media_type": "pdf",
+                "media_name": SAVED_FILE_RESPONSE[1]
+            }
+            serializer = CreateUpdateUploadMediaSerializer(data=data)
+            if serializer.is_valid():
+                serializer.save()
+            save_file_in_model = FileConversationModel.objects.create(
+                user_id=request.user.id,
+                converted_media_id=serializer.data["id"],
+                sub_category=11
+            )
+            if os.path.exists(input_path):
+                os.remove(input_path)
+            if os.path.exists(output_path):
+                os.remove(output_path)
+            return {"data": serializer.data, "message": "File converted successfully", "status": 200} 
+        except Exception as err:
+            return {"data": str(err), "message": "Please upload the file again.", "status": 400} 
