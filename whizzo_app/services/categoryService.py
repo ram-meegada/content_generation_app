@@ -72,6 +72,7 @@ from pptx.util import Inches
 from PIL import Image
 from PIL import Image, ImageDraw
 from googletrans import Translator
+from django.core.files.uploadedfile import UploadedFile
 from spire.presentation.common import *
 from spire.presentation import *
 
@@ -508,42 +509,59 @@ class CategoryService:
     #     return {"data": "", "message": "conversion is done", "status": 200}
     
     def pdf_to_word(self , request):
-        pdf_file = request.FILES.get("pdf_file")
-        file_name = generate_file_name(pdf_file.name)[0]
-        OUTPUT_FILE_NAME = file_name
-        file_name = f"{file_name}_{random.randint(10000, 99999)}"
-        output_word_file = f"{OUTPUT_FILE_NAME}.docx"
-        input_name = f"{file_name}_{random.randint(10000, 99999)}"
-        input_pdf_file = f"{input_name}.pdf"
-        delete_files = [input_pdf_file, output_word_file]
-        
-        fs = FileSystemStorage()
-        fs.save(input_pdf_file, pdf_file)
-        cv = Converter(input_pdf_file)
-        # cv = Converter(BytesIO(pdf_content))
-        cv.convert(output_word_file, start=0, end=None)
-        cv.close()
-        SAVED_FILE_RESPONSE = save_file_conversion(output_word_file, output_word_file, "word")
-        data = {
-                    "media_url": SAVED_FILE_RESPONSE[0],
-                    "media_type": "word",
-                    "media_name": SAVED_FILE_RESPONSE[1]
-                }
-        serializer = CreateUpdateUploadMediaSerializer(data = data)
-        if serializer.is_valid():
-            serializer.save()
-        for file in delete_files:
-            if os.path.exists(file):
-                os.remove(file)
-        save_file_in_model = FileConversationModel.objects.create(
-                                                            user_id=request.user.id,
-                                                            converted_media_id=serializer.data["id"],
-                                                            sub_category=10
-                                                        )        
-        return {"data": data, "message": messages.PDF_TO_WORD, "status": 200}
+        try:
+            pdf_file = request.FILES.get("pdf_file")
+            try:
+                pdf_file: UploadedFile
+                doc = fitz.open(stream=pdf_file.read(), filetype="pdf")
+                if doc.is_encrypted:
+                    return {"data": None, "message": messages.PROTECTED_PDF, "status": 400}
+            except Exception as e:
+                pass
+            file_name = generate_file_name(pdf_file.name)[0]
+            OUTPUT_FILE_NAME = file_name
+            file_name = f"{file_name}_{random.randint(10000, 99999)}"
+            output_word_file = f"{OUTPUT_FILE_NAME}.docx"
+            input_name = f"{file_name}_{random.randint(10000, 99999)}"
+            input_pdf_file = f"{input_name}.pdf"
+            delete_files = [input_pdf_file, output_word_file]
+            
+            fs = FileSystemStorage()
+            fs.save(input_pdf_file, pdf_file)
+            cv = Converter(input_pdf_file)
+            # cv = Converter(BytesIO(pdf_content))
+            cv.convert(output_word_file, start=0, end=None)
+            cv.close()
+            SAVED_FILE_RESPONSE = save_file_conversion(output_word_file, output_word_file, "word")
+            data = {
+                        "media_url": SAVED_FILE_RESPONSE[0],
+                        "media_type": "word",
+                        "media_name": SAVED_FILE_RESPONSE[1]
+                    }
+            serializer = CreateUpdateUploadMediaSerializer(data = data)
+            if serializer.is_valid():
+                serializer.save()
+            for file in delete_files:
+                if os.path.exists(file):
+                    os.remove(file)
+            save_file_in_model = FileConversationModel.objects.create(
+                                                                user_id=request.user.id,
+                                                                converted_media_id=serializer.data["id"],
+                                                                sub_category=10
+                                                            )        
+            return {"data": data, "message": messages.PDF_TO_WORD, "status": 200}
+        except Exception as err:
+            return {"data": str(err), "message": messages.PLEASE_UPLOAD_AGAIN, "status": 400}
 
     def convert_pdf_to_excel(self , request):
         excel_file = request.FILES.get("pdf_file")
+        try:
+            excel_file: UploadedFile
+            doc = fitz.open(stream=excel_file.read(), filetype="pdf")
+            if doc.is_encrypted:
+                return {"data": None, "message": messages.PROTECTED_PDF, "status": 400}
+        except Exception as e:
+            pass
         file_name = f"output_{random.randint(10000, 99999)}"
         OUTPUT_FILE_NAME = generate_file_name(excel_file.name)[0]
         pdf_content = excel_file.read()
@@ -1098,7 +1116,7 @@ class CategoryService:
         SAVED_FILE_RESPONSE = save_file_conversion(ppt_path, OUTPUT_FILE_NAME, "application/vnd.openxmlformats-officedocument.presentationml.presentation")
         data = {
             "media_url": SAVED_FILE_RESPONSE[0],
-            "media_type": "pdf",
+            "media_type": "pptx",
             "media_name": SAVED_FILE_RESPONSE[1]
         }
 
