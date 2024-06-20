@@ -82,6 +82,19 @@ upload_media_obj = UploadMediaService()
 load_dotenv()
 google_api_key = settings.GOOGLE_API_KEY
 
+def generate_file_name(name):
+    import string
+    char = string.ascii_letters + string.digits + "."
+    for i in name:
+        if i not in char:
+            name = name.replace(i, '')
+    for j in range(len(name)-1, -1, -1):
+        if name[j] == ".":
+            extension = name[j+1:]
+            file_name = name[:j]
+            break
+    result = [file_name, extension]    
+    return result
 
 
 def to_markdown(text):
@@ -493,10 +506,10 @@ class CategoryService:
     
     def pdf_to_word(self , request):
         pdf_file = request.FILES.get("pdf_file")
-        f_name = pdf_file.name
-        file_name = "".join((f_name).split(" "))
+        file_name = generate_file_name(pdf_file.name)[0]
+        OUTPUT_FILE_NAME = file_name
         file_name = f"{file_name}_{random.randint(10000, 99999)}"
-        output_word_file = f"{file_name}.docx"
+        output_word_file = f"{OUTPUT_FILE_NAME}.docx"
         input_name = f"{file_name}_{random.randint(10000, 99999)}"
         input_pdf_file = f"{input_name}.pdf"
         delete_files = [input_pdf_file, output_word_file]
@@ -529,7 +542,7 @@ class CategoryService:
     def convert_pdf_to_excel(self , request):
         excel_file = request.FILES.get("pdf_file")
         file_name = f"output_{random.randint(10000, 99999)}"
-
+        OUTPUT_FILE_NAME = generate_file_name(excel_file.name)[0]
         pdf_content = excel_file.read()
 
         # Convert the PDF content to a byte stream
@@ -539,7 +552,7 @@ class CategoryService:
         output_path = f"{file_name}.xlsx"
 
         self.pdf_to_excel(excel_file, output_path)
-        SAVED_FILE_RESPONSE = save_file_conversion(output_path, output_path, "excel")
+        SAVED_FILE_RESPONSE = save_file_conversion(output_path, f"{OUTPUT_FILE_NAME}.xlsx", "excel")
         data = {
                     "media_url": SAVED_FILE_RESPONSE[0],
                     "media_type": "excel",
@@ -647,32 +660,41 @@ class CategoryService:
                     worksheet.set_column(idx, idx, max_len)
 
     def excel_to_pdf(self , request):
-        excel_file  = request.FILES.get("excel_file")
-        file_name = excel_file.name
-        file_name = file_name.replace(" ", "")
-        file_name = file_name.replace("%", "")
+        try:
+            excel_file  = request.FILES.get("excel_file")
+            file_name = excel_file.name
+            OUTPUT_FILE_NAME = generate_file_name(file_name)[0] + ".pdf"
+            file_name = file_name.replace(" ", "")
+            file_name = file_name.replace("%", "")
 
-        # excel_path = str(excel_file)
-        file_save_path= f"{file_name}_{random.randint(10000, 99999)}.pdf"
+            # excel_path = str(excel_file)
+            file_save_path= f"{file_name}_{random.randint(10000, 99999)}.pdf"
 
-        self.Excel_To_Pdf(excel_file, file_save_path)
-        SAVED_FILE_RESPONSE = save_file_conversion(file_save_path, file_save_path, "application/pdf")
-        data = {
-                    "media_url": SAVED_FILE_RESPONSE[0],
-                    "media_type": "excel",
-                    "media_name": SAVED_FILE_RESPONSE[1]
-                }
-        serializer = CreateUpdateUploadMediaSerializer(data = data)
-        if serializer.is_valid():
-            serializer.save()
-        if os.path.exists(file_save_path):
-            os.remove(file_save_path)
-        save_file_in_model = FileConversationModel.objects.create(
-                                                            user_id=request.user.id,
-                                                            converted_media_id=serializer.data["id"],
-                                                            sub_category=15
-                                                        )    
-        return {"data": serializer.data, "message": messages.CONVERT_SUCCESS, "status": 200}                
+            self.Excel_To_Pdf(excel_file, file_save_path)
+            SAVED_FILE_RESPONSE = save_file_conversion(file_save_path, OUTPUT_FILE_NAME, "application/pdf")
+            data = {
+                        "media_url": SAVED_FILE_RESPONSE[0],
+                        "media_type": "excel",
+                        "media_name": SAVED_FILE_RESPONSE[1]
+                    }
+            serializer = CreateUpdateUploadMediaSerializer(data = data)
+            if serializer.is_valid():
+                serializer.save()
+            if os.path.exists(file_save_path):
+                os.remove(file_save_path)
+            save_file_in_model = FileConversationModel.objects.create(
+                                                                user_id=request.user.id,
+                                                                converted_media_id=serializer.data["id"],
+                                                                sub_category=15
+                                                            )    
+            return {"data": serializer.data, "message": messages.CONVERT_SUCCESS, "status": 200}                
+        except ValueError as ve:
+            if "must have at least a row and column" in str(ve):
+                return {"data": None, "message": messages.EMPTY_EXCEL, "status": 400}
+            return {"data": str(ve), "message": messages.PLEASE_UPLOAD_AGAIN, "status": 400}                
+        except Exception as err:
+            return {"data": str(err), "message": messages.PLEASE_UPLOAD_AGAIN, "status": 400}                
+
     
     def Excel_To_Pdf(self, excel_file, pdf_file):
         # Read Excel file into pandas DataFrame
@@ -735,7 +757,7 @@ class CategoryService:
     
     def convert_pdf_to_image(self, request):
         pdf_file = request.FILES.get("pdf_file")
-
+        OUTPUT_FILE_NAME = generate_file_name(pdf_file.name)[0] + ".jpg"
         # Generate a unique file save path
         base_name = f"output_{random.randint(10000, 99999)}"
         temp_dir = tempfile.gettempdir()
@@ -755,13 +777,16 @@ class CategoryService:
         # Handle the converted images
         image_paths = conversion_result["image_paths"]
         saved_file_responses = []
+        start = 0
         for img_path in image_paths:
-            SAVED_FILE_RESPONSE = save_file_conversion(img_path, img_path, "image/png")
+            image_name = OUTPUT_FILE_NAME + "_" + f"{start}" + ".jpg"
+            SAVED_FILE_RESPONSE = save_file_conversion(img_path, image_name , "image/png")
             saved_file_responses.append({
                 "media_url": SAVED_FILE_RESPONSE[0],
                 "media_type": "image",
                 "media_name": SAVED_FILE_RESPONSE[1]
             })
+            start += 1
         images_ids = []
         for data in saved_file_responses:
             serializer = CreateUpdateUploadMediaSerializer(data=data)
@@ -817,49 +842,82 @@ class CategoryService:
 
 
     def image_to_pdf(self , request):
+        from PIL import Image
         try:
-            image_file = request.FILES.get("image")
-            fs = FileSystemStorage()
-            f_name= image_file.name
-            f_name= f_name.replace(" ", "")
-            input_image_file = fs.save(f_name, image_file)
-            
-            # Create a new Aspose Words document
-            doc = aw.Document()
-            builder = aw.DocumentBuilder(doc)
+            # Get a list of uploaded images
+            image_files = request.FILES.getlist("image")
+            if not image_files:
+                return {"message": "No images provided", "status": 400}
 
-            # Insert the image into the document
-            builder.insert_image(fs.path(input_image_file))
+            fs = FileSystemStorage()
+            saved_image_paths = []
 
             # Generate a unique file name for the PDF
-            file_name = os.path.splitext(f_name)[0]
+            file_name = os.path.splitext(image_files[0].name)[0]  # Use the first image's name as the base
             output_pdf_file = f"{file_name}_{random.randint(10000, 99999)}.pdf"
             file_save_path = fs.path(output_pdf_file)
 
-            # Save the document as a PDF
-            doc.save(file_save_path)
+            # Create a PDF document
+            c = canvas.Canvas(file_save_path, pagesize=letter)
+
+            for image_file in image_files:
+                f_name = image_file.name
+                f_name = f_name.replace(" ", "")
+                input_image_file = fs.save(f_name, image_file)
+                saved_image_paths.append(fs.path(input_image_file))
+
+                # Open the image file
+                with Image.open(fs.path(input_image_file)) as img:
+                    img_width, img_height = img.size
+
+                    # Convert the image size to fit into the PDF page size
+                    pdf_width, pdf_height = letter
+                    aspect = img_width / img_height
+
+                    if img_width > img_height:
+                        # Landscape orientation
+                        img_width = pdf_width
+                        img_height = pdf_width / aspect
+                    else:
+                        # Portrait orientation
+                        img_height = pdf_height
+                        img_width = pdf_height * aspect
+
+                    
+                    x = (pdf_width - img_width) / 2
+                    y = (pdf_height - img_height) / 2
+
+                    # Insert the image into the PDF
+                    c.drawImage(fs.path(input_image_file), x, y, width=img_width, height=img_height)
+                    c.showPage()  # Add a page break
+
+            # Save the PDF document
+            c.save()
 
             # Generate the URL for the PDF file
-            # pdf_url = fs.url(output_pdf_file)
             SAVED_FILE_RESPONSE = save_file_conversion(output_pdf_file, output_pdf_file, "application/pdf")
             data = {
-                    "media_url": SAVED_FILE_RESPONSE[0],
-                    "media_type": "pdf",
-                    "media_name": SAVED_FILE_RESPONSE[1]
-                }
-            serializer = CreateUpdateUploadMediaSerializer(data = data)
-            if os.path.exists(file_save_path):
-                os.remove(file_save_path)
-            if os.path.exists(f_name):
-                os.remove(f_name)
+                "media_url": SAVED_FILE_RESPONSE[0],
+                "media_type": "pdf",
+                "media_name": SAVED_FILE_RESPONSE[1]
+            }
+            serializer = CreateUpdateUploadMediaSerializer(data=data)
             if serializer.is_valid():
                 serializer.save()
+
+            # Clean up saved image files
+            for saved_image_path in saved_image_paths:
+                if os.path.exists(saved_image_path):
+                    os.remove(saved_image_path)
+            if os.path.exists(file_save_path):
+                os.remove(file_save_path)
+
             save_file_in_model = FileConversationModel.objects.create(
-                                                            user_id=request.user.id,
-                                                            converted_media_id=serializer.data["id"],
-                                                            sub_category=13
-                                                        )    
-            return {"data":serializer.data,"status":200}
+                user_id=request.user.id,
+                converted_media_id=serializer.data["id"],
+                sub_category=13
+            )
+            return {"data": serializer.data, "status": 200}
 
         except Exception as e:
             return {"message": str(e), "status": 400}
@@ -1015,6 +1073,7 @@ class CategoryService:
     def pdf_to_ppt(self, request):
         pdf_file = request.FILES.get("pdf_file")
         # Generate a unique file save path
+        OUTPUT_FILE_NAME = generate_file_name(pdf_file.name)[0] + ".pptx"
         base_name = f"output_{random.randint(10000, 99999)}"
         temp_dir = tempfile.gettempdir()
         pdf_path = os.path.join(temp_dir, f"{base_name}.pdf")
@@ -1032,7 +1091,7 @@ class CategoryService:
             return conversion_result
 
         # Handle the converted PPT
-        SAVED_FILE_RESPONSE = save_file_conversion(ppt_path, ppt_path, "application/vnd.openxmlformats-officedocument.presentationml.presentation")
+        SAVED_FILE_RESPONSE = save_file_conversion(ppt_path, OUTPUT_FILE_NAME, "application/vnd.openxmlformats-officedocument.presentationml.presentation")
         data = {
             "media_url": SAVED_FILE_RESPONSE[0],
             "media_type": "pdf",
@@ -1090,15 +1149,24 @@ class CategoryService:
 
                 top_half.save(top_half_path)
                 bottom_half.save(bottom_half_path)
+                # Define margins in inches
+                margin_left = Inches(0.5)
+                margin_top = Inches(0.5)
+                margin_right = Inches(0.5)
+                margin_bottom = Inches(0.5)
+
+                # Calculate the image display dimensions to fit within the slide with margins
+                slide_width = prs.slide_width - margin_left - margin_right
+                slide_height = prs.slide_height - margin_top - margin_bottom
 
                 # Add the top half image to a slide
                 slide_layout = prs.slide_layouts[5]  # Use a blank slide layout
                 slide = prs.slides.add_slide(slide_layout)
-                slide.shapes.add_picture(top_half_path, Inches(0), Inches(0), width=prs.slide_width, height=prs.slide_height)
+                slide.shapes.add_picture(top_half_path,  margin_left, margin_top, width=slide_width, height=slide_height )
 
                 # Add the bottom half image to another slide
                 slide = prs.slides.add_slide(slide_layout)
-                slide.shapes.add_picture(bottom_half_path, Inches(0), Inches(0), width=prs.slide_width, height=prs.slide_height)
+                slide.shapes.add_picture(bottom_half_path,  margin_left, margin_top, width=slide_width, height=slide_height )
 
                 # Remove the temporary image files
                 os.remove(img_path)

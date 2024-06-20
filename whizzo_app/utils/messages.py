@@ -98,3 +98,4 @@ FAQ_DELETED="Faq deleted successfully"
 
 
 PLEASE_UPLOAD_AGAIN = "Please upload file again.There may be some issue with network"
+EMPTY_EXCEL = "Input excel file is empty. It must contain atleast one row."
