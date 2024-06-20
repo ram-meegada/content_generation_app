@@ -20,7 +20,7 @@ urlpatterns = [
 
     #### file conversions ####
     path("conversion/pdf-to-word/", categoryView.PdfToWordView.as_view()),
-    path("conversion/word-to-pdf/", categoryView.ConvertWordToPdfView.as_view()),
+    # path("conversion/word-to-pdf/", categoryView.ConvertWordToPdfView.as_view()),
     path("conversion/pdf-to-excel/", categoryView.ConvertPdfToExcelView.as_view()),
 
     path("conversion/excel-to-pdf/", categoryView.ConvertExcelToPdfView.as_view()),
@@ -29,6 +29,7 @@ urlpatterns = [
     # path("conversion/ppt-to-pdf/", categoryView.ConvertPptToPdfView.as_view()),
     path("conversion/pdf-to-ppt/", categoryView.ConvertPdfToPptView.as_view()),
     path("conversion/ppt-to-pdf/", categoryView.NewServiceView.as_view()),
+    path("conversion/word-to-pdf/", categoryView.NewDocToPdfView.as_view()),
     path("conversion/history/", categoryView.FileConversionHistoryView.as_view()),
 
 

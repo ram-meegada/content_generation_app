@@ -11,6 +11,7 @@ from datetime import datetime
 from threading import Thread
 import pytz
 from whizzo_app.models.customerSupportModel import CustomerSupportModel
+from whizzo_app.services.categoryService import generate_file_name
 
 class UserService:
     def user_registration(self, request):
@@ -371,6 +372,8 @@ class UserService:
         word_file: UploadedFile = request.FILES.get("word_file")
         if not word_file:
             return {"message": "No Word file provided", "status": 400}
+        
+        OUTPUT_FILE_NAME = generate_file_name(word_file.name)[0] + ".pdf"
 
         # Generate unique file names
         file_name = "".join((word_file.name).split(" "))
@@ -414,7 +417,7 @@ class UserService:
 
         # Handle the converted PDF
         try:
-            SAVED_FILE_RESPONSE = save_file_conversion(output_pdf_file, output_pdf_file, "application/pdf")
+            SAVED_FILE_RESPONSE = save_file_conversion(output_pdf_file, OUTPUT_FILE_NAME, "application/pdf")
             data = {
                 "media_url": SAVED_FILE_RESPONSE[0],
                 "media_type": "pdf",

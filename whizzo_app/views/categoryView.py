@@ -255,3 +255,8 @@ class NewServiceView(APIView):
     def post(self, request):
         result = category_obj.new_service(request)
         return Response(result, status=result["status"])
+
+class NewDocToPdfView(APIView):
+    def post(self, request):
+        result = category_obj.new_doc_to_pdf_service(request)
+        return Response(result, status=result["status"])

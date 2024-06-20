@@ -898,7 +898,7 @@ class CategoryService:
             c.save()
 
             # Generate the URL for the PDF file
-            SAVED_FILE_RESPONSE = save_file_conversion(output_pdf_file, output_pdf_file, "application/pdf")
+            SAVED_FILE_RESPONSE = save_file_conversion(output_pdf_file, "output.pdf", "application/pdf")
             data = {
                 "media_url": SAVED_FILE_RESPONSE[0],
                 "media_type": "pdf",
@@ -1073,11 +1073,11 @@ class CategoryService:
         
 
 
+        
     def pdf_to_ppt(self, request):
         pdf_file = request.FILES.get("pdf_file")
-        print(pdf_file, type(pdf_file), '------------------------')
-        # Generate a unique file save path
         OUTPUT_FILE_NAME = generate_file_name(pdf_file.name)[0] + ".pptx"
+        # Generate a unique file save path
         base_name = f"output_{random.randint(10000, 99999)}"
         temp_dir = tempfile.gettempdir()
         pdf_path = os.path.join(temp_dir, f"{base_name}.pdf")
@@ -1088,13 +1088,13 @@ class CategoryService:
             for chunk in pdf_file.chunks():
                 f.write(chunk)
 
-        # Convert PDF to PPT
+        # Convert PDF to PPT using the instance method
         conversion_result = self.convert_pdf_to_ppt(pdf_path, ppt_path)
 
         if conversion_result["status"] != 200:
             return conversion_result
 
-        # Handle the converted PPT
+        # Handle the converted PPT (example save_file_conversion function call)
         SAVED_FILE_RESPONSE = save_file_conversion(ppt_path, OUTPUT_FILE_NAME, "application/vnd.openxmlformats-officedocument.presentationml.presentation")
         data = {
             "media_url": SAVED_FILE_RESPONSE[0],
@@ -1102,16 +1102,19 @@ class CategoryService:
             "media_name": SAVED_FILE_RESPONSE[1]
         }
 
+        # Example serializer usage (replace with your serializer)
         serializer = CreateUpdateUploadMediaSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
 
+        # Example model creation (replace with your model)
         save_file_in_model = FileConversationModel.objects.create(
-                                                            user_id=request.user.id,
-                                                            converted_media_id=serializer.data["id"],
-                                                            sub_category=16
-                                                        )    
+            user_id=request.user.id,
+            converted_media_id=serializer.data["id"],
+            sub_category=16
+        )
 
+        # Clean up temporary files
         if os.path.exists(pdf_path):
             os.remove(pdf_path)
         if os.path.exists(ppt_path):
@@ -1124,6 +1127,7 @@ class CategoryService:
         }
 
     def convert_pdf_to_ppt(self, pdf_path, ppt_path):
+        from pptx.util import Pt
         from PIL import Image
         from pptx import Presentation
         try:
@@ -1132,6 +1136,7 @@ class CategoryService:
             temp_dir = tempfile.gettempdir()
 
             prs = Presentation()
+
             for page_num in range(len(pdf_document)):
                 page = pdf_document.load_page(page_num)
 
@@ -1140,42 +1145,36 @@ class CategoryService:
                 img_path = os.path.join(temp_dir, f"page_{page_num}.png")
                 pix.save(img_path)
 
-                # Create two images from one PDF page
-                img = Image.open(img_path)
-                width, height = img.size
-                half_height = height // 1.5
+                # Open the image and get its size
+                with Image.open(img_path) as img:
+                    img_width, img_height = img.size
 
-                top_half_path = os.path.join(temp_dir, f"page_{page_num}_top.png")
-                bottom_half_path = os.path.join(temp_dir, f"page_{page_num}_bottom.png")
+                    # Define slide dimensions for portrait orientation (switching width and height)
+                    slide_height = Inches(10)  # Height in inches (adjust as needed)
+                    slide_width = Inches(7.5)  # Width in inches (adjust as needed)
 
-                top_half = img.crop((0, 0, width, half_height))
-                bottom_half = img.crop((0, half_height, width, height))
+                    # Calculate scaling factor to fit image within slide dimensions
+                    scale = min(slide_width / img_width, slide_height / img_height)
 
-                top_half.save(top_half_path)
-                bottom_half.save(bottom_half_path)
-                # Define margins in inches
-                margin_left = Inches(0.5)
-                margin_top = Inches(0.5)
-                margin_right = Inches(0.5)
-                margin_bottom = Inches(0.5)
+                    # Calculate centered position within slide
+                    left = (slide_width - img_width * scale) / 2
+                    top = (slide_height - img_height * scale) / 2
 
-                # Calculate the image display dimensions to fit within the slide with margins
-                slide_width = prs.slide_width - margin_left - margin_right
-                slide_height = prs.slide_height - margin_top - margin_bottom
+                    # Add a blank slide with portrait orientation
+                    slide_layout = prs.slide_layouts[6]  # Index 6 for blank slide layout (Title Slide)
+                    slide = prs.slides.add_slide(slide_layout)
 
-                # Add the top half image to a slide
-                slide_layout = prs.slide_layouts[5]  # Use a blank slide layout
-                slide = prs.slides.add_slide(slide_layout)
-                slide.shapes.add_picture(top_half_path,  margin_left, margin_top, width=slide_width, height=slide_height )
+                    # Set slide dimensions and orientation
+                    slide.slide_width = Pt(slide_width.pt)
+                    slide.slide_height = Pt(slide_height.pt)
+                    prs.slide_width = slide.slide_width
+                    prs.slide_height = slide.slide_height
 
-                # Add the bottom half image to another slide
-                slide = prs.slides.add_slide(slide_layout)
-                slide.shapes.add_picture(bottom_half_path,  margin_left, margin_top, width=slide_width, height=slide_height )
+                    # Add image to slide
+                    slide.shapes.add_picture(img_path, left, top, width=img_width * scale, height=img_height * scale)
 
-                # Remove the temporary image files
+                # Remove the temporary image file
                 os.remove(img_path)
-                os.remove(top_half_path)
-                os.remove(bottom_half_path)
 
             # Save the presentation
             prs.save(ppt_path)
@@ -1870,11 +1869,11 @@ class CategoryService:
             input_pdf_file = f"{random.randint(1000, 9999)}_{file.name}.pdf"
             fs.save(input_pdf_file, file)
             presentation = slides.Presentation(input_pdf_file)
-
+            OUTPUT_FILE_NAME = generate_file_name(file.name)[0] + ".pdf"
             # Saves the presentation as a PDF
             output = f"{random.randint(1000, 9999)}_PPT-to-PDF.pdf"
             presentation.save(output, slides.export.SaveFormat.PDF)
-            SAVED_FILE_RESPONSE = save_file_conversion(output, output, "application/pdf")
+            SAVED_FILE_RESPONSE = save_file_conversion(output, OUTPUT_FILE_NAME, "application/pdf")
             data = {
                 "media_url": SAVED_FILE_RESPONSE[0],
                 "media_type": "pdf",
@@ -1903,3 +1902,22 @@ class CategoryService:
         except Exception as err:
             print(err, '----errore============')
             return {"data": str(err), "message": "Something went wrong", "status": 400}
+        
+    def new_doc_to_pdf_service(self, request):
+        from docx2pdf import convert
+
+        file = request.FILES.get("file")
+        generate_name = generate_file_name(file.name)
+        FILE_NAME = generate_name[0]
+        EXTENSION = generate_name[1]
+        name = f"{random.randint(1000, 9999)}_{FILE_NAME}"
+        output_path = os.path.join(os.getcwd(), f"{name}.pdf")
+        input_path = os.path.join(os.getcwd(), f"{name}.{EXTENSION}")
+        fs = FileSystemStorage()
+        fs.save(input_path, file)
+        convert(input_path=input_path, output_path=output_path)
+        if os.path.exists(input_path):
+            os.remove(input_path)
+        if os.path.exists(output_path):
+            os.remove(output_path)
+        return {"data": "", "message": "File converted successfully", "status": 200} 
