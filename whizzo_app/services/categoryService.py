@@ -1257,7 +1257,7 @@ class CategoryService:
                     ## old ###
                     # "text": "I am an invligator i will give you scaned pdf of images. Whatever you find text in images give question and answer regarding them.And dont give random answers"},
                     ### new ####
-                    "text": "You are a teacher. Generate questions and answers based on the data I provide to you. Format should be proper Python Javascript object notation list of dictionaries where every dictionary contains keys as 'question', 'correct_answer' and 'options'(if available)."},
+                    "text": "You are a teacher. Generate questions and answers based on the data I provide to you. Format should be proper Python Javascript object notation list of dictionaries where every dictionary contains keys as 'question_no', 'question', 'correct_answer' and 'options'(if available)."},
                     # "text": "I am an invligator to mark the questions i need correct answers ,provide me correct answers for these questions and when needed diagrams and figures or explanations just give concise answers and give answers to remaining questions,lastly provide the answers in json list format (question no. ,question, options(this field will will only be there if options are present else no need ), correct answer)"},
                 {"type": "text", "text":text_data}
             ]
@@ -1317,33 +1317,38 @@ class CategoryService:
                 return {"data": final_response, "record_id": final_data.id, "message": "Assignment solution generated successfully", "status": 200}
             except Exception as e:
                 return{"data": str(e), "message": "Please upload the file again", "status": 400}
+            
         if int(request.data["type"]) == 2:
-            llm = ChatGoogleGenerativeAI(model="gemini-pro")
-            images = dict(request.data)["file_link"]
-            query = "You are a teacher. Generate questions and answers based on the data I provide to you. Format should be proper Python Javascript object notation list of dictionaries where every dictionary contains keys as 'question', 'correct_answer' and 'options'(if available)."
-            gemini_result = []
-            for file_image in images:
-                img = save_image(file_image)
-                result = self.image_processing_assignment_solution(img[0], query)
-                # text_data = self.extract_text_from_image(file_image)
-                # message = HumanMessage(
-                #     content=[
-                #         {"type": "text",
-                #             "text": "You are a teacher. Generate questions and answers based on the data I provide to you. Format should be proper Python Javascript object notation list of dictionaries where every dictionary contains keys as 'question', 'answer' and 'options'(if available)."},
-                #         {"type": "text", "text":text_data}
-                #     ]
-                # )
-                # # result = self.gemini_solution(file_link)
-                # response = llm.invoke([message])
-                # result = to_markdown(response.content)
-                temp = self.format_final_response(result)
-                gemini_result += temp
-            final_data = AssignmentModel.objects.create(
-                    user_id=request.user.id,
-                    result = gemini_result
-                )
-            final_data.save()    
-            return {"data": gemini_result, "record_id": final_data.id, "message": "Assignment solution generated successfully", "status": 200}
+            try:
+                # llm = ChatGoogleGenerativeAI(model="gemini-pro")
+                images = dict(request.data)["file_link"]
+                query = "You are a teacher. Generate questions and answers based on the data I provide to you. Format should be proper Python Javascript object notation list of dictionaries where every dictionary contains keys as 'question_no', 'question', 'correct_answer' and 'options'(if available)."
+                gemini_result = []
+                for file_image in images:
+                    img = save_image(file_image)
+                    result = self.image_processing_assignment_solution(img[0], query)
+                    # text_data = self.extract_text_from_image(file_image)
+                    # message = HumanMessage(
+                    #     content=[
+                    #         {"type": "text",
+                    #             "text": "You are a teacher. Generate questions and answers based on the data I provide to you. Format should be proper Python Javascript object notation list of dictionaries where every dictionary contains keys as 'question', 'answer' and 'options'(if available)."},
+                    #         {"type": "text", "text":text_data}
+                    #     ]
+                    # )
+                    # # result = self.gemini_solution(file_link)
+                    # response = llm.invoke([message])
+                    # result = to_markdown(response.content)
+                    temp = self.format_final_response(result)
+                    gemini_result += temp
+                final_data = AssignmentModel.objects.create(
+                        user_id=request.user.id,
+                        result = gemini_result
+                    )
+                final_data.save()    
+                return {"data": gemini_result, "record_id": final_data.id, "message": "Assignment solution generated successfully", "status": 200}
+            except Exception as err:
+                return {"data": str(err), "message": messages.PLEASE_UPLOAD_AGAIN, "status": 400}
+
         
     def image_processing_assignment_solution(self, image_link , query):
         '''processing the image and generate the mcq with options and answer 
