@@ -1528,7 +1528,7 @@ class CategoryService:
         message = HumanMessage(
             content=[
                 {"type": "text",
-                    "text": "These are some question and answers you have generated for my assigment previously.Now just add another key explanation and give explanation of that answer. And make sure to keep that response as it is by just adding explanation key, lastly provide the answers in json list format (question no. ,question, options(this field will will only be there if options are present else no need ), correct answer, explaination"},
+                    "text": "These are some question and answers you have generated for my assigment previously.Now just add another key explanation and give explanation of that answer. And make sure to keep that response as it is by just adding explanation key, lastly provide the answers in json list format with keys (question_no, question, correct_answer, explanation, options(this field will will only be there if options are present else no need)"},
                 #  "text": f"list the answers for all questions present  in these given file's (don't leave any question ,even if there is breaks between questions)and provide in  json  format (questtions which have no options just give correct answers in concise manner) try writing answer in this way  (question no. ,question, options(this field will will only be there if options are present else no need ),correct answer) "},
                 {"type": "text", "text":text_data}
             ]
@@ -1697,7 +1697,7 @@ class CategoryService:
             if os.path.exists(file):
                 os.remove(file)
             if not final_response:
-                return {"data": None, "message": "Please try again", "status": 200}
+                return {"data": "Empty Response", "message": "Please try again", "status": 200}
             return {"data": final_response, "message": "Review generated successfully", "status": 200}
         except Exception as e:
             return{"data": str(e), "message": "Please try again", "status": 400}
