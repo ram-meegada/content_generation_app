@@ -48,7 +48,7 @@ MCQ_GENERATED = "Mcq Generate successfully."
 
 ########### admin ###########
 ABILITY_ADDED="Abilty added successfully"
-FETCH="Fetch successfully"
+FETCH="Data Fetch successfully"
 ABILITY_UPDATED="Abilty updated successfully"
 ABILITY_DELETED="Abilty deleted successfully"
 
@@ -99,3 +99,7 @@ FAQ_DELETED="Faq deleted successfully"
 
 PLEASE_UPLOAD_AGAIN = "Please upload file again.There may be some issue with network"
 EMPTY_EXCEL = "Input excel file is empty. It must contain atleast one row."
+PROTECTED_PDF = "The file you provided is password protected. We donot have access to this file"
+
+
+RESEARCH_GENERATED = "Research generated successfully."

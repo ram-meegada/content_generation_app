@@ -44,8 +44,10 @@ urlpatterns = [
 
     #### research ####
     path("get-research-answer/", categoryView.GetResearchAnswerView.as_view()),
+    path("research-answer-by-upload-reference/", categoryView.UploadReferenceForResearchView.as_view()),
     path("get-all-listing-research/", categoryView.GetAllResearchView.as_view()),
     path("get-research-by-id/<int:id>/", categoryView.GetResearchByIdView.as_view()),
+    path("download-research-file/<int:id>/", categoryView.DownloadResearchView.as_view()),
 
     #### assignment ####
     path("get-assignmnet-answer/", categoryView.GetAssignmentSolutionView.as_view()),

@@ -39,7 +39,7 @@ class GetNoteListSerializer(serializers.ModelSerializer):
     media = CreateUpdateUploadMediaSerializer()
     class Meta:
         model = CategoryModel
-        fields = ["id", "created_at", "updated_at", "media"]        
+        fields = ["id", "topic", "created_at", "updated_at", "media", "result"]        
     # def get_category(self, obj):
     #     try:
     #         return obj.get_category_display()

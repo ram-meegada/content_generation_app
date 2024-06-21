@@ -135,21 +135,29 @@ class SendNotesViaMale(APIView):
 
 # research
 class GetResearchAnswerView(APIView):
-    permission_classes = [AllowAny]
     def post(self, request):
         result = category_obj.get_research_answer(request)
         return Response(result, status = result["status"])
 
+class UploadReferenceForResearchView(APIView):
+    def post(self, request):
+        result = category_obj.research_based_on_reference(request)
+        return Response(result, status = result["status"])
+
 class GetAllResearchView(APIView):
     def post(self, request):
-        result = category_obj.get_all_research(request)
+        result = category_obj.get_history_research(request)
         return Response(result, status = result["status"])   
     
 class GetResearchByIdView(APIView):
-    def post(self, request, id):
+    def get(self, request, id):
         result = category_obj.get_research_by_id(request, id)
         return Response(result, status = result["status"]) 
 
+class DownloadResearchView(APIView):
+    def post(self, request, id):
+        result = category_obj.download_research_file(request, id)
+        return Response(result, status = result["status"]) 
     
 
 

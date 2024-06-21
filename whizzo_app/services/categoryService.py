@@ -551,6 +551,7 @@ class CategoryService:
                                                             )        
             return {"data": data, "message": messages.PDF_TO_WORD, "status": 200}
         except Exception as err:
+            print(str(err), '-----')
             return {"data": str(err), "message": messages.PLEASE_UPLOAD_AGAIN, "status": 400}
 
     def convert_pdf_to_excel(self , request):
@@ -1286,23 +1287,33 @@ class CategoryService:
         return intent_text
     
     def get_research_answer(self, request):
+        PAGE_REFERENCES = {1: (600, 1200), 2: (1800, 3000), 3: (4200, 7200), 4: (9000, 15000)}
         reduce_citation=request.data.get("reduce_citation")
         description=request.data.get("description")
         if not request.data.get('upload_reference'):
             topic = request.data.get("topic")
             page = request.data.get("page")
-            words=int(page)*300
+            # words=int(page)*300
             tone = request.data.get("tone")
             reference = request.data.get("reference")
-            
-
-            data=f"generate esaay of {topic} having minimum {words} words answer with tone of voice {tone} by using reference from {reference} and also reduce recitation should be {reduce_citation} and also related to the give description that it {description}"
+            # data=f"Generate research of {topic} having approximate of {PAGE_REFERENCES[page][0]} to {PAGE_REFERENCES[page][1]} words, answer with tone of voice {tone} by using reference of {reference} and also reduce recitation should be {reduce_citation}. Format should be like numbered side headings and matter of side heading should be in numbered points."
+            data=f"You are a topics list generator. Generate research topics list based on {topic}. Output should contain only three topics headings(numbered like 1,2,3) and strictly two side headings(numbered like i, ii, iii)."
             query = data
             llm = ChatGoogleGenerativeAI(model="gemini-pro")
             try:
                 response = llm.invoke(query)
                 result = to_markdown(response.content)
-                return{"data":result,"message":messages.FETCH,"status":200}
+                print(result, '------result------')
+                save_to_db = CategoryModel.objects.create(
+                                user_id=request.user.id,
+                                topic=topic,
+                                page=page,
+                                tone=tone,
+                                reference=reference,
+                                category=4,
+                                result=result
+                )
+                return{"data":result, "record_id": save_to_db.id, "message":messages.FETCH,"status":200}
             except Exception as e:
                 return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
         
@@ -1317,23 +1328,83 @@ class CategoryService:
         except Exception as e:
             return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
         
+    def research_based_on_reference(self,request):
+        llm = ChatGoogleGenerativeAI(model="gemini-pro-vision")
+        description = request.data.get("description", "")
+        reduce_citation = request.data.get("reduce_citation", True)
+        image_links = ["https://enilcon.s3.ap-south-1.amazonaws.com/GinaAdmin31.jpg_0.jpg", "https://enilcon.s3.ap-south-1.amazonaws.com/2843PPTtoPDF.jpg_55.jpg"]
+        query = f"You are a research generaor. Generate research of mininimum 500 words from given file links and according to {description} and reduce citation will be {reduce_citation}."
+        message_content = [
+            {
+                "type": "text",
+                "text": query,  
+            }
+        ]
+        for image_link in image_links:
+            message_content.append({
+                "type": "image_url",
+                "image_url": str(image_link)
+            })
+        message = HumanMessage(content=message_content)
+        response = llm.invoke([message])
+        return {"data": response.content, "message": messages.RESEARCH_GENERATED, "status": 200}
 
     def save_rsearch_file(self, request):
         try:
             save_pdf=CategoryModel.objects.create(user_id=request.user.id,category=4, sub_category=5,media_id = request.data.get("pdf_file"))
             save_pdf.save()
-            return{"data":request.data,"message":"saved successfully","status":200}
+            return {"data":request.data,"message":"saved successfully","status":200}
         except Exception as e:
-            return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
+            return {"data":str(e),"message":messages.WENT_WRONG,"status":400}
         
-    def get_history_research(self, request, id):
+    def get_history_research(self, request):
         try:
-            notes_obj=CategoryModel.objects.filter(user_id=request.user.id, category=id)
-            serializer=categorySerializer.GetNoteListSerializer(notes_obj, many=True)
-            return{"data":serializer.data,"message":messages.FETCH,"status":200}
+            research_obj = CategoryModel.objects.filter(user_id=request.user.id, category=4)
+            pagination_obj = CustomPagination()
+            search_keys = []
+            result = pagination_obj.custom_pagination(request, search_keys, categorySerializer.GetNoteListSerializer, research_obj)
+            return {"data":result,"message":messages.FETCH,"status":200}
+        except Exception as err:
+            return{"data": str(err), "message": messages.WENT_WRONG, "status": 400}
+        
+    def get_research_by_id(self, request, id):
+        try:
+            research_obj = CategoryModel.objects.get(id=id)
+            serializer = categorySerializer.GetNoteListSerializer(research_obj)
+            return {"data": serializer.data,"message":messages.FETCH,"status":200}
         except:
             return{"data":None,"message":messages.WENT_WRONG,"status":400}
-
+        
+    def download_research_file(self, request,id):
+        try:
+            assignment = CategoryModel.objects.get(id=id)
+            if request.data["type"] == 1:
+                if request.data["new"] is True:
+                    file = self.html_to_pdf(request)
+                    return {"data": file, "message": "pdf generated successfully", "status":200}
+                if assignment.download_file:
+                    return {"data": assignment.download_file, "message":messages.UPDATED,"status":200}
+                file = self.html_to_pdf(request)
+                assignment.download_file = file    
+                assignment.save()
+            if request.data["type"] == 2:
+                if request.data["new"] is True:
+                    file = self.html_to_doc(request)
+                    return {"data": file, "message": "pdf generated successfully", "status":200}
+                if assignment.download_doc_file:
+                    return {"data": assignment.download_doc_file, "message":messages.UPDATED,"status":200}
+                file = self.html_to_doc(request)
+                assignment.download_doc_file = file    
+                assignment.save()
+            elif request.data["type"] == 3:
+                file = self.html_to_pdf(request)
+                Thread(target=send_pdf_file_to_mail, args=(assignment.user.email, file)).start() 
+                return {"data":None, "message": "File send to your email successfully", "status":200}
+            return {"data": file, "message":messages.UPDATED,"status":200}
+        except CategoryModel.DoesNotExist:
+            return {"data": None, "message": "Record not found","status":400}
+        except Exception as e:
+            return {"data": str(e),"message":messages.WENT_WRONG,"status":400}    
 
     def gemini_solution(self, file_link):
         llm = ChatGoogleGenerativeAI(model="gemini-pro")

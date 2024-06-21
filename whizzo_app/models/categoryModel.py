@@ -15,8 +15,15 @@ class CategoryModel(BaseModel):
     sub_category = models.IntegerField(choices=SUB_CATEGORY_CHOICES, default=0)
     correct_answers = models.IntegerField(blank=True, null=True)
 
+    topic = models.TextField(default="")
+    page = models.IntegerField(default=0)
+    tone = models.TextField(default="")
+    reference = models.TextField(default="")
+
     #others
     result = models.JSONField(default=list)
+    download_file = models.TextField(default="")
+    download_doc_file = models.TextField(default="")
 
     class Meta:
         db_table = "Category"
