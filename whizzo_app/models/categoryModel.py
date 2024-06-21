@@ -19,7 +19,10 @@ class CategoryModel(BaseModel):
     page = models.IntegerField(default=0)
     tone = models.TextField(default="")
     reference = models.TextField(default="")
-
+    research_file_links = models.JSONField(default=list)
+    reduced_citations = models.BooleanField(default=False)
+    description = models.TextField(default="")
+    research_type = models.IntegerField(default=1)
     #others
     result = models.JSONField(default=list)
     download_file = models.TextField(default="")

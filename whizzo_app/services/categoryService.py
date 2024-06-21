@@ -75,6 +75,7 @@ from googletrans import Translator
 from django.core.files.uploadedfile import UploadedFile
 from spire.presentation.common import *
 from spire.presentation import *
+from bs4 import BeautifulSoup
 
 pytesseract.pytesseract.tesseract_cmd = 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
 
@@ -1287,7 +1288,6 @@ class CategoryService:
         return intent_text
     
     def get_research_answer(self, request):
-        PAGE_REFERENCES = {1: (600, 1200), 2: (1800, 3000), 3: (4200, 7200), 4: (9000, 15000)}
         reduce_citation=request.data.get("reduce_citation")
         description=request.data.get("description")
         if not request.data.get('upload_reference'):
@@ -1303,7 +1303,6 @@ class CategoryService:
             try:
                 response = llm.invoke(query)
                 result = to_markdown(response.content)
-                print(result, '------result------')
                 save_to_db = CategoryModel.objects.create(
                                 user_id=request.user.id,
                                 topic=topic,
@@ -1328,26 +1327,123 @@ class CategoryService:
         except Exception as e:
             return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
         
+    def regenerate_research_solution(self, request, id):
+        get_research_record = CategoryModel.objects.get(id=id)
+        try:
+            if get_research_record.research_type == 1:
+                topic = get_research_record.topic
+                tone = get_research_record.tone
+                QUERY=f"You are a topics list generator. Generate research topics list based on {topic}. Output should contain only three topics headings(numbered like 1,2,3) and strictly two side headings(numbered like i, ii, iii)."
+                llm = ChatGoogleGenerativeAI(model="gemini-pro")
+                response = llm.invoke(QUERY)
+                result = to_markdown(response.content)
+                return {"data": result, "message": "Research topics generated successfully", "status": 200}
+            elif get_research_record.research_type == 2:    
+                image_links = get_research_record.research_file_links
+                QUERY = f"You are topics list generator. Generate research topics list based on links I provide to you. Output should contain only three topics headings(numbered like 1,2,3) and strictly two side headings(numbered like i, ii, iii)."
+                message_content = [
+                    {
+                        "type": "text",
+                        "text": QUERY,  
+                    }
+                ]
+                for image_link in image_links:
+                    message_content.append({
+                        "type": "image_url",
+                        "image_url": str(image_link)
+                    })
+                message = HumanMessage(content=message_content)
+                response = llm.invoke([message])
+                result = to_markdown(response.content)
+                return {"data": result, "message": "Research topics generated successfully", "status": 200}
+        except Exception as err:
+            return {"data": str(err), "message": messages.WENT_WRONG, "status": 400}
+        
     def research_based_on_reference(self,request):
-        llm = ChatGoogleGenerativeAI(model="gemini-pro-vision")
-        description = request.data.get("description", "")
-        reduce_citation = request.data.get("reduce_citation", True)
-        image_links = ["https://enilcon.s3.ap-south-1.amazonaws.com/GinaAdmin31.jpg_0.jpg", "https://enilcon.s3.ap-south-1.amazonaws.com/2843PPTtoPDF.jpg_55.jpg"]
-        query = f"You are a research generaor. Generate research of mininimum 500 words from given file links and according to {description} and reduce citation will be {reduce_citation}."
+        try:
+            llm = ChatGoogleGenerativeAI(model="gemini-pro-vision")
+            description = request.data.get("description", "")
+            reduce_citation = request.data.get("reduce_citation", True)
+            image_links = []
+            for img in dict(request.data)["files"]:
+                get_link = save_image(img)
+                image_links.append(get_link[0])
+            # query = f"You are a research generator. Generate research of mininimum 500 words from given file links and according to {description} and reduce citation will be {reduce_citation}."
+            query = f"You are topics list generator. Generate research topics list based on links I provide to you with reduce citations as {reduce_citation}. Output should contain only three topics headings(numbered like 1,2,3) and strictly two side headings(numbered like i, ii, iii)."
+            message_content = [
+                {
+                    "type": "text",
+                    "text": query,  
+                }
+            ]
+            for image_link in image_links:
+                message_content.append({
+                    "type": "image_url",
+                    "image_url": str(image_link)
+                })
+            message = HumanMessage(content=message_content)
+            response = llm.invoke([message])
+            final_response = response.content.replace("*", "").replace("-", "")
+            save_to_db = CategoryModel.objects.create(
+                                    user_id=request.user.id,
+                                    description=description,
+                                    category=4,
+                                    research_type=2,
+                                    reduced_citations=reduce_citation,
+                                    result=final_response,
+                                    research_file_links=image_links
+                    )
+            return {"data": final_response, "record_id": save_to_db.id, "message": messages.RESEARCH_GENERATED, "status": 200}
+        except Exception as err:    
+            return {"data": str(err), "message": messages.WENT_WRONG, "status": 400}
+    
+    def generate_detailed_research_based_on_topics(self, request, id):
+        PAGE_REFERENCES = {1: (600, 1200), 2: (1800, 3000), 3: (4200, 7200), 4: (9000, 15000)}
+        get_research_record = CategoryModel.objects.get(id=id)
+        try:
+            api_type = 1
+            min_pages = PAGE_REFERENCES[get_research_record.page][0]
+            max_pages = PAGE_REFERENCES[get_research_record.page][1]
+            tone = get_research_record.tone
+            reference = get_research_record.reference
+        except KeyError:
+            api_type = 2
+            image_links = get_research_record.research_file_links
+            descriptoin = get_research_record.description
+        except Exception as err:
+            return {"data": str(err), "message": messages.WENT_WRONG, "status": 400}
+        llm = ChatGoogleGenerativeAI(model="gemini-pro")
+        html_text = request.data.get("html_text")
+        ### extract text from html
+        soup = BeautifulSoup(html_text, "html.parser")
+        all_topics = []
+        for ele in soup.find_all(["h1", "li"]):
+            all_topics.append(ele.get_text())
+        ####    
+        if api_type == 1:
+            QUERY = f"You are research generator. Generate some theory on the topics which I provide you. Whole research should be of approximately {min_pages} to {max_pages} words with voice of tone as {tone} and take reference from {reference}. Format should be descriptive. Keep the same name as topic heading which I provide you and also in same order of topics."
+        elif api_type == 2:
+            QUERY = f"You are research generator. Generate some theory on the topics which I provide you. Whole research should be of approximately 400 to 800 words. Format should be descriptive. Keep the same name as topic heading which I provide you in list and also in same order of topics."
         message_content = [
             {
                 "type": "text",
-                "text": query,  
+                "text": QUERY
             }
         ]
-        for image_link in image_links:
+        for top in all_topics:
+            print(top, '---top----')
             message_content.append({
-                "type": "image_url",
-                "image_url": str(image_link)
+                "type": "text",
+                "text": top
             })
         message = HumanMessage(content=message_content)
         response = llm.invoke([message])
-        return {"data": response.content, "message": messages.RESEARCH_GENERATED, "status": 200}
+        final_response = response.content.replace("*", "")
+        ## save record
+        get_research_record.result = final_response
+        get_research_record.save()
+        ##
+        return {"data": final_response, "message": "Details research generated successfully", "status": 200}
 
     def save_rsearch_file(self, request):
         try:
@@ -1359,7 +1455,7 @@ class CategoryService:
         
     def get_history_research(self, request):
         try:
-            research_obj = CategoryModel.objects.filter(user_id=request.user.id, category=4)
+            research_obj = CategoryModel.objects.filter(user_id=request.user.id, category=4).order_by("-created_at")
             pagination_obj = CustomPagination()
             search_keys = []
             result = pagination_obj.custom_pagination(request, search_keys, categorySerializer.GetNoteListSerializer, research_obj)
