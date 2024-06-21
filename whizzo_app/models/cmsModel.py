@@ -10,6 +10,10 @@ class CmsModel(BaseModel):
     email = models.CharField(max_length=255, blank=True, null=True)
     phone_no = models.CharField(max_length=20, blank=True, null=True)
     country_code = models.CharField(max_length=17, default="")
+    about_us_ar = models.TextField( blank=True, null=True)
+    terms_condition_ar = models.TextField( blank=True, null=True)
+    privacy_policy_ar = models.TextField( blank=True, null=True)
+    
 
     class Meta:
         db_table = "CMS"

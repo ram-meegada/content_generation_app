@@ -387,6 +387,10 @@ class AddAboutUsView(APIView):
         result = admin_obj.about_us(request)
         return Response(result, status=result["status"])
     
+class AddArabicValues(APIView):
+    def put(self, request):
+        result = admin_obj.add_arabic_values(request)
+        return Response(result,status=result["status"])
 
 
 class AddTestimonialView(APIView):

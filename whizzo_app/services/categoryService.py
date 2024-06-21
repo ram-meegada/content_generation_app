@@ -73,8 +73,8 @@ from PIL import Image
 from PIL import Image, ImageDraw
 from googletrans import Translator
 from django.core.files.uploadedfile import UploadedFile
-from spire.presentation.common import *
-from spire.presentation import *
+# from spire.presentation.common import *
+# from spire.presentation import *
 from bs4 import BeautifulSoup
 
 pytesseract.pytesseract.tesseract_cmd = 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
@@ -1329,12 +1329,12 @@ class CategoryService:
         
     def regenerate_research_solution(self, request, id):
         get_research_record = CategoryModel.objects.get(id=id)
+        llm = ChatGoogleGenerativeAI(model="gemini-pro")
         try:
             if get_research_record.research_type == 1:
                 topic = get_research_record.topic
                 tone = get_research_record.tone
                 QUERY=f"You are a topics list generator. Generate research topics list based on {topic}. Output should contain only three topics headings(numbered like 1,2,3) and strictly two side headings(numbered like i, ii, iii)."
-                llm = ChatGoogleGenerativeAI(model="gemini-pro")
                 response = llm.invoke(QUERY)
                 result = to_markdown(response.content)
                 return {"data": result, "message": "Research topics generated successfully", "status": 200}

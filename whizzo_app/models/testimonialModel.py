@@ -12,6 +12,10 @@ class TestimonialModel(BaseModel):
     phone_no = models.CharField(max_length=100, default="")
     rating = models.FloatField(default=0)
     message = models.CharField(max_length=255, default="")
+    # is_arabic = models.BooleanField(default=False)
+    first_name_ar = models.CharField(max_length=255, default="")
+    last_name_ar = models.CharField(max_length=255, default="")
+    message_ar = models.CharField(max_length=255, default="")
 
     class Meta:
         db_table = "Testimonial"

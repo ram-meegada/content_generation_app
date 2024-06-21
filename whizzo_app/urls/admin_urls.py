@@ -77,6 +77,7 @@ urlpatterns = [
     path("add-privacy-policy/",adminView.AddPrivacyPolicyView.as_view()),
     path("add-terms-condition/",adminView.AddTermsConditionView.as_view()),
     path("add-about-us/",adminView.AddAboutUsView.as_view()),
+    path("arabic-cms/",adminView.AddArabicValues.as_view()),
     path("get-cms-detail/",adminView.GetCmsDetailView.as_view()),
 
     path('add-testimonial/', adminView.AddTestimonialView.as_view()),

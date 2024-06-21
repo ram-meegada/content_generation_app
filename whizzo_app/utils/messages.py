@@ -24,6 +24,7 @@ RESENT_OTP = "Otp sent successfully"
 WRONG_OTP = "The otp you entered is incorrect"
 OTP_NOT_SENT="Otp not sent yet"
 OTP_VERIFIED="Otp verified successfully"
+ADD="Add successfully"
  
 ####### media #########
 MEDIA_UPLOADED = "Media uploaded successfully"

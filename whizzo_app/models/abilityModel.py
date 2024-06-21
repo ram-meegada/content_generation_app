@@ -10,6 +10,7 @@ class AbilityModel(models.Model):
     is_active = models.BooleanField(default=True)
     is_deleted = models.BooleanField(default=False)
     is_mcq = models.BooleanField(default=False)
+    is_arabic = models.BooleanField(default=False)
 
     class Meta:
         db_table = "Ability"

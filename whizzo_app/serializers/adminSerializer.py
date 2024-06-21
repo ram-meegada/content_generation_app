@@ -9,14 +9,14 @@ from whizzo_app.serializers.uploadMediaSerializer import CreateUpdateUploadMedia
 class CreateAbilitySerializer(serializers.ModelSerializer):
     class Meta:
         model = AbilityModel
-        fields = ["id", "question", "answer_option","corect_answer","is_mcq", "is_active", "created_at"]
+        fields = ["id", "question", "answer_option","corect_answer","is_mcq", "is_active", "created_at","is_arabic"]
 
 
 
 class CreateAcheivementSerializer(serializers.ModelSerializer):
     class Meta:
         model = AchievementModel
-        fields = ["id", "question", "answer_option","subject","corect_answer","is_mcq", "created_at", "is_active"]
+        fields = ["id", "question", "answer_option","subject","corect_answer","is_mcq", "created_at", "is_active","is_arabic"]
 
 
 class CreateSubjectSerializer(serializers.ModelSerializer):
@@ -96,7 +96,7 @@ class GeteditSubAdminSerializer(serializers.ModelSerializer):
 class PurposeSerializer(serializers.ModelSerializer):
     class Meta:
         model = PurposeModel
-        fields = ['id', 'name', 'detail', 'is_active']
+        fields = ['id', 'name', 'detail', 'is_active',"name_ar","detail_ar"]
 
 class GeteditpurposeStatusSerializer(serializers.ModelSerializer):
     class Meta:
@@ -201,6 +201,11 @@ class AddAboutUsSerializer(serializers.ModelSerializer):
         model = CmsModel
         fields = ["id","about_us"]
 
+class ArabicValueCMSSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CmsModel
+        fields = ["id","terms_condition","email","phone_no","country_code","privacy_policy","about_us","privacy_policy_ar","about_us_ar","terms_condition_ar"]
+
 class AddAdminSerializer(serializers.ModelSerializer):
     token = serializers.SerializerMethodField()
     class Meta:
@@ -232,7 +237,7 @@ class loginAdminSerializer(serializers.ModelSerializer):
 class TestimonialSerializer(serializers.ModelSerializer):
     class Meta:
         model = TestimonialModel
-        fields = ["id", "first_name", "last_name", "email", "country_code", "phone_no", "rating", "message", "profile_picture"]
+        fields = ["id", "first_name", "last_name", "email", "country_code", "phone_no", "rating", "message", "profile_picture","first_name_ar","last_name_ar","message_ar"]
 
 class GeteditTestimonialStatusSerializer(serializers.ModelSerializer):
     class Meta:
@@ -263,7 +268,7 @@ class CustomerSupportListSerializer(serializers.ModelSerializer):
 class NotificationListSerializer(serializers.ModelSerializer):
     class Meta:
         model = NotificationModel
-        fields = ['title',  'message', 'notification_for']
+        fields = ['title',  'message', 'notification_for',"title_ar","message_ar"]
 
 class UsersCsvSerializer(serializers.ModelSerializer):
     class Meta:

@@ -362,7 +362,7 @@ class AdminService:
 
     def get_all_ability(self, request):
         try:
-            data = AbilityModel.objects.all().order_by("-created_at")
+            data = AbilityModel.objects.filter(is_arabic = request.data["is_arabic"]).order_by("-created_at")
             pagination_obj = CustomPagination()
             search_keys = ["question__icontains", "answer_option__icontains"]
             result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.CreateAbilitySerializer, data)
@@ -510,7 +510,7 @@ class AdminService:
     
     def get_all_achievement(self, request):
         try:
-            data = AchievementModel.objects.all().order_by("-created_at")
+            data = AchievementModel.objects.filter(is_arabic = request.data["is_arabic"]).order_by("-created_at")
             pagination_obj = CustomPagination()
             search_keys = [ "question__icontains","corect_answer__icontains"]
             result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.CreateAcheivementSerializer, data)
@@ -801,6 +801,28 @@ class AdminService:
             return {"data": None, "message": message, "status": 200}
         else:
             return {"data": None, "message": serializer.errors, "status": 400}
+
+    def add_arabic_values(self, request):
+        try:
+            support_data = CmsModel.objects.filter(id=1)
+            if not support_data:
+                serializer = adminSerializer.ArabicValueCMSSerializer(data=request.data)
+                if serializer.is_valid():
+                    serializer.save()
+                    return {"data":serializer.data,"message":messages.ADD,"status":200}
+                else:
+                    return {"data":None,"message":messages.WENT_WRONG,"status":400}
+            else:
+                support_data = CmsModel.objects.get(id=1)
+                serializer = adminSerializer.ArabicValueCMSSerializer(support_data, data=request.data)
+                if serializer.is_valid():
+                    serializer.save()
+                    return {"data":serializer.data,"message":messages.ADD,"status":200}
+                else:
+                    return {"data":None,"message":messages.WENT_WRONG,"status":400}
+        except Exception as e:
+            return {"data":str(e),"message":messages.WENT_WRONG,"status":400}
+
         
 
     def get_all_cms_details(self, request):
