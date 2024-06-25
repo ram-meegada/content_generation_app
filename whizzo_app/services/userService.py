@@ -238,6 +238,9 @@ class UserService:
                 serializer = userSerializer.updateUserSerializer(user,data=request.data, context={"user_profile":request.data["profile_picture"],"purpose":request.data["purpose"]})
                 if serializer.is_valid():
                     serializer.save(profile_picture_id=request.data["profile_picture"], purpose_id=request.data["purpose"])
+                    if user.profile_status==2:
+                        user.profile_status = 3
+                        user.save()
                     return {"data": serializer.data, "message": "Profile updated successfully", "status": 200}
             else:
                 serializer = userSerializer.updateWithoutPPUserSerializer(user,data=request.data, context={"purpose":request.data["purpose"]})

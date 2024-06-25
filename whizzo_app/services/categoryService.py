@@ -103,7 +103,7 @@ def generate_file_name(name):
 
 
 def to_markdown(text):
-  text = text.replace('*', '')
+  text = text.replace('*', '').replace('#', '').replace("-", "")
   intent_text=(textwrap.indent(text, '', predicate=lambda _: True))
   return intent_text
 
@@ -475,6 +475,7 @@ class CategoryService:
                         {"type": "text",
                         # "text": f"generate a summary of this pdf file and the length of the summary should be strictly atleast 2000 words and give me only text no * and extra symbols"},
                         "text": f"Generate all the  vocabulary words you found in this pdf which you consider to be important as a reference point to the pdf from this pdf file. Format should be python list."},
+                        # "text": f"Find out important vocabulary words from the input which you consider to be important. Give only 20 percent of total words from the input. Format should be python list."},
                         {"type": "text", "text":text_data}
                     ]
                 )
@@ -1258,6 +1259,11 @@ class CategoryService:
             text= request.data.get("text")
             translator = GoogleTranslator(source="auto", target="ar")
             answer = translator.translate(text)
+            try:
+                answer = ast.literal_eval(answer)
+            except Exception as err:
+                print(err, type(err), '======')
+                pass    
             return {"data": answer, "message": messages.FETCH, "status": 200}
         except Exception as e:
             return {"error": str(e), "message": messages.WENT_WRONG, "status": 400}
@@ -1312,6 +1318,7 @@ class CategoryService:
                                 category=4,
                                 result=result
                 )
+                print(result, '-----result=======')
                 return{"data":result, "record_id": save_to_db.id, "message":messages.FETCH,"status":200}
             except Exception as e:
                 return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
@@ -1345,8 +1352,8 @@ class CategoryService:
                     QUERY=f"You are a topics list generator. Generate research topics list based on {topic}. Output should contain only three topics headings(numbered like 1,2,3) and strictly two side headings(numbered like i, ii, iii)."
                     response = llm.invoke(QUERY)
 
-                    print(response, '----')
                     result = to_markdown(response.content)
+                    print(result, '------')
                     return {"data": result, "message": "Research topics generated successfully", "status": 200}
                 elif get_research_record.research_type == 2:    
                     image_links = get_research_record.research_file_links
@@ -1466,6 +1473,7 @@ class CategoryService:
         get_research_record.result = final_response
         get_research_record.save()
         ##
+        # print(final_response, '=== final_response ====')
         return {"data": final_response, "message": "Details research generated successfully", "status": 200}
 
     def save_rsearch_file(self, request):
@@ -1551,7 +1559,7 @@ class CategoryService:
         message = HumanMessage(
             content=[
                 {"type": "text",
-                    "text": "These are some question and answers you have generated for my assigment previously.Now just add another key explanation and give explanation of that answer. And make sure to keep that response as it is by just adding explanation key, lastly provide the answers in json list format with keys (question_no, question, correct_answer, explanation, options(this field will will only be there if options are present else no need)"},
+                    "text": "These are some question and answers you have generated for my assigment previously.Now just add another key explanation and give explanation of that answer. And make sure to keep that response as it is by just adding explanation key, lastly provide the answers in json list of objects where each object should have keys (question_no, question, correct_answer, explanation, options(this field will will only be there if options are present else no need)"},
                 #  "text": f"list the answers for all questions present  in these given file's (don't leave any question ,even if there is breaks between questions)and provide in  json  format (questtions which have no options just give correct answers in concise manner) try writing answer in this way  (question no. ,question, options(this field will will only be there if options are present else no need ),correct answer) "},
                 {"type": "text", "text":text_data}
             ]
@@ -1693,14 +1701,21 @@ class CategoryService:
             django_file = File(in_memory_file, name=os.path.basename(file))
             result = self.gemini_solution_review(django_file)
             final_response = ""
+            last_ele = 0
             try:
                 for i in range(len(result)-1, -1, -1):
                     if result[i] == "}":
+                        last_ele = i
                         break
                 final_response = result[result.index("["): i+1] + "]"
                 final_response = json.loads(final_response)
-            except:
-                pass
+            except ValueError:
+                if result[0] == "{":
+                    result = "[" + result[result.index("{"): last_ele+1] + "]"
+                    final_response = json.loads(result)
+            except Exception as err:
+                print(err, type(err), '========')
+                return{"data": str(err), "message": "Please try again", "status": 400}
             try:
                 for i in final_response:
                     if not i.get("options"):
@@ -1713,17 +1728,20 @@ class CategoryService:
                 pass
             try:
                 for i in final_response:
-                    i["correct_answer"] = i["explanation"]
+                    if i["correct_answer"] is not None: 
+                        i["correct_answer"] = i["explanation"]
+                    elif i["explanation"] is not None:
+                        i["explanation"]=i["correct_answer"]
             except Exception as err:
                 pass
-
             if os.path.exists(file):
                 os.remove(file)
             if not final_response:
-                return {"data": "Empty Response", "message": "Please try again", "status": 200}
+                return {"data": "Empty Response", "message": "Please try again", "status": 400}
             return {"data": final_response, "message": "Review generated successfully", "status": 200}
-        except Exception as e:
-            return{"data": str(e), "message": "Please try again", "status": 400}
+        except Exception as error:
+            print(error, type(error), "2222222222222")
+            return{"data": str(error), "message": "Please try again", "status": 400}
         
     def get_assignment_solution_review_func(self, request):
         html_text = request.data["html_text"]
@@ -1735,7 +1753,7 @@ class CategoryService:
 
     def get_all_assignment(self, request):
         try:
-            data = AssignmentModel.objects.all().order_by("-created_at")
+            data = AssignmentModel.objects.filter(user=request.user.id).order_by("-created_at")
             pagination_obj = CustomPagination()
             search_keys = []
             result = pagination_obj.custom_pagination(request, search_keys, categorySerializer.CreateAssignmentSerializers, data)
