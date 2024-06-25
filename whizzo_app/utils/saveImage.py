@@ -11,7 +11,7 @@ secret_access_key = AWS_SECRET_KEY
 bucket_name = AWS_BUCKET_NAME
 
 def save_image(image):
-    image_name = "".join((image.name).split(" "))
+    image_name = "".join((image.name).split(" ")).replace("%", "")
     image_name = "{}_{}".format(random.randint(100000, 999999), image_name)
     s3 = boto3.client("s3", aws_access_key_id=access_key_id, aws_secret_access_key=secret_access_key)
     acl="public-read"

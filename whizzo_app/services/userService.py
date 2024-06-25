@@ -189,6 +189,7 @@ class UserService:
         
     def forgot_password(self, request):
         otp = sendMail.generate_otp()
+        print(request.data, 'payload==============')
         try:
             if "email" in request.data:
                 role =request.data.get("role")
@@ -231,6 +232,7 @@ class UserService:
         }
     
     def update_profile(self, request):
+        print(request.data,"=================payload=========")
         EMAIL_CHANGED = False
         check_email = UserModel.objects.filter(email=request.data["email"], role=2)
         if request.user.email != request.data["email"]:

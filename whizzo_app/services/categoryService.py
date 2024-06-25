@@ -1328,62 +1328,79 @@ class CategoryService:
             return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
         
     def regenerate_research_solution(self, request, id):
+        PAGE_REFERENCES = {1: (600, 1200), 2: (1800, 3000), 3: (4200, 7200), 4: (9000, 15000)}
         get_research_record = CategoryModel.objects.get(id=id)
         llm = ChatGoogleGenerativeAI(model="gemini-pro")
-        try:
-            if get_research_record.research_type == 1:
-                topic = get_research_record.topic
-                tone = get_research_record.tone
-                QUERY=f"You are a topics list generator. Generate research topics list based on {topic}. Output should contain only three topics headings(numbered like 1,2,3) and strictly two side headings(numbered like i, ii, iii)."
-                response = llm.invoke(QUERY)
-                result = to_markdown(response.content)
-                return {"data": result, "message": "Research topics generated successfully", "status": 200}
-            elif get_research_record.research_type == 2:    
-                image_links = get_research_record.research_file_links
-                QUERY = f"You are topics list generator. Generate research topics list based on links I provide to you. Output should contain only three topics headings(numbered like 1,2,3) and strictly two side headings(numbered like i, ii, iii)."
-                message_content = [
-                    {
-                        "type": "text",
-                        "text": QUERY,  
-                    }
-                ]
-                for image_link in image_links:
-                    message_content.append({
-                        "type": "image_url",
-                        "image_url": str(image_link)
-                    })
-                message = HumanMessage(content=message_content)
-                response = llm.invoke([message])
-                result = to_markdown(response.content)
-                return {"data": result, "message": "Research topics generated successfully", "status": 200}
-        except Exception as err:
-            return {"data": str(err), "message": messages.WENT_WRONG, "status": 400}
+        if request.GET.get("page") in ["1/", 1, "1"]:
+            try:
+                if get_research_record.research_type == 1:
+                    topic = get_research_record.topic
+                    # min_pages = PAGE_REFERENCES[get_research_record.page][0]
+                    # max_pages = PAGE_REFERENCES[get_research_record.page][1]
+                    # tone = get_research_record.tone
+                    # reference = get_research_record.reference
+                    # reduce_citations = get_research_record.reduced_citations
+                    # tone = get_research_record.tone
+                    # QUERY=F"You are research generator. Generate some theory on the topics which I provide you. Whole research should be of approximately {min_pages} to {max_pages} words with voice of tone as {tone} and take reference from {reference} with reduce citations as {reduce_citations}. Format should be descriptive. Keep the same name as topic heading which I provide you and also in same order of topics. Strictly keep Heading(numbered as 1,2,3) and side headings(numbered as i, ii, iii)."
+                    QUERY=f"You are a topics list generator. Generate research topics list based on {topic}. Output should contain only three topics headings(numbered like 1,2,3) and strictly two side headings(numbered like i, ii, iii)."
+                    response = llm.invoke(QUERY)
+
+                    print(response, '----')
+                    result = to_markdown(response.content)
+                    return {"data": result, "message": "Research topics generated successfully", "status": 200}
+                elif get_research_record.research_type == 2:    
+                    image_links = get_research_record.research_file_links
+                    QUERY = f"You are topics list generator. Generate research topics list based on links I provide to you. Output should contain only three topics headings(numbered like 1,2,3) and strictly two side headings(numbered like i, ii, iii)."
+                    # message_content = [
+                    #     {
+                    #         "type": "text",
+                    #         "text": QUERY,  
+                    #     }
+                    # ]
+                    # for image_link in image_links:
+                    #     message_content.append({
+                    #         "type": "image_url",
+                    #         "image_url": str(image_link)
+                    #     })
+                    response = pdf_processing(image_links[0], QUERY)
+                    final_response = response.replace("*", "").replace("-", "")
+                    # message = HumanMessage(content=message_content)
+                    # response = llm.invoke([message])
+                    # result = to_markdown(response.content)
+                    return {"data": final_response, "message": "Research topics generated successfully", "status": 200}
+            except Exception as err:
+                return {"data": str(err), "message": messages.WENT_WRONG, "status": 400}
+        else:
+            result = self.generate_detailed_research_based_on_topics(request, id)
+            print(result, '---result----')
+            return result
         
     def research_based_on_reference(self,request):
         try:
             llm = ChatGoogleGenerativeAI(model="gemini-pro-vision")
             description = request.data.get("description", "")
-            reduce_citation = request.data.get("reduce_citation", True)
+            reduce_citation = True if request.data.get("reduce_citation") == "true" else False
             image_links = []
+            print(dict(request.data)["files"], '-----')
             for img in dict(request.data)["files"]:
                 get_link = save_image(img)
                 image_links.append(get_link[0])
-            # query = f"You are a research generator. Generate research of mininimum 500 words from given file links and according to {description} and reduce citation will be {reduce_citation}."
             query = f"You are topics list generator. Generate research topics list based on links I provide to you with reduce citations as {reduce_citation}. Output should contain only three topics headings(numbered like 1,2,3) and strictly two side headings(numbered like i, ii, iii)."
-            message_content = [
-                {
-                    "type": "text",
-                    "text": query,  
-                }
-            ]
-            for image_link in image_links:
-                message_content.append({
-                    "type": "image_url",
-                    "image_url": str(image_link)
-                })
-            message = HumanMessage(content=message_content)
-            response = llm.invoke([message])
-            final_response = response.content.replace("*", "").replace("-", "")
+            response = pdf_processing(image_links[0], query)
+            # message_content = [
+            #     {
+            #         "type": "text",
+            #         "text": query,  
+            #     }
+            # ]
+            # for image_link in image_links:
+            #     message_content.append({
+            #         "type": "image_url",
+            #         "image_url": str(image_link)
+            #     })
+            # message = HumanMessage(content=message_content)
+            # response = llm.invoke([message])
+            final_response = response.replace("*", "").replace("-", "")
             save_to_db = CategoryModel.objects.create(
                                     user_id=request.user.id,
                                     description=description,
@@ -1406,24 +1423,31 @@ class CategoryService:
             max_pages = PAGE_REFERENCES[get_research_record.page][1]
             tone = get_research_record.tone
             reference = get_research_record.reference
+            reduce_citations = get_research_record.reduced_citations
         except KeyError:
             api_type = 2
             image_links = get_research_record.research_file_links
             descriptoin = get_research_record.description
+            reduce_citations = get_research_record.reduced_citations
         except Exception as err:
             return {"data": str(err), "message": messages.WENT_WRONG, "status": 400}
         llm = ChatGoogleGenerativeAI(model="gemini-pro")
         html_text = request.data.get("html_text")
         ### extract text from html
-        soup = BeautifulSoup(html_text, "html.parser")
-        all_topics = []
-        for ele in soup.find_all(["h1", "li"]):
-            all_topics.append(ele.get_text())
+        if html_text:
+            soup = BeautifulSoup(html_text, "html.parser")
+            all_topics = []
+            for ele in soup.find_all(["h1", "li"]):
+                all_topics.append(ele.get_text())
+                get_research_record.all_topics = all_topics
+                get_research_record.save()
+        else:
+            all_topics = get_research_record.all_topics        
         ####    
         if api_type == 1:
-            QUERY = f"You are research generator. Generate some theory on the topics which I provide you. Whole research should be of approximately {min_pages} to {max_pages} words with voice of tone as {tone} and take reference from {reference}. Format should be descriptive. Keep the same name as topic heading which I provide you and also in same order of topics."
+            QUERY = f"You are research generator. Generate some theory on the topics which I provide you. Whole research should be of approximately {min_pages} to {max_pages} words with voice of tone as {tone} and take reference from {reference} with reduce citations as {reduce_citations}. Format should be descriptive. Keep the same name as topic heading which I provide you and also in same order of topics. Strictly keep Heading(numbered as 1,2,3) and side headings(numbered as i, ii, iii)."
         elif api_type == 2:
-            QUERY = f"You are research generator. Generate some theory on the topics which I provide you. Whole research should be of approximately 400 to 800 words. Format should be descriptive. Keep the same name as topic heading which I provide you in list and also in same order of topics."
+            QUERY = f"You are research generator. Generate some theory on the topics which I provide you. Whole research should be of approximately 400 to 800 words along with reduce citations as {reduce_citations}. Format should be descriptive. Keep the same name as topic heading which I provide you in list and also in same order of topics. Strictly keep Heading(numbered as 1,2,3) and side headings(numbered as i, ii, iii)."
         message_content = [
             {
                 "type": "text",
@@ -1431,14 +1455,13 @@ class CategoryService:
             }
         ]
         for top in all_topics:
-            print(top, '---top----')
             message_content.append({
                 "type": "text",
                 "text": top
             })
         message = HumanMessage(content=message_content)
         response = llm.invoke([message])
-        final_response = response.content.replace("*", "")
+        final_response = response.content.replace("*", "").replace("#", "").replace("-", "")
         ## save record
         get_research_record.result = final_response
         get_research_record.save()
@@ -1455,7 +1478,7 @@ class CategoryService:
         
     def get_history_research(self, request):
         try:
-            research_obj = CategoryModel.objects.filter(user_id=request.user.id, category=4).order_by("-created_at")
+            research_obj = CategoryModel.objects.filter(user_id=request.user.id, category=4).order_by("-id")
             pagination_obj = CustomPagination()
             search_keys = []
             result = pagination_obj.custom_pagination(request, search_keys, categorySerializer.GetNoteListSerializer, research_obj)
@@ -1755,6 +1778,7 @@ class CategoryService:
         try:
             file_summary = FileSumarizationModel.objects.get(id=id)
             if request.data["type"] == 2: 
+                print("11111111111111111111111")
                 if file_summary.download_file:
                     return {"data": file_summary.download_file, "message":messages.UPDATED,"status":200}    
                 else:    
