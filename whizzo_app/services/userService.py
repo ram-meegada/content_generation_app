@@ -95,17 +95,17 @@ class UserService:
         GIVE_LOGIN_TOKEN = False
         try:
             if "email" in request.data:
-                role =request.data.get("role")
-                if role ==2:
-                    user = UserModel.objects.get(email=request.data["email"],role=role)
-                else:
-                    user = UserModel.objects.filter(email =request.data["email"]).exclude(role=2).first()
+                # role =request.data.get("role")
+                # if role ==2:
+                    # user = UserModel.objects.get(email=request.data["email"],role=role)
+                # else:
+                user = UserModel.objects.get(email =request.data["email"])
             elif "phone_no" in request.data:
-                role =request.data.get("role")
-                if role ==2:
-                    user = UserModel.objects.get(email=request.data["phone_no"],role=role)
-                else:
-                    user = UserModel.objects.filter(email =request.data["phone_no"]).exclude(role=2).first()
+                # role =request.data.get("role")
+                # if role ==2:
+                    # user = UserModel.objects.get(email=request.data["phone_no"],role=role)
+                # else:
+                user = UserModel.objects.get(email =request.data["phone_no"])
             else:
                 return {"data": None, "message": "Email or phone number not provided", "status": 400}
         except UserModel.DoesNotExist:
@@ -127,27 +127,25 @@ class UserService:
                 user.profile_status = 2
                 GIVE_LOGIN_TOKEN = True
         user.save()
-        user_serializer = userSerializer.GetUserSerializer(user, context={"give_login_token": GIVE_LOGIN_TOKEN})    
+        user_serializer = userSerializer.GetUserSerializer(user, context={"give_login_token": GIVE_LOGIN_TOKEN})
         return {"data": user_serializer.data, "message":  "OTP verified successfully", "status": 200}
-    
     def resend_otp(self, request):
         otp = sendMail.generate_otp()
         try:
             if "email" in request.data:
-                role =request.data.get("role")
-                if role ==2:
-                    user = UserModel.objects.get(email=request.data["email"],role=role)
-                else:
-                    user = UserModel.objects.filter(email =request.data["email"]).exclude(role=2).first()
+                # role =request.data.get("role")
+                # if role ==2:
+                user = UserModel.objects.get(email=request.data["email"])
+                # else:
+                    # user = UserModel.objects.filter(email =request.data["email"]).exclude(role=2).first()
                 Thread(target=sendMail.send_otp_to_mail, args=[request.data["email"], otp, user.username]).start()
                 # Thread(target=sendMail.send_otp_to_mail, args=[request.data["email"], otp]).start()
             elif "phone_no" in request.data:
-                
-                role =request.data.get("role")
-                if role ==2:
-                    user = UserModel.objects.get(email=request.data["phone_no"],role=role)
-                else:
-                    user = UserModel.objects.filter(email =request.data["phone_no"]).exclude(role=2).first()
+                # role =request.data.get("role")
+                # if role ==2:
+                    # user = UserModel.objects.get(email=request.data["phone_no"],role=role)
+                # else:
+                user = UserModel.objects.filter(email =request.data["phone_no"])
             else:
                 return {"data": None, "message": "Email or phone number not provided", "status": 400}
         except UserModel.DoesNotExist:
@@ -156,7 +154,6 @@ class UserService:
         user.otp = otp
         user.save()
         return {"data": None, "message":  "OTP sent successfully", "status": 200}
-    
     def change_password(self, request):
         try:
             user = UserModel.objects.get(id=request.user.id)
@@ -186,36 +183,32 @@ class UserService:
                 "message": "Old password is incorrect",
                 "status": status.HTTP_400_BAD_REQUEST
             }
-        
     def forgot_password(self, request):
         otp = sendMail.generate_otp()
-        print(request.data, 'payload==============')
         try:
             if "email" in request.data:
-                role =request.data.get("role")
-                if role ==2:
-                    user = UserModel.objects.get(email=request.data["email"],role=role)
-                else:
-                    user = UserModel.objects.filter(email =request.data["email"]).exclude(role=2).first()
+                # role =request.data.get("role")
+                # if role ==2:
+                user = UserModel.objects.get(email=request.data["email"])
+                # else:
+                    # user = UserModel.objects.filter(email =request.data["email"]).exclude(role=2).first()
             else:
                 return {"data": None, "message": "Email not provided", "status": 400}
         except UserModel.DoesNotExist:
             return {"data": None, "message":  messages.USER_NOT_FOUND, "status": 400}
         # Thread(target=sendMail.send_otp_to_mail, args=[request.data["email"], otp]).start()
         Thread(target=sendMail.send_otp_to_mail, args=[ request.data["email"], otp,user.username]).start()
-
         user.otp_sent_time= datetime.now(tz=pytz.UTC)
         user.otp = otp
         user.save()
-        return {"data": None, "message":  "Otp sent successfully", "status": status.HTTP_200_OK}    
-    
+        return {"data": None, "message":  "Otp sent successfully", "status": status.HTTP_200_OK}
     def reset_password(self, request):
         try:
-            role =request.data.get("role")
-            if role ==2:
-                user = UserModel.objects.get(email=request.data["email"],role=role)
-            else:
-                user = UserModel.objects.filter(email =request.data["email"]).exclude(role=2).first()
+            # role =request.data.get("role")
+            # if role ==2:
+            user = UserModel.objects.get(email=request.data["email"])
+            # else:
+                # user = UserModel.objects.filter(email =request.data["email"]).exclude(role=2).first()
         except UserModel.DoesNotExist:
             return {
                 "data": None,

@@ -579,7 +579,7 @@ class AdminService:
     def add_sub_admin(self, request):
         try:
             data = request.data
-            if UserModel.objects.filter(email=data["email"],role=3).first():
+            if UserModel.objects.filter(email=data["email"]).first():
                 return {'data': None, 'message': "Email already taken", 'status': 400}
 
             user_serializer = adminSerializer.CreateSubAdminSerializer(data=data)
