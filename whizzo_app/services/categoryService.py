@@ -413,6 +413,7 @@ class CategoryService:
                     self.translate_text_for_file_summarization(result, save_file_summary_record)
                 except:
                     pass    
+                print(result, "resulkt----------------------------------------")
                 return {"data": result, "record_id": save_file_summary_record.id, "message": messages.SUMMARY_GENERATED, "status": 200}
             except Exception as err:
                 return {"error": str(err), "message": messages.PLEASE_UPLOAD_AGAIN, "status": 400}
@@ -1473,7 +1474,7 @@ class CategoryService:
         get_research_record.result = final_response
         get_research_record.save()
         ##
-        # print(final_response, '=== final_response ====')
+        print(final_response, '=== final_response ====')
         return {"data": final_response, "message": "Details research generated successfully", "status": 200}
 
     def save_rsearch_file(self, request):
@@ -1700,6 +1701,7 @@ class CategoryService:
         # Wrap the BytesIO object with Django's File class
             django_file = File(in_memory_file, name=os.path.basename(file))
             result = self.gemini_solution_review(django_file)
+            print(result, '----result-----')
             final_response = ""
             last_ele = 0
             try:
@@ -1710,12 +1712,13 @@ class CategoryService:
                 final_response = result[result.index("["): i+1] + "]"
                 final_response = json.loads(final_response)
             except ValueError:
+                print("except ValueError-- except ValueError---")
                 if result[0] == "{":
                     result = "[" + result[result.index("{"): last_ele+1] + "]"
                     final_response = json.loads(result)
             except Exception as err:
                 print(err, type(err), '========')
-                return{"data": str(err), "message": "Please try again", "status": 400}
+                return{"data": "Please try again.", "message": "Please try again", "status": 400}
             try:
                 for i in final_response:
                     if not i.get("options"):
@@ -1728,10 +1731,10 @@ class CategoryService:
                 pass
             try:
                 for i in final_response:
-                    if i["correct_answer"] is not None: 
+                    # if i["explanation"] is not None:
+                    #     i["explanation"]=i["correct_answer"]
+                    if i["explanation"]: 
                         i["correct_answer"] = i["explanation"]
-                    elif i["explanation"] is not None:
-                        i["explanation"]=i["correct_answer"]
             except Exception as err:
                 pass
             if os.path.exists(file):
