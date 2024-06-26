@@ -243,13 +243,11 @@ class DecryptionMiddleware:
 
                 # Extract string until the last '}'
                 decrypted_string = decrypted_string.rsplit('}', 1)[0] + '}'
-                print(decrypted_string, "Processed Decrypted String")
 
                 # Parse the extracted string as JSON
                 data_dict = json.loads(decrypted_string)
 
                 # Extract the authorization token
-                print(data_dict)
                 # authorization_token = data_dict.get('authorization', '')
                 authorization_token = data_dict.get('authorization', '')
                 request.META["HTTP_AUTHORIZATION"] = data_dict.get('authorization', '')
@@ -273,7 +271,7 @@ class DecryptionMiddleware:
                         data = json.loads(request.body)
                         updated_data = payload_decrypt(data)
                         request._body = json.dumps(updated_data).encode('utf-8')
-                    except:
+                    except Exception as err:
                         pass
             elif request.method in ["POST", "PUT"]:
                 try:

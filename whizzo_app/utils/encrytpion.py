@@ -34,8 +34,8 @@ def payload_decrypt(data):
     decipher = AES.new(hash_bytes, AES.MODE_CBC, iv)
     decrypted_bytes = decipher.decrypt(sek_bytes)
     # string_data = decrypted_bytes.decode()
-    print(decrypted_bytes,'decrypted_bytes')
-    decrypted = decrypted_bytes.decode('ascii')
+    # decrypted = decrypted_bytes.decode('ascii')
+    decrypted = decrypted_bytes.decode('utf-8')
     # cleaned_string = re.sub(r'[^a-zA-Z0-9\s{}:,._@""()\[\]]', '', a_decrypted)
     # converted_string = json.loads(cleaned_string)
     # print(converted_string,'converted_string')
@@ -49,6 +49,7 @@ def payload_decrypt(data):
             break
     # if "null" in decrypted_string:
     json_ans = json.loads(decrypted_string)
+    print(json_ans, "---------- json ans -------------")
     return json_ans
     # json_ans = ast.literal_eval(decrypted_string)
     # return json_ans
