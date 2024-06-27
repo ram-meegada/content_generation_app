@@ -1799,8 +1799,11 @@ class CategoryService:
         try:
             file_summary = FileSumarizationModel.objects.get(id=id)
             if request.data["type"] == 2: 
-                print("11111111111111111111111")
-                if file_summary.download_file:
+                if request.data.get("new"):
+                    file = self.html_to_pdf(request)
+                    file_summary.download_file = file    
+                    file_summary.save()
+                elif not request.data.get("new") and file_summary.download_file:
                     return {"data": file_summary.download_file, "message":messages.UPDATED,"status":200}    
                 else:    
                     file = self.html_to_pdf(request)
