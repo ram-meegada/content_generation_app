@@ -1573,7 +1573,7 @@ class CategoryService:
     def text_translation(self, request):
         text = request.data.get("text")
         if isinstance(text, list):
-            query = "You are english to arabic translator. Translate the text to arabic which I provide you in and don't translate the key names. Format should be python json list."
+            query = "You are english to arabic translator. Translate the all the words to arabic wherever you find which I provide you and don't translate the key names. Format should be python json list."
             text = json.dumps(text)
             result = self.gemini_solution_for_text_translation(text, query)
             final_response = json.loads(result)
