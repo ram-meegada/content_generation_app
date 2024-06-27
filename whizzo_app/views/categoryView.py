@@ -176,6 +176,12 @@ class GetAssignmentSolutionView(APIView):
     def post(self, request):
         result = category_obj.get_assignment_solution(request)
         return Response(result, status = result["status"])
+        
+class TextTranslationView(APIView):
+    permission_classes = [AllowAny]
+    def post(self, request):
+        result = category_obj.text_translation(request)
+        return Response(result, status = result["status"])
     
 class GetAssignmentSolutionReviewView(APIView):
     def post(self, request, id):

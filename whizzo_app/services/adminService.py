@@ -22,7 +22,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from io import BytesIO
 from PyPDF2 import PdfReader
 import textwrap
-
+import string
 import urllib.request as urlopener
 from PyPDF2 import PdfReader
 from io import BytesIO
@@ -1008,10 +1008,25 @@ class AdminService:
                             break
                     final_response = result[result.index("["): i+1] + "]"
                     final_response = json.loads(final_response)
-                except:
+                except Exception as err:
+                    print(err, "1111111111111111")
                     pass
                 try:
+                    is_arabic = True
+                    all_alphabets = string.ascii_letters 
+                    first_question = final_response[0]["question"]
+                    for i in first_question:
+                        if i in all_alphabets:
+                            is_arabic = False
+                            break
+                except Exception as err:
+                    print(err, "5555555555555555555555555555555555555")
+
+                    pass
+                print("333333333333333333333333333333333",final_response,"444444444444444444444444444", type(final_response))
+                try:
                     for i in final_response:
+                        print(i,"123456789234567890345678")
                         if not i.get("answer_option"):
                             i["question_type"] = True
                         elif not i["answer_option"]:
@@ -1020,12 +1035,14 @@ class AdminService:
                             i["question_type"] = False
                         final_data = AbilityModel.objects.create(
                             question=i["question"],
-                            answer_option=i["answer_options"],
+                            answer_option=i["answer_option"],
                             corect_answer=i["correct_answer"],
-                            is_mcq=i["question_type"]  
+                            is_mcq=i["question_type"],
+                            is_arabic=is_arabic  
                         )
                         final_data.save()
-                except:
+                except Exception as err:
+                    print(err, "222222222222222222222222222222222222222222222222222222222222222222222")
                     pass         
                 if not final_response:
                     return {"data": None, "message": "Please upload the file again", "status": 200}
@@ -1041,7 +1058,7 @@ class AdminService:
         message = HumanMessage(
             content=[
                 {"type": "text",
-                    "text": "generate 20 multiple choice questions with  four different options to choose and correct answers for this document and make in python json list format with these keys (question , answer_option ,correct_answer(make sure the spellings remain same as here for keys ))"},
+                    "text": "generate 20 multiple choice questions with  four different options to choose and correct answers for this document. Fomrat should be in python json list format with these keys (question , answer_option ,correct_answer(make sure the spellings remain same as here for keys ), (generate data in same language as text data(language options available english and arabic))). Make sure to keep constraint on non ascii characters"},
                 {"type": "text", "text":text_data}
             ]
         )
