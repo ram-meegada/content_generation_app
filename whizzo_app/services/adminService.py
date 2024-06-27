@@ -361,8 +361,10 @@ class AdminService:
 # ability
 
     def get_all_ability(self, request):
+        print(request.data, '---------------')
         try:
-            data = AbilityModel.objects.filter(is_arabic = request.data["is_arabic"]).order_by("-created_at")
+            data = AbilityModel.objects.all().order_by("-created_at")
+            print(data, '---data----')
             pagination_obj = CustomPagination()
             search_keys = ["question__icontains", "answer_option__icontains"]
             result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.CreateAbilitySerializer, data)
@@ -510,7 +512,7 @@ class AdminService:
     
     def get_all_achievement(self, request):
         try:
-            data = AchievementModel.objects.filter(is_arabic = request.data["is_arabic"]).order_by("-created_at")
+            data = AchievementModel.objects.all().order_by("-created_at")
             pagination_obj = CustomPagination()
             search_keys = [ "question__icontains","corect_answer__icontains"]
             result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.CreateAcheivementSerializer, data)

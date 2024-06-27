@@ -184,12 +184,12 @@ class AddContactSupportSerializer(serializers.ModelSerializer):
 class AddPrivacyPolicySerializer(serializers.ModelSerializer):
     class Meta:
         model = CmsModel
-        fields = ["id","privacy_policy"]
+        fields = ["id","privacy_policy", "privacy_policy_ar"]
 
 class AddTermsConditionSerializer(serializers.ModelSerializer):
     class Meta:
         model = CmsModel
-        fields = ["id","terms_condition"]
+        fields = ["id","terms_condition", "terms_condition_ar"]
 
 class GetAllTermsConditionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -199,7 +199,7 @@ class GetAllTermsConditionSerializer(serializers.ModelSerializer):
 class AddAboutUsSerializer(serializers.ModelSerializer):
     class Meta:
         model = CmsModel
-        fields = ["id","about_us"]
+        fields = ["id","about_us", "about_us_ar"]
 
 class ArabicValueCMSSerializer(serializers.ModelSerializer):
     class Meta:
@@ -248,7 +248,7 @@ class GetTestimonialSerializer(serializers.ModelSerializer):
     profile_picture = CreateUpdateUploadMediaSerializer()
     class Meta:
         model = TestimonialModel
-        fields = ["id","first_name","last_name","email","rating","message","profile_picture","country_code", "phone_no","is_active"]
+        fields = ["id","first_name","last_name","email","rating","message","profile_picture","country_code", "phone_no","is_active", "first_name_ar","last_name_ar","message_ar"]
 
 
 class CustomerSupportListSerializer(serializers.ModelSerializer):
