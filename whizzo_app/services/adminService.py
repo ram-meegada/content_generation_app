@@ -1023,7 +1023,6 @@ class AdminService:
                     print(err, "5555555555555555555555555555555555555")
 
                     pass
-                print("333333333333333333333333333333333",final_response,"444444444444444444444444444", type(final_response))
                 try:
                     for i in final_response:
                         print(i,"123456789234567890345678")
@@ -1042,7 +1041,7 @@ class AdminService:
                         )
                         final_data.save()
                 except Exception as err:
-                    print(err, "222222222222222222222222222222222222222222222222222222222222222222222")
+                    print(err, "2222222222222222222")
                     pass         
                 if not final_response:
                     return {"data": None, "message": "Please upload the file again", "status": 200}
