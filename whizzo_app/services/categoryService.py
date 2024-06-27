@@ -1570,6 +1570,34 @@ class CategoryService:
         return result
     
 ##### assignment solution
+    def text_translation(self, request):
+        text = request.data.get("text")
+        if isinstance(text, list):
+            query = "You are english to arabic translator. Translate the text to arabic which I provide you in and don't translate the key names. Format should be python json list."
+            text = json.dumps(text)
+            result = self.gemini_solution_for_text_translation(text, query)
+            final_response = json.loads(result)
+        else:
+            query = "You are english to arabic translator. Translate the text to arabic which I provide you.Output format should be proper human readable text ."    
+            result = self.gemini_solution_for_text_translation(text, query)
+            final_response = result
+            print(result, '------')
+        return {"data": final_response, "message": "Text translated successfully.", "status": 200}
+   
+    def gemini_solution_for_text_translation(self, text, query):
+        llm = ChatGoogleGenerativeAI(model="gemini-pro")
+        text_data = text
+        message = HumanMessage(
+            content=[
+                {"type": "text",
+                    "text": query},
+                {"type": "text", "text":text_data}
+            ]
+        )
+        response = llm.invoke([message])
+        result = to_markdown(response.content)
+        return result
+
     def get_assignment_solution(self, request):
         if int(request.data["type"]) == 1:
             file_link = request.FILES.get("file_link")
