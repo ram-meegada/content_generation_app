@@ -250,12 +250,15 @@ class SendFileToMailByToken(APIView):
     
 
 
-class ArticleView(APIView):
-    permission_classes = [AllowAny]
+class ArticleListView(APIView):
     def post(self, request):
-        result = category_obj.get_article_response(request)
+        result = category_obj.get_article_response_list(request)
         return Response(result, status = result["status"])
     
+class DetailedArticleView(APIView):
+    def post(self, request, id):
+        result = category_obj.generate_detailed_article_based_on_topics(request, id)
+        return Response(result, status = result["status"])
 
 class AbilitesCategory(APIView):
     permission_classes = [AllowAny]

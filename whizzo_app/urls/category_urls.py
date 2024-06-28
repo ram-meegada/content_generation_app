@@ -66,11 +66,12 @@ urlpatterns = [
     
     # #### articles #####
     # path("get-articles-response/", categoryView.GetArticlesView.as_view()),
+    path("article/",categoryView.ArticleListView.as_view()),
+    path("detailed-article/<int:id>/", categoryView.DetailedArticleView.as_view()),
 
     ####common for all #####
     path("send-file-to-mail/",categoryView.SendFileToMailByToken.as_view()),
 
-    path("article/",categoryView.ArticleView.as_view()),
 
 ]
 
