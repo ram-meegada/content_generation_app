@@ -76,6 +76,7 @@ from django.core.files.uploadedfile import UploadedFile
 # from spire.presentation.common import *
 # from spire.presentation import *
 from bs4 import BeautifulSoup
+from whizzo_app.models.articleModel import ArticleModel
 
 pytesseract.pytesseract.tesseract_cmd = 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
 
@@ -1928,33 +1929,71 @@ class CategoryService:
 
 # articles
 
-    def get_article_response(self, request):
+    def get_article_response_list(self, request):
         
         topic = request.data.get("topic")
         words = request.data.get("words")
         language = request.data.get("language")
         region = request.data.get("region")
-        tone_of_voice = request.data.get("tone")
+        tone = request.data.get("tone")
         pov = request.data.get("pronouns")
 
         llm = ChatGoogleGenerativeAI(model="gemini-pro")
         try:
-            message_content = (
-                f"Generate an article on {topic} in {tone_of_voice} tone of voice from a {pov} point of view "
-                f"in {language} language for a person from {region} in {words} words and give me only text "
-                "no * and extra symbols"
-            )
+            message_content_1=f"Generate artcle topics list based on {topic} in {tone} tone of voice from a {pov} point of view in {language} language for a person from {region}. Output should contain only three topics headings(numbered like 1,2,3) and strictly two side headings(numbered like i, ii, iii)."
+            message_content = message_content_1
             message = HumanMessage(
                 content=[
                     {"type": "text", "text": message_content}
                 ]
             )
-            
             response = llm.invoke([message])
             result = to_markdown(response.content)
-            return{"data":result,"message":"Article generated successfully.","status":200}
+
+            save_article = ArticleModel.objects.create(
+                user_id=request.user.id,
+                topic=topic,
+                language=language,
+                region=region,
+                pov=pov,
+                words=words,
+                tone=tone,
+                result=result
+            )
+
+            return{"data":result, "record_id": save_article.id, "message":"Article generated successfully.","status":200}
         except Exception as e:
             return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
+
+
+       
+   # def get_article_response(self, request):
+        
+    #     topic = request.data.get("topic")
+    #     words = request.data.get("words")
+    #     language = request.data.get("language")
+    #     region = request.data.get("region")
+    #     tone_of_voice = request.data.get("tone")
+    #     pov = request.data.get("pronouns")
+
+    #     llm = ChatGoogleGenerativeAI(model="gemini-pro")
+    #     try:
+    #         
+
+    #         message_content_1 = f"Generate an article  based on these {result} topics list considering that the article is on {topic} in {tone_of_voice} tone of voice from a {pov} point of view in {language} language for a person from {region} in {words} words  and give image  that is suitable for article from popular verified sources and the image is not deleted"
+    #         message_content = message_content_1
+    #         message = HumanMessage(
+    #             content=[
+    #                 {"type": "text", "text": message_content}
+    #             ]
+    #         )
+    #         response = llm.invoke([message])
+    #         results = to_markdown(response.content)
+
+
+    #         return{"data":results,"message":"Article generated successfully.","status":200}
+    #     except Exception as e:
+    #         return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
 
 
 ###common for all ####
@@ -1970,9 +2009,6 @@ class CategoryService:
         except Exception as e:
             return{"data":None,"message":messages.WENT_WRONG,"status":400}
 
-
-#testing
-# articles and achievement 
 
 ###ablities 
 
