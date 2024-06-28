@@ -1472,11 +1472,17 @@ class CategoryService:
         response = llm.invoke([message])
         final_response = response.content.replace("*", "").replace("#", "").replace("-", "")
         ## save record
-        get_research_record.result = final_response
-        get_research_record.save()
+        # get_research_record.result = final_response
+        # get_research_record.save()
         ##
-        print(final_response, '=== final_response ====')
+        # print(final_response, '=== final_response ====')
         return {"data": final_response, "message": "Detailed research generated successfully", "status": 200}
+    
+    def save_research_topic_list(self, request, id):
+        research_obj = CategoryModel.objects.get(id=id)
+        research_obj.result = request.data.get("text")
+        research_obj.save()
+        return {"data": "", "message": messages.RESEARCH_SAVED, "status": 200}
 
     def save_rsearch_file(self, request):
         try:
@@ -1574,7 +1580,7 @@ class CategoryService:
     def text_translation(self, request):
         text = request.data.get("text")
         if isinstance(text, list):
-            query = "You are english to arabic translator. Translate the all the words to arabic wherever you find which I provide you and don't translate the key names. Format should be python json list."
+            query = "You are english to arabic translator. Translate all the words to arabic wherever you find which I provide you and don't translate the key names. Format should be python json list."
             text = json.dumps(text)
             result = self.gemini_solution_for_text_translation(text, query)
             final_response = json.loads(result)

@@ -154,6 +154,11 @@ class DetailedResearchView(APIView):
         result = category_obj.generate_detailed_research_based_on_topics(request, id)
         return Response(result, status = result["status"])
 
+class SaveResearchTopicsView(APIView):
+    def post(self, request, id):
+        result = category_obj.save_research_topic_list(request, id)
+        return Response(result, status = result["status"])
+
 class GetAllResearchView(APIView):
     def post(self, request):
         result = category_obj.get_history_research(request)

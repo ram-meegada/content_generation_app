@@ -44,8 +44,10 @@ urlpatterns = [
 
     #### research ####
     path("get-research-answer/", categoryView.GetResearchAnswerView.as_view()),
+
     path("regenerate-research-answer/<int:id>/", categoryView.RegenerateResearchAnswerView.as_view()),
     path("detailed-research-answer/<int:id>/", categoryView.DetailedResearchView.as_view()),
+    path("save-research-topics/<int:id>/", categoryView.SaveResearchTopicsView.as_view()),
     path("research-answer-by-upload-reference/", categoryView.UploadReferenceForResearchView.as_view()),
     path("get-all-listing-research/", categoryView.GetAllResearchView.as_view()),
     path("get-research-by-id/<int:id>/", categoryView.GetResearchByIdView.as_view()),
