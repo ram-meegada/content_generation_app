@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from whizzo_app.models.assignmentModel import AssignmentModel
 from whizzo_app.models.categoryModel import CategoryModel
-from whizzo_app.models import FileSumarizationModel, NoteModel, ReseaerchModel, FileConversationModel
+from whizzo_app.models import FileSumarizationModel, NoteModel, ReseaerchModel, FileConversationModel, ArticleModel
 from whizzo_app.serializers.uploadMediaSerializer import CreateUpdateUploadMediaSerializer
 from whizzo_app.models.uploadMediaModel import UploadMediaModel
 
@@ -40,6 +40,11 @@ class GetNoteListSerializer(serializers.ModelSerializer):
     class Meta:
         model = CategoryModel
         fields = ["id", "topic", "created_at", "updated_at", "media", "result"]        
+
+class GetArticlesListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ArticleModel
+        fields = ["id", "topic", "created_at", "updated_at", "result"]        
     # def get_category(self, obj):
     #     try:
     #         return obj.get_category_display()
