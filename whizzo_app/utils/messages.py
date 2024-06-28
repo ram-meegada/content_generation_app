@@ -104,3 +104,4 @@ PROTECTED_PDF = "The file you provided is password protected. We donot have acce
 
 
 RESEARCH_GENERATED = "Research generated successfully."
+RESEARCH_SAVED = "Research topics saved successfully"
