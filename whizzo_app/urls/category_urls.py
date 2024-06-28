@@ -66,8 +66,12 @@ urlpatterns = [
     
     # #### articles #####
     # path("get-articles-response/", categoryView.GetArticlesView.as_view()),
-    path("article/",categoryView.ArticleListView.as_view()),
-    path("detailed-article/<int:id>/", categoryView.DetailedArticleView.as_view()),
+    path("article-topics/", categoryView.ArticleListView.as_view()),
+    path("regenerate-article/<int:id>/", categoryView.RegenerateArticleView.as_view()),
+    path("detailed-article/", categoryView.DetailedArticleView.as_view()),
+    path("articles/", categoryView.ArticlesListingView.as_view()),
+    path("article/<int:id>/", categoryView.GetArticleByIdView.as_view()),
+    path("download-article/", categoryView.DownloadArticleView.as_view()),
 
     ####common for all #####
     path("send-file-to-mail/",categoryView.SendFileToMailByToken.as_view()),
