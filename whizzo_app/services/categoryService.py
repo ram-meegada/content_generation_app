@@ -268,62 +268,66 @@ def pdf_processing(pdf_file , query):
 class CategoryService:
     def generate_testing_category_result(self, request):
         try:
-            check_incomplete_test = CategoryModel.objects.filter(user_id=request.user.id, 
-                                                           category=1, #static because this api is for testing category
-                                                           sub_category=request.data["sub_category"],
-                                                           is_active=True
-                                                           )
-            if check_incomplete_test.exists():
-                return {"data": check_incomplete_test.first().result, "message": messages.INCOMPLETE_PREVIOUS_TEST, "status": 200}
-
-            file_links = request.data["file_links"]
+            file_links = request.data["file"]
             sub_category = request.data["sub_category"]
+            api_type = request.data["type"]
             final_response = []
-            for file in file_links:
-                if file.endswith((".jpeg",".png",".jpg",".webp")):
-                    if sub_category == 1:
-                        query = f"generate {settings.NUMBER_OF_QUESTIONS} mcqs with options and answers for this image and make in python json list format."
+            if sub_category == 1:
+                if api_type == 1:
+                    number_of_questions = int(settings.NUMBER_OF_QUESTIONS)//len(file_links)
+                    for file in file_links:
+                        query = f"Generate {number_of_questions} mcqs with options and answers for this image and make in python json list format. Keys should be 'question_no', 'question', 'answer_option', 'correct_answer'."
                         result = image_processing(file, query)
                         json_result = self.jsonify_response(result)
                         final_response += json_result
-                    elif  sub_category == 2:
-                        query = f"generate {settings.NUMBER_OF_QUESTIONS} flashcards for this image and make in python json list format. make a name is frontside and backside not any other name for this and give me only one answer for this."
+                elif api_type == 2:
+                    query = f"Generate {settings.NUMBER_OF_QUESTIONS} mcqs with options and answers for this input. Format should be in python json list. Keys should be 'question_no', 'question', 'answer_option', 'correct_answer'."
+                    result = pdf_processing(file_links[0], query)
+                    json_result = self.jsonify_response(result)
+                    final_response = json_result
+            elif sub_category == 2:
+                if api_type == 1:        
+                    number_of_questions = int(settings.NUMBER_OF_QUESTIONS)//len(file_links)
+                    for file in file_links:
+                        query = f"Generate {number_of_questions} flashcards for this input. Format should be in python json list. Keys should be 'question', 'answer'"
                         result = image_processing(file, query)
                         json_result = self.jsonify_response(result)
                         final_response += json_result
+                elif api_type == 2:
+                    query = f"Generate {settings.NUMBER_OF_QUESTIONS} flashcards for this input. Format should be in python json list. Keys should be 'question', 'answer'"
+                    result = pdf_processing(file_links[0], query)
+                    json_result = self.jsonify_response(result)
+                    final_response = json_result
 
-            create_category = CategoryModel.objects.create(user_id=request.user.id, 
-                                                           category=1, #static because this api is for testing category
-                                                           sub_category=request.data["sub_category"],
-                                                           result=final_response
-                                                           )
-
+            # create_category = CategoryModel.objects.create(user_id=request.user.id, 
+            #                                                category=1, #static because this api is for testing category
+            #                                                sub_category=request.data["sub_category"],
+            #                                                result=final_response
+            #                                                )
             return {"data": final_response, "message": "Result generated successfully", "status": 200}
         except Exception as error:
             return {"data": str(error), "message": "Something went wrong", "status": 400}
     
     def generate_testing_category_result_pdf(self , request):
-            file_links = request.data["file_links"]
-            sub_category = request.data["sub_category"]
-            final_response = []
-            for file in file_links:         
-                if file.endswith(".pdf"):
-                    if sub_category == 1:
-                        query = f"generate {settings.NUMBER_OF_QUESTIONS} mcqs with options and answers for this image and make in python json list format."
-                        result = pdf_processing(file , query)
-                        json_result = self.jsonify_response(result)
-                        final_response.append(json_result)
-                    elif  sub_category == 2:
-                        query = f"generate {settings.NUMBER_OF_QUESTIONS} flashcards for this image and make in python json list format. make a name is frontside and backside not any other name for this and give me only one answer for this."
-                        result = pdf_processing(file , query)
-                        json_result = self.jsonify_response(result)
-                        final_response.append(json_result)
-            create_category = CategoryModel.objects.create(user_id=request.user.id, 
-                                                           category=1, #static because this api is for testing category
-                                                           sub_category=request.data["sub_category"],
-                                                           result=final_response
-                                                           )            
-            return {"data": final_response, "message": "Result generated successfully", "status": 200}
+        file_link = request.data["file_link"]
+        sub_category = request.data["sub_category"]
+        final_response = []
+        if sub_category == 1:
+            query = f"Generate {settings.NUMBER_OF_QUESTIONS} mcqs with options and answers for this input. Format should be in python json list."
+            result = pdf_processing(file_link, query)
+            json_result = self.jsonify_response(result)
+            final_response.append(json_result)
+        elif  sub_category == 2:
+            query = f"Generate {settings.NUMBER_OF_QUESTIONS} flashcards for this input. Format should be in python json list."
+            result = pdf_processing(file_link, query)
+            json_result = self.jsonify_response(result)
+            final_response.append(json_result)
+        create_category = CategoryModel.objects.create(user_id=request.user.id, 
+                                                        category=1, #static because this api is for testing category
+                                                        sub_category=request.data["sub_category"],
+                                                        result=final_response
+                                                        )            
+        return {"data": final_response, "message": "Result generated successfully", "status": 200}
 
     def jsonify_response(self, result):
         for i, j in enumerate(result):
@@ -333,6 +337,8 @@ class CategoryService:
             if result[end] == "]":
                 break
         final_result = json.loads(result[i:end+1])
+        for i in final_result:
+            i["user_answer"] = ""
         return final_result
 
     def submit_test_and_update_result(self, request):
