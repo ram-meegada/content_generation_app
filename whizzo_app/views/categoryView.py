@@ -19,12 +19,12 @@ class GenerateTestingCategoryResponseViewPdf(APIView):
         return Response(result, status = result["status"])
 
 class SubmitTestAndUpdateResultView(APIView):
-    def post(self, request):
-        result = category_obj.submit_test_and_update_result(request)
+    def post(self, request, id):
+        result = category_obj.submit_test_and_update_result(request, id)
         return Response(result, status = result["status"])
 
 class TestingCategoryPastListingView(APIView):
-    def get(self, request):
+    def post(self, request):
         result = category_obj.previous_tests_listing(request)
         return Response(result, status = result["status"])
 
@@ -154,6 +154,11 @@ class DetailedResearchView(APIView):
         result = category_obj.generate_detailed_research_based_on_topics(request, id)
         return Response(result, status = result["status"])
 
+class SaveResearchTopicsView(APIView):
+    def post(self, request, id):
+        result = category_obj.save_research_topic_list(request, id)
+        return Response(result, status = result["status"])
+
 class GetAllResearchView(APIView):
     def post(self, request):
         result = category_obj.get_history_research(request)
@@ -254,10 +259,30 @@ class ArticleListView(APIView):
     def post(self, request):
         result = category_obj.get_article_response_list(request)
         return Response(result, status = result["status"])
+
+class RegenerateArticleView(APIView):
+    def get(self, request, id):
+        result = category_obj.regenerate_article(request, id)
+        return Response(result, status = result["status"])
     
 class DetailedArticleView(APIView):
-    def post(self, request, id):
-        result = category_obj.generate_detailed_article_based_on_topics(request, id)
+    def post(self, request):
+        result = category_obj.generate_detailed_article_based_on_topics(request)
+        return Response(result, status = result["status"])
+
+class ArticlesListingView(APIView):
+    def post(self, request):
+        result = category_obj.get_article_history(request)
+        return Response(result, status = result["status"])
+
+class GetArticleByIdView(APIView):
+    def get(self, request, id):
+        result = category_obj.get_article_by_id(request, id)
+        return Response(result, status = result["status"])
+
+class DownloadArticleView(APIView):
+    def post(self, request):
+        result = category_obj.download_article(request)
         return Response(result, status = result["status"])
 
 class AbilitesCategory(APIView):

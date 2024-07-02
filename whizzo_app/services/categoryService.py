@@ -18,7 +18,7 @@ import textwrap
 import urllib.request as urlopener
 from PyPDF2 import PdfReader
 from io import BytesIO
-from whizzo_app.models import FaqModel,CmsModel, UserModel, FileSumarizationModel, NoteModel
+from whizzo_app.models import FaqModel,CmsModel, UserModel, FileSumarizationModel, NoteModel, TestingModel
 from whizzo_app.utils import messages
 from whizzo_app.serializers import categorySerializer, adminSerializer
 from deep_translator import GoogleTranslator
@@ -268,62 +268,66 @@ def pdf_processing(pdf_file , query):
 class CategoryService:
     def generate_testing_category_result(self, request):
         try:
-            check_incomplete_test = CategoryModel.objects.filter(user_id=request.user.id, 
-                                                           category=1, #static because this api is for testing category
-                                                           sub_category=request.data["sub_category"],
-                                                           is_active=True
-                                                           )
-            if check_incomplete_test.exists():
-                return {"data": check_incomplete_test.first().result, "message": messages.INCOMPLETE_PREVIOUS_TEST, "status": 200}
-
-            file_links = request.data["file_links"]
+            file_links = request.data["file"]
             sub_category = request.data["sub_category"]
+            api_type = request.data["type"]
             final_response = []
-            for file in file_links:
-                if file.endswith((".jpeg",".png",".jpg",".webp")):
-                    if sub_category == 1:
-                        query = f"generate {settings.NUMBER_OF_QUESTIONS} mcqs with options and answers for this image and make in python json list format."
+            if sub_category == 1:
+                if api_type == 1:
+                    number_of_questions = int(settings.NUMBER_OF_QUESTIONS)//len(file_links)
+                    for file in file_links:
+                        query = f"Generate {number_of_questions} mcqs with options and answers for this image and make in python json list format. Keys should be 'question_no', 'question', 'answer_option', 'correct_answer'."
                         result = image_processing(file, query)
                         json_result = self.jsonify_response(result)
                         final_response += json_result
-                    elif  sub_category == 2:
-                        query = f"generate {settings.NUMBER_OF_QUESTIONS} flashcards for this image and make in python json list format. make a name is frontside and backside not any other name for this and give me only one answer for this."
+                elif api_type == 2:
+                    query = f"Generate {settings.NUMBER_OF_QUESTIONS} mcqs with options and answers for this input. Format should be in python json list. Keys should be 'question_no', 'question', 'answer_option', 'correct_answer'."
+                    result = pdf_processing(file_links[0], query)
+                    json_result = self.jsonify_response(result)
+                    final_response = json_result
+            elif sub_category == 2:
+                if api_type == 1:        
+                    number_of_questions = int(settings.NUMBER_OF_QUESTIONS)//len(file_links)
+                    for file in file_links:
+                        query = f"Generate {number_of_questions} flashcards for this input. Format should be in python json list. Keys should be 'question', 'answer'"
                         result = image_processing(file, query)
                         json_result = self.jsonify_response(result)
                         final_response += json_result
+                elif api_type == 2:
+                    query = f"Generate {settings.NUMBER_OF_QUESTIONS} flashcards for this input. Format should be in python json list. Keys should be 'question', 'answer'"
+                    result = pdf_processing(file_links[0], query)
+                    json_result = self.jsonify_response(result)
+                    final_response = json_result
 
-            create_category = CategoryModel.objects.create(user_id=request.user.id, 
-                                                           category=1, #static because this api is for testing category
+            save_data = TestingModel.objects.create(user_id=request.user.id, 
                                                            sub_category=request.data["sub_category"],
-                                                           result=final_response
+                                                           result=final_response,
+                                                           remaining_answers=len(final_response)
                                                            )
-
-            return {"data": final_response, "message": "Result generated successfully", "status": 200}
+            return {"data": final_response, "record_id": save_data.id, "message": "Result generated successfully", "status": 200}
         except Exception as error:
             return {"data": str(error), "message": "Something went wrong", "status": 400}
     
     def generate_testing_category_result_pdf(self , request):
-            file_links = request.data["file_links"]
-            sub_category = request.data["sub_category"]
-            final_response = []
-            for file in file_links:         
-                if file.endswith(".pdf"):
-                    if sub_category == 1:
-                        query = f"generate {settings.NUMBER_OF_QUESTIONS} mcqs with options and answers for this image and make in python json list format."
-                        result = pdf_processing(file , query)
-                        json_result = self.jsonify_response(result)
-                        final_response.append(json_result)
-                    elif  sub_category == 2:
-                        query = f"generate {settings.NUMBER_OF_QUESTIONS} flashcards for this image and make in python json list format. make a name is frontside and backside not any other name for this and give me only one answer for this."
-                        result = pdf_processing(file , query)
-                        json_result = self.jsonify_response(result)
-                        final_response.append(json_result)
-            create_category = CategoryModel.objects.create(user_id=request.user.id, 
-                                                           category=1, #static because this api is for testing category
-                                                           sub_category=request.data["sub_category"],
-                                                           result=final_response
-                                                           )            
-            return {"data": final_response, "message": "Result generated successfully", "status": 200}
+        file_link = request.data["file_link"]
+        sub_category = request.data["sub_category"]
+        final_response = []
+        if sub_category == 1:
+            query = f"Generate {settings.NUMBER_OF_QUESTIONS} mcqs with options and answers for this input. Format should be in python json list."
+            result = pdf_processing(file_link, query)
+            json_result = self.jsonify_response(result)
+            final_response.append(json_result)
+        elif  sub_category == 2:
+            query = f"Generate {settings.NUMBER_OF_QUESTIONS} flashcards for this input. Format should be in python json list."
+            result = pdf_processing(file_link, query)
+            json_result = self.jsonify_response(result)
+            final_response.append(json_result)
+        create_category = CategoryModel.objects.create(user_id=request.user.id, 
+                                                        category=1, #static because this api is for testing category
+                                                        sub_category=request.data["sub_category"],
+                                                        result=final_response
+                                                        )            
+        return {"data": final_response, "message": "Result generated successfully", "status": 200}
 
     def jsonify_response(self, result):
         for i, j in enumerate(result):
@@ -333,27 +337,45 @@ class CategoryService:
             if result[end] == "]":
                 break
         final_result = json.loads(result[i:end+1])
+        for i in final_result:
+            i["user_answer"] = ""
         return final_result
 
-    def submit_test_and_update_result(self, request):
-        get_test_objects = CategoryModel.objects.filter(user_id=request.user.id,
-                                                            category=1, #static because this api is for testing category
-                                                            sub_category=request.data["sub_category"],
-                                                            is_active=True
-                                                           )
-        get_test_obj = get_test_objects.first()
-        get_test_obj.correct_answers = request.data["correct_answers"]
-        get_test_obj.is_active = False
-        get_test_obj.save()
-        return {"data": "", "message": messages.TEST_SUBMITTED, "status": 200}
+    def submit_test_and_update_result(self, request, id):
+        get_test_object = TestingModel.objects.get(id=id)
+        user_response = request.data.get("user_response")
+        sub_category = request.data.get("sub_category")
+        correct_answers, wrong_answers, remaining_answers = 0, 0, 0
+        if sub_category == 1:
+            for i in user_response:
+                if i["correct_answer"] == i["user_answer"]:
+                    correct_answers += 1
+                elif i["user_answer"] == "":
+                    remaining_answers += 1
+                elif i["correct_answer"] != i["user_answer"]:
+                    wrong_answers += 1
+        elif sub_category == 2:
+            for i in user_response:
+                if i["user_answer"] == "YES":
+                    correct_answers += 1
+                elif i["user_answer"] == "":
+                    remaining_answers += 1
+                elif i["user_answer"] == "NO":
+                    wrong_answers += 1
+        get_test_object.correct_answers = correct_answers
+        get_test_object.wrong_answers = wrong_answers
+        get_test_object.remaining_answers = remaining_answers
+        get_test_object.result = user_response
+        get_test_object.save()    
+        data = {"correct_answers": correct_answers, "wrong_answers": wrong_answers, "remaining_answers": remaining_answers}    
+        return {"data": data, "message": messages.TEST_SUBMITTED, "status": 200}
     
     def previous_tests_listing(self, request):
-        previous_tests = CategoryModel.objects.filter(user_id=request.user.id,
-                                                      is_active=False,
-                                                      category=1
-                                                      )
-        serializer = categorySerializer.GetPreviousTestSerializer(previous_tests, many=True)
-        return {"data": serializer.data, "message": messages.TESTING_CATEGORY_PAST_TESTS, "status": 200}
+        previous_tests = TestingModel.objects.filter(user_id=request.user.id).order_by("updated_at")
+        pagination_obj = CustomPagination()
+        search_keys = []
+        result = pagination_obj.custom_pagination(request, search_keys, categorySerializer.GetPreviousTestSerializer, previous_tests)
+        return {"data": result, "message": messages.TESTING_CATEGORY_PAST_TESTS, "status": 200}
 
 
 # filesumarization
@@ -1472,11 +1494,17 @@ class CategoryService:
         response = llm.invoke([message])
         final_response = response.content.replace("*", "").replace("#", "").replace("-", "")
         ## save record
-        get_research_record.result = final_response
-        get_research_record.save()
+        # get_research_record.result = final_response
+        # get_research_record.save()
         ##
-        print(final_response, '=== final_response ====')
-        return {"data": final_response, "message": "Details research generated successfully", "status": 200}
+        # print(final_response, '=== final_response ====')
+        return {"data": final_response, "message": "Detailed research generated successfully", "status": 200}
+    
+    def save_research_topic_list(self, request, id):
+        research_obj = CategoryModel.objects.get(id=id)
+        research_obj.result = request.data.get("text")
+        research_obj.save()
+        return {"data": "", "message": messages.RESEARCH_SAVED, "status": 200}
 
     def save_rsearch_file(self, request):
         try:
@@ -1574,9 +1602,14 @@ class CategoryService:
     def text_translation(self, request):
         text = request.data.get("text")
         if isinstance(text, list):
-            query = "You are english to arabic translator. Translate the all the words to arabic wherever you find which I provide you and don't translate the key names. Format should be python json list."
+            # query = "You are english to arabic translator. Translate all the words to arabic wherever you find which I provide you and don't translate the key names. Format should be python json list."
+            query = f"""
+                        Translate the following text from English to Arabic:
+                        {text}
+                    """
             text = json.dumps(text)
             result = self.gemini_solution_for_text_translation(text, query)
+            print(result, '---result----')
             final_response = json.loads(result)
         else:
             query = "You are english to arabic translator. Translate the text to arabic which I provide you.Output format should be proper human readable text ."    
@@ -1965,35 +1998,80 @@ class CategoryService:
         except Exception as e:
             return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
 
-
+    def regenerate_article(self, request, id):
+        request.data["record_id"] = id
+        result = self.generate_detailed_article_based_on_topics(request)
+        return result    
        
-   # def get_article_response(self, request):
+    def generate_detailed_article_based_on_topics(self, request):
+        llm = ChatGoogleGenerativeAI(model="gemini-pro")
+        if "record_id" not in request.data:
+            topic = request.data.get("topic")
+            words = request.data.get("words")
+            language = request.data.get("language")
+            region = request.data.get("region")
+            tone = request.data.get("tone")
+            pov = request.data.get("pronouns")
+        elif "record_id" in request.data:
+            get_article_record = ArticleModel.objects.get(id=request.data.get("record_id"))
+            topic = get_article_record.topic
+            tone = get_article_record.tone
+            pov = get_article_record.pov
+            language = get_article_record.language
+            region = get_article_record.region
+            words = get_article_record.words
+        ####
+        QUERY = f"You are article generator. Generate an article on {topic} in the point of view of {pov} which I provide you. Whole Article should be in {language} and of approximately {words} words with voice of tone as {tone} and article should belongs to {region} region. Format should be descriptive. Strictly keep Headings(numbered as 1,2,3) and side headings(numbered as i, ii, iii)."
+        message_content = [
+            {
+                "type": "text",
+                "text": QUERY
+            }
+        ]
+        message = HumanMessage(content=message_content)
+        response = llm.invoke([message])
+        final_response = response.content.replace("*", "").replace("#", "").replace("-", "")
+        ## save record
+        if "record_id" not in request.data:
+            get_article_record = ArticleModel.objects.create(
+                    user_id=request.user.id,
+                    topic=topic,
+                    language=language,
+                    region=region,
+                    pov=pov,
+                    words=words,
+                    tone=tone,
+                    result=final_response
+                )
+        elif "record_id" in request.data:
+            get_article_record.result = final_response
+            get_article_record.save()
+        return {"data": final_response, "record_id": get_article_record.id, "message": "Detailed article generated successfully", "status": 200}
+    
+    def get_article_history(self, request):
+        try:
+            articles = ArticleModel.objects.filter(user_id=request.user.id).order_by("-updated_at")
+            pagination_obj = CustomPagination()
+            search_keys = []
+            result = pagination_obj.custom_pagination(request, search_keys, categorySerializer.GetArticlesListSerializer, articles)
+            return {"data":result,"message":messages.FETCH,"status":200}
+        except Exception as err:
+            return{"data": str(err), "message": messages.WENT_WRONG, "status": 400}
+
+    def get_article_by_id(self, request, id):
+        try:
+            article = ArticleModel.objects.get(id=id)
+            serializer = categorySerializer.GetArticlesListSerializer(article)
+            return {"data": serializer.data, "message": messages.FETCH, "status": 200}
+        except Exception as err:
+            return{"data": str(err), "message": messages.WENT_WRONG, "status": 400}
         
-    #     topic = request.data.get("topic")
-    #     words = request.data.get("words")
-    #     language = request.data.get("language")
-    #     region = request.data.get("region")
-    #     tone_of_voice = request.data.get("tone")
-    #     pov = request.data.get("pronouns")
-
-    #     llm = ChatGoogleGenerativeAI(model="gemini-pro")
-    #     try:
-    #         
-
-    #         message_content_1 = f"Generate an article  based on these {result} topics list considering that the article is on {topic} in {tone_of_voice} tone of voice from a {pov} point of view in {language} language for a person from {region} in {words} words  and give image  that is suitable for article from popular verified sources and the image is not deleted"
-    #         message_content = message_content_1
-    #         message = HumanMessage(
-    #             content=[
-    #                 {"type": "text", "text": message_content}
-    #             ]
-    #         )
-    #         response = llm.invoke([message])
-    #         results = to_markdown(response.content)
-
-
-    #         return{"data":results,"message":"Article generated successfully.","status":200}
-    #     except Exception as e:
-    #         return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
+    def download_article(self, request):
+        try:
+            file = self.html_to_pdf(request)
+            return {"data": file, "message":messages.UPDATED,"status":200}
+        except Exception as err:    
+            return {"data": str(err), "message": messages.WENT_WRONG, "status": 400}    
 
 
 ###common for all ####

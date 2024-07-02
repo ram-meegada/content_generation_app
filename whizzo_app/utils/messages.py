@@ -49,7 +49,7 @@ MCQ_GENERATED = "Mcq Generate successfully."
 
 ########### admin ###########
 ABILITY_ADDED="Abilty added successfully"
-FETCH="Data Fetch successfully"
+FETCH = "Data Fetched successfully"
 ABILITY_UPDATED="Abilty updated successfully"
 ABILITY_DELETED="Abilty deleted successfully"
 
@@ -104,3 +104,4 @@ PROTECTED_PDF = "The file you provided is password protected. We donot have acce
 
 
 RESEARCH_GENERATED = "Research generated successfully."
+RESEARCH_SAVED = "Research topics saved successfully"

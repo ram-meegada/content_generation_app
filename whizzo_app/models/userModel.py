@@ -29,6 +29,8 @@ class UserModel(AbstractUser, BaseModel):
     role = models.IntegerField(choices = USER_ROLE_CHOICES, default=0) 
     sub_role = models.ForeignKey(SubRoleModel, on_delete=models.CASCADE, null=True)
 
+    accept_terms_and_conditions = models.BooleanField(default=False)
+
     def __str__(self):
         return str(self.id)
 

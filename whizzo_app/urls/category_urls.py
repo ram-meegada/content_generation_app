@@ -4,8 +4,8 @@ from whizzo_app.views import categoryView
 urlpatterns = [
     ##### testing ######
     path("testing/", categoryView.GenerateTestingCategoryResponseView.as_view()),
-    path("testing/pdf/", categoryView.GenerateTestingCategoryResponseViewPdf.as_view()),
-    path("testing/result/", categoryView.SubmitTestAndUpdateResultView.as_view()),
+    # path("testing/pdf/", categoryView.GenerateTestingCategoryResponseViewPdf.as_view()),
+    path("testing/result/<int:id>/", categoryView.SubmitTestAndUpdateResultView.as_view()),
     path("testing/past-tests/", categoryView.TestingCategoryPastListingView.as_view()),
     path("testing/ablities/",categoryView.AbilitesCategory.as_view()),
     path("testing/achievement/",categoryView.AchievementSubCategoryView.as_view()),
@@ -44,8 +44,10 @@ urlpatterns = [
 
     #### research ####
     path("get-research-answer/", categoryView.GetResearchAnswerView.as_view()),
+
     path("regenerate-research-answer/<int:id>/", categoryView.RegenerateResearchAnswerView.as_view()),
     path("detailed-research-answer/<int:id>/", categoryView.DetailedResearchView.as_view()),
+    path("save-research-topics/<int:id>/", categoryView.SaveResearchTopicsView.as_view()),
     path("research-answer-by-upload-reference/", categoryView.UploadReferenceForResearchView.as_view()),
     path("get-all-listing-research/", categoryView.GetAllResearchView.as_view()),
     path("get-research-by-id/<int:id>/", categoryView.GetResearchByIdView.as_view()),
@@ -66,8 +68,12 @@ urlpatterns = [
     
     # #### articles #####
     # path("get-articles-response/", categoryView.GetArticlesView.as_view()),
-    path("article/",categoryView.ArticleListView.as_view()),
-    path("detailed-article/<int:id>/", categoryView.DetailedArticleView.as_view()),
+    path("article-topics/", categoryView.ArticleListView.as_view()),
+    path("regenerate-article/<int:id>/", categoryView.RegenerateArticleView.as_view()),
+    path("detailed-article/", categoryView.DetailedArticleView.as_view()),
+    path("articles/", categoryView.ArticlesListingView.as_view()),
+    path("article/<int:id>/", categoryView.GetArticleByIdView.as_view()),
+    path("download-article/", categoryView.DownloadArticleView.as_view()),
 
     ####common for all #####
     path("send-file-to-mail/",categoryView.SendFileToMailByToken.as_view()),
