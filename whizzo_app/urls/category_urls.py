@@ -3,14 +3,14 @@ from whizzo_app.views import categoryView
 
 urlpatterns = [
     ##### testing ######
-    path("testing/", categoryView.GenerateTestingCategoryResponseView.as_view()),
+    path("testing/generate-response/", categoryView.GenerateTestingCategoryResponseView.as_view()),
     # path("testing/pdf/", categoryView.GenerateTestingCategoryResponseViewPdf.as_view()),
     path("testing/result/<int:id>/", categoryView.SubmitTestAndUpdateResultView.as_view()),
     path("testing/past-tests/", categoryView.TestingCategoryPastListingView.as_view()),
-    path("testing/ablities/",categoryView.AbilitesCategory.as_view()),
-    path("testing/ablities-new/",categoryView.AbilityView.as_view()),
-    path("testing/achievement/",categoryView.AchievementSubCategoryView.as_view()),
-    path("testing/achievement-new/<int:id>/",categoryView.AchievementView.as_view()),
+    path("testing/ablities/", categoryView.AbilityView.as_view()),
+    path("testing/<int:id>/", categoryView.GetRecordByIdView.as_view()),
+    path("testing/achievements/<int:id>/",categoryView.AchievementView.as_view()),
+    path("download-file/", categoryView.DownloadArticleView.as_view()),
 
     path("testing/download-questions-without-answers/",categoryView.downloadQuestionWithoutAnswerView.as_view()),
 
