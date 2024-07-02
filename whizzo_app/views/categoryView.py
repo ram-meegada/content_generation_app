@@ -312,3 +312,16 @@ class NewDocToPdfView(APIView):
     def post(self, request):
         result = category_obj.new_doc_to_pdf_service(request)
         return Response(result, status=result["status"])
+    
+    
+class AchievementView(APIView):
+    # permission_classes =(AllowAny,)
+    def get(self, request, id):
+        result = category_obj.achievement(request, id)
+        return Response(result, status=result["status"])
+
+class AbilityView(APIView):
+    # permission_classes =(AllowAny,)
+    def get(self, request):
+        result = category_obj.ability(request)
+        return Response(result, status=result["status"])
