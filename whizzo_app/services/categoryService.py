@@ -3,6 +3,7 @@ from ssl import SSL_ERROR_EOF
 from typing import final
 from django.http import JsonResponse
 from whizzo_app.models.assignmentModel import AssignmentModel
+from whizzo_app.models.testingModel import TestingModel
 from whizzo_app.models.achievementModel import AchievementModel
 from whizzo_app.models.abilityModel import AbilityModel
 from whizzo_app.models.categoryModel import CategoryModel
@@ -2313,3 +2314,51 @@ class CategoryService:
             return {"data": serializer.data, "message": "File converted successfully", "status": 200} 
         except Exception as err:
             return {"data": str(err), "message": "Please upload the file again.", "status": 400} 
+
+    def ability(self, request):
+        try:
+            count = AbilityModel.objects.filter(is_arabic=False).count()
+            if count <= 20:
+                questions = AbilityModel.objects.filter(is_arabic=False).order_by('?')
+            else:
+                random_ids = random.sample(list(AbilityModel.objects.filter(is_arabic=False).values_list('id', flat=True)), 20)
+                questions = AbilityModel.objects.filter(id__in=random_ids, is_arabic=False)
+            serialized_questions = [
+                {
+                    "question_no": idx + 1,
+                    "question": question.question,
+                    "answer_option": question.answer_option,
+                    "correct_answer": question.corect_answer,
+                    "user_answer": ""
+                }
+                for idx, question in enumerate(questions)
+            ]
+            create = TestingModel.objects.create(user_id=request.user.id, 
+                                                result=serialized_questions)
+            return {"data":serialized_questions,"message":messages.FETCH,"status":200}
+        except Exception as e:
+            return {"data":None,"message":messages.WENT_WRONG,"status":400}
+        
+    def achievement(self, request,id):
+        try:
+            count = AchievementModel.objects.filter(subject_id=id, is_arabic=False).count()
+            if count <= 20:
+                questions = AchievementModel.objects.filter(subject_id=id, is_arabic=False).order_by('?')
+            else:
+                random_ids = AchievementModel.objects.filter(subject_id=id, is_arabic=False).order_by('?').values_list('id', flat=True)[:20]
+                questions = AchievementModel.objects.filter(id__in=random_ids,is_arabic=False)
+            serialized_questions = [
+                {
+                    "question_no": idx + 1,
+                    "question": question.question,
+                    "answer_option": question.answer_option,
+                    "correct_answer": question.corect_answer,
+                    "user_answer": ""
+                }
+                for idx, question in enumerate(questions)
+            ]
+            create = TestingModel.objects.create(user_id=request.user.id, 
+                                                result=serialized_questions)
+            return {"data":serialized_questions,"message":messages.FETCH,"status":200}
+        except Exception as e:
+            return {"data":None,"message":messages.WENT_WRONG,"status":400}
