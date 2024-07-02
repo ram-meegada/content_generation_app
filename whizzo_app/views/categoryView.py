@@ -19,12 +19,12 @@ class GenerateTestingCategoryResponseViewPdf(APIView):
         return Response(result, status = result["status"])
 
 class SubmitTestAndUpdateResultView(APIView):
-    def post(self, request):
-        result = category_obj.submit_test_and_update_result(request)
+    def post(self, request, id):
+        result = category_obj.submit_test_and_update_result(request, id)
         return Response(result, status = result["status"])
 
 class TestingCategoryPastListingView(APIView):
-    def get(self, request):
+    def post(self, request):
         result = category_obj.previous_tests_listing(request)
         return Response(result, status = result["status"])
 
