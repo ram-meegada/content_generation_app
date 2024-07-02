@@ -5,7 +5,7 @@ urlpatterns = [
     ##### testing ######
     path("testing/", categoryView.GenerateTestingCategoryResponseView.as_view()),
     # path("testing/pdf/", categoryView.GenerateTestingCategoryResponseViewPdf.as_view()),
-    path("testing/result/", categoryView.SubmitTestAndUpdateResultView.as_view()),
+    path("testing/result/<int:id>/", categoryView.SubmitTestAndUpdateResultView.as_view()),
     path("testing/past-tests/", categoryView.TestingCategoryPastListingView.as_view()),
     path("testing/ablities/",categoryView.AbilitesCategory.as_view()),
     path("testing/achievement/",categoryView.AchievementSubCategoryView.as_view()),

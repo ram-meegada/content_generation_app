@@ -34,6 +34,7 @@ class UserService:
             user.otp = otp
             user.otp_sent_time = datetime.now(tz=pytz.UTC)
             user.profile_status = 1
+            user.accept_terms_and_conditions = True
             user.set_password(password)
             user.save()
             Thread(target=sendMail.send_otp_to_mail, args=[email, otp]).start()
@@ -50,6 +51,7 @@ class UserService:
             user.otp = otp
             user.otp_sent_time = datetime.now(tz=pytz.UTC)
             user.profile_status = 1
+            user.accept_terms_and_conditions = True
             user.save()
         return {"data": "", "message": messages.OTP_SENT_AFTER_REGISTRATION, "status": 201}
     
@@ -165,9 +167,9 @@ class UserService:
             }
         old_password = request.data.get("old_password")
         new_password = request.data.get("new_password")
-        pswd = check_password(new_password, user.password)
-        if pswd:
-            return {"data":None,"messages":messages.PASSWORD_NOT_SAME,"status":status.HTTP_400_BAD_REQUEST}
+        # pswd = check_password(new_password, user.password)
+        # if not pswd:
+        #     return {"data":None,"messages": messages.PASSWORD_NOT_SAME,"status":status.HTTP_400_BAD_REQUEST}
         verify_password = check_password(old_password, user.password)
         if verify_password:
             user.set_password(new_password)

@@ -18,7 +18,7 @@ import textwrap
 import urllib.request as urlopener
 from PyPDF2 import PdfReader
 from io import BytesIO
-from whizzo_app.models import FaqModel,CmsModel, UserModel, FileSumarizationModel, NoteModel
+from whizzo_app.models import FaqModel,CmsModel, UserModel, FileSumarizationModel, NoteModel, TestingModel
 from whizzo_app.utils import messages
 from whizzo_app.serializers import categorySerializer, adminSerializer
 from deep_translator import GoogleTranslator
@@ -299,12 +299,12 @@ class CategoryService:
                     json_result = self.jsonify_response(result)
                     final_response = json_result
 
-            # create_category = CategoryModel.objects.create(user_id=request.user.id, 
-            #                                                category=1, #static because this api is for testing category
-            #                                                sub_category=request.data["sub_category"],
-            #                                                result=final_response
-            #                                                )
-            return {"data": final_response, "message": "Result generated successfully", "status": 200}
+            save_data = TestingModel.objects.create(user_id=request.user.id, 
+                                                           sub_category=request.data["sub_category"],
+                                                           result=final_response,
+                                                           remaining_answers=len(final_response)
+                                                           )
+            return {"data": final_response, "record_id": save_data.id, "message": "Result generated successfully", "status": 200}
         except Exception as error:
             return {"data": str(error), "message": "Something went wrong", "status": 400}
     
@@ -341,25 +341,41 @@ class CategoryService:
             i["user_answer"] = ""
         return final_result
 
-    def submit_test_and_update_result(self, request):
-        get_test_objects = CategoryModel.objects.filter(user_id=request.user.id,
-                                                            category=1, #static because this api is for testing category
-                                                            sub_category=request.data["sub_category"],
-                                                            is_active=True
-                                                           )
-        get_test_obj = get_test_objects.first()
-        get_test_obj.correct_answers = request.data["correct_answers"]
-        get_test_obj.is_active = False
-        get_test_obj.save()
-        return {"data": "", "message": messages.TEST_SUBMITTED, "status": 200}
+    def submit_test_and_update_result(self, request, id):
+        get_test_object = TestingModel.objects.get(id=id)
+        user_response = request.data.get("user_response")
+        sub_category = request.data.get("sub_category")
+        correct_answers, wrong_answers, remaining_answers = 0, 0, 0
+        if sub_category == 1:
+            for i in user_response:
+                if i["correct_answer"] == i["user_answer"]:
+                    correct_answers += 1
+                elif i["user_answer"] == "":
+                    remaining_answers += 1
+                elif i["correct_answer"] != i["user_answer"]:
+                    wrong_answers += 1
+        elif sub_category == 2:
+            for i in user_response:
+                if i["user_answer"] == "YES":
+                    correct_answers += 1
+                elif i["user_answer"] == "":
+                    remaining_answers += 1
+                elif i["user_answer"] == "NO":
+                    wrong_answers += 1
+        get_test_object.correct_answers = correct_answers
+        get_test_object.wrong_answers = wrong_answers
+        get_test_object.remaining_answers = remaining_answers
+        get_test_object.result = user_response
+        get_test_object.save()    
+        data = {"correct_answers": correct_answers, "wrong_answers": wrong_answers, "remaining_answers": remaining_answers}    
+        return {"data": data, "message": messages.TEST_SUBMITTED, "status": 200}
     
     def previous_tests_listing(self, request):
-        previous_tests = CategoryModel.objects.filter(user_id=request.user.id,
-                                                      is_active=False,
-                                                      category=1
-                                                      )
-        serializer = categorySerializer.GetPreviousTestSerializer(previous_tests, many=True)
-        return {"data": serializer.data, "message": messages.TESTING_CATEGORY_PAST_TESTS, "status": 200}
+        previous_tests = TestingModel.objects.filter(user_id=request.user.id).order_by("updated_at")
+        pagination_obj = CustomPagination()
+        search_keys = []
+        result = pagination_obj.custom_pagination(request, search_keys, categorySerializer.GetPreviousTestSerializer, previous_tests)
+        return {"data": result, "message": messages.TESTING_CATEGORY_PAST_TESTS, "status": 200}
 
 
 # filesumarization
@@ -1586,9 +1602,14 @@ class CategoryService:
     def text_translation(self, request):
         text = request.data.get("text")
         if isinstance(text, list):
-            query = "You are english to arabic translator. Translate all the words to arabic wherever you find which I provide you and don't translate the key names. Format should be python json list."
+            # query = "You are english to arabic translator. Translate all the words to arabic wherever you find which I provide you and don't translate the key names. Format should be python json list."
+            query = f"""
+                        Translate the following text from English to Arabic:
+                        {text}
+                    """
             text = json.dumps(text)
             result = self.gemini_solution_for_text_translation(text, query)
+            print(result, '---result----')
             final_response = json.loads(result)
         else:
             query = "You are english to arabic translator. Translate the text to arabic which I provide you.Output format should be proper human readable text ."    
