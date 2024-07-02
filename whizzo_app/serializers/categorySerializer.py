@@ -1,21 +1,15 @@
 from rest_framework import serializers
 from whizzo_app.models.assignmentModel import AssignmentModel
 from whizzo_app.models.categoryModel import CategoryModel
-from whizzo_app.models import FileSumarizationModel, NoteModel, ReseaerchModel, FileConversationModel, ArticleModel
+from whizzo_app.models import FileSumarizationModel, NoteModel, ReseaerchModel, FileConversationModel, ArticleModel, TestingModel
 from whizzo_app.serializers.uploadMediaSerializer import CreateUpdateUploadMediaSerializer
 from whizzo_app.models.uploadMediaModel import UploadMediaModel
 
 class GetPreviousTestSerializer(serializers.ModelSerializer):
     sub_category = serializers.SerializerMethodField()
-    category = serializers.SerializerMethodField()
     class Meta:
-        model = CategoryModel
-        fields = ["id", "category", "sub_category", "created_at", "updated_at"]
-    def get_category(self, obj):
-        try:
-            return obj.get_category_display()
-        except:
-            return obj.category
+        model = TestingModel
+        fields = ["id", "sub_category", "created_at", "updated_at", "result", "correct_answers", "wrong_answers", "remaining_answers"]
     def get_sub_category(self, obj):
         try:
             return obj.get_sub_category_display()
