@@ -19,12 +19,12 @@ class GenerateTestingCategoryResponseViewPdf(APIView):
         return Response(result, status = result["status"])
 
 class SubmitTestAndUpdateResultView(APIView):
-    def post(self, request):
-        result = category_obj.submit_test_and_update_result(request)
+    def post(self, request, id):
+        result = category_obj.submit_test_and_update_result(request, id)
         return Response(result, status = result["status"])
 
 class TestingCategoryPastListingView(APIView):
-    def get(self, request):
+    def post(self, request):
         result = category_obj.previous_tests_listing(request)
         return Response(result, status = result["status"])
 
@@ -285,18 +285,6 @@ class DownloadArticleView(APIView):
         result = category_obj.download_article(request)
         return Response(result, status = result["status"])
 
-class AbilitesCategory(APIView):
-    permission_classes = [AllowAny]
-    def post(self, request):
-        result = category_obj.ability_by_AI_and_self(request)
-        return Response(result, status=result["status"])
-
-class AchievementSubCategoryView(APIView):
-    permission_classes = [AllowAny]
-    def post(self, request):
-        result = category_obj.achievement_by_AI_and_self(request)
-        return Response(result, status=result["status"])
-
 class downloadQuestionWithoutAnswerView(APIView):
     permission_classes = [AllowAny]
     def post(self, request, id):
@@ -312,3 +300,20 @@ class NewDocToPdfView(APIView):
     def post(self, request):
         result = category_obj.new_doc_to_pdf_service(request)
         return Response(result, status=result["status"])
+    
+    
+class AchievementView(APIView):
+    def get(self, request, id):
+        result = category_obj.achievement(request, id)
+        return Response(result, status=result["status"])
+
+class AbilityView(APIView):
+    def get(self, request):
+        result = category_obj.ability(request)
+        return Response(result, status=result["status"])
+
+class GetRecordByIdView(APIView):
+    def get(self, request, id):
+        result = category_obj.get_testing_record_by_id(request, id)
+        return Response(result, status=result["status"])
+    

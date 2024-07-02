@@ -23,3 +23,4 @@ from .customerSupportModel import CustomerSupportModel
 from .notificationModel import NotificationModel
 from .fileConversionModel import FileConversationModel
 from .articleModel import ArticleModel
+from .testingModel import TestingModel

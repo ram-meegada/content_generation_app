@@ -3,6 +3,7 @@ from ssl import SSL_ERROR_EOF
 from typing import final
 from django.http import JsonResponse
 from whizzo_app.models.assignmentModel import AssignmentModel
+from whizzo_app.models.testingModel import TestingModel
 from whizzo_app.models.achievementModel import AchievementModel
 from whizzo_app.models.abilityModel import AbilityModel
 from whizzo_app.models.categoryModel import CategoryModel
@@ -18,7 +19,7 @@ import textwrap
 import urllib.request as urlopener
 from PyPDF2 import PdfReader
 from io import BytesIO
-from whizzo_app.models import FaqModel,CmsModel, UserModel, FileSumarizationModel, NoteModel
+from whizzo_app.models import FaqModel,CmsModel, UserModel, FileSumarizationModel, NoteModel, TestingModel
 from whizzo_app.utils import messages
 from whizzo_app.serializers import categorySerializer, adminSerializer
 from deep_translator import GoogleTranslator
@@ -268,62 +269,66 @@ def pdf_processing(pdf_file , query):
 class CategoryService:
     def generate_testing_category_result(self, request):
         try:
-            check_incomplete_test = CategoryModel.objects.filter(user_id=request.user.id, 
-                                                           category=1, #static because this api is for testing category
-                                                           sub_category=request.data["sub_category"],
-                                                           is_active=True
-                                                           )
-            if check_incomplete_test.exists():
-                return {"data": check_incomplete_test.first().result, "message": messages.INCOMPLETE_PREVIOUS_TEST, "status": 200}
-
-            file_links = request.data["file_links"]
+            file_links = request.data["file"]
             sub_category = request.data["sub_category"]
+            api_type = request.data["type"]
             final_response = []
-            for file in file_links:
-                if file.endswith((".jpeg",".png",".jpg",".webp")):
-                    if sub_category == 1:
-                        query = f"generate {settings.NUMBER_OF_QUESTIONS} mcqs with options and answers for this image and make in python json list format."
+            if sub_category == 1:
+                if api_type == 1:
+                    number_of_questions = int(settings.NUMBER_OF_QUESTIONS)//len(file_links)
+                    for file in file_links:
+                        query = f"Generate {number_of_questions} mcqs with options and answers for this image and make in python json list format. Keys should be 'question_no', 'question', 'answer_option', 'correct_answer'."
                         result = image_processing(file, query)
                         json_result = self.jsonify_response(result)
                         final_response += json_result
-                    elif  sub_category == 2:
-                        query = f"generate {settings.NUMBER_OF_QUESTIONS} flashcards for this image and make in python json list format. make a name is frontside and backside not any other name for this and give me only one answer for this."
+                elif api_type == 2:
+                    query = f"Generate {settings.NUMBER_OF_QUESTIONS} mcqs with options and answers for this input. Format should be in python json list. Keys should be 'question_no', 'question', 'answer_option', 'correct_answer'."
+                    result = pdf_processing(file_links[0], query)
+                    json_result = self.jsonify_response(result)
+                    final_response = json_result
+            elif sub_category == 2:
+                if api_type == 1:        
+                    number_of_questions = int(settings.NUMBER_OF_QUESTIONS)//len(file_links)
+                    for file in file_links:
+                        query = f"Generate {number_of_questions} flashcards for this input. Format should be in python json list. Keys should be 'question', 'answer'"
                         result = image_processing(file, query)
                         json_result = self.jsonify_response(result)
                         final_response += json_result
+                elif api_type == 2:
+                    query = f"Generate {settings.NUMBER_OF_QUESTIONS} flashcards for this input. Format should be in python json list. Keys should be 'question', 'answer'"
+                    result = pdf_processing(file_links[0], query)
+                    json_result = self.jsonify_response(result)
+                    final_response = json_result
 
-            create_category = CategoryModel.objects.create(user_id=request.user.id, 
-                                                           category=1, #static because this api is for testing category
+            save_data = TestingModel.objects.create(user_id=request.user.id, 
                                                            sub_category=request.data["sub_category"],
-                                                           result=final_response
+                                                           result=final_response,
+                                                           remaining_answers=len(final_response)
                                                            )
-
-            return {"data": final_response, "message": "Result generated successfully", "status": 200}
+            return {"data": final_response, "record_id": save_data.id, "message": "Result generated successfully", "status": 200}
         except Exception as error:
             return {"data": str(error), "message": "Something went wrong", "status": 400}
     
     def generate_testing_category_result_pdf(self , request):
-            file_links = request.data["file_links"]
-            sub_category = request.data["sub_category"]
-            final_response = []
-            for file in file_links:         
-                if file.endswith(".pdf"):
-                    if sub_category == 1:
-                        query = f"generate {settings.NUMBER_OF_QUESTIONS} mcqs with options and answers for this image and make in python json list format."
-                        result = pdf_processing(file , query)
-                        json_result = self.jsonify_response(result)
-                        final_response.append(json_result)
-                    elif  sub_category == 2:
-                        query = f"generate {settings.NUMBER_OF_QUESTIONS} flashcards for this image and make in python json list format. make a name is frontside and backside not any other name for this and give me only one answer for this."
-                        result = pdf_processing(file , query)
-                        json_result = self.jsonify_response(result)
-                        final_response.append(json_result)
-            create_category = CategoryModel.objects.create(user_id=request.user.id, 
-                                                           category=1, #static because this api is for testing category
-                                                           sub_category=request.data["sub_category"],
-                                                           result=final_response
-                                                           )            
-            return {"data": final_response, "message": "Result generated successfully", "status": 200}
+        file_link = request.data["file_link"]
+        sub_category = request.data["sub_category"]
+        final_response = []
+        if sub_category == 1:
+            query = f"Generate {settings.NUMBER_OF_QUESTIONS} mcqs with options and answers for this input. Format should be in python json list."
+            result = pdf_processing(file_link, query)
+            json_result = self.jsonify_response(result)
+            final_response.append(json_result)
+        elif  sub_category == 2:
+            query = f"Generate {settings.NUMBER_OF_QUESTIONS} flashcards for this input. Format should be in python json list."
+            result = pdf_processing(file_link, query)
+            json_result = self.jsonify_response(result)
+            final_response.append(json_result)
+        create_category = CategoryModel.objects.create(user_id=request.user.id, 
+                                                        category=1, #static because this api is for testing category
+                                                        sub_category=request.data["sub_category"],
+                                                        result=final_response
+                                                        )            
+        return {"data": final_response, "message": "Result generated successfully", "status": 200}
 
     def jsonify_response(self, result):
         for i, j in enumerate(result):
@@ -333,27 +338,44 @@ class CategoryService:
             if result[end] == "]":
                 break
         final_result = json.loads(result[i:end+1])
+        for i in final_result:
+            i["user_answer"] = ""
         return final_result
 
-    def submit_test_and_update_result(self, request):
-        get_test_objects = CategoryModel.objects.filter(user_id=request.user.id,
-                                                            category=1, #static because this api is for testing category
-                                                            sub_category=request.data["sub_category"],
-                                                            is_active=True
-                                                           )
-        get_test_obj = get_test_objects.first()
-        get_test_obj.correct_answers = request.data["correct_answers"]
-        get_test_obj.is_active = False
-        get_test_obj.save()
-        return {"data": "", "message": messages.TEST_SUBMITTED, "status": 200}
+    def submit_test_and_update_result(self, request, id):
+        get_test_object = TestingModel.objects.get(id=id)
+        user_response = request.data.get("user_response")
+        correct_answers, wrong_answers, remaining_answers = 0, 0, 0
+        if get_test_object.sub_category == 1:
+            for i in user_response:
+                if i["correct_answer"] == i["user_answer"]:
+                    correct_answers += 1
+                elif i["user_answer"] == "":
+                    remaining_answers += 1
+                elif i["correct_answer"] != i["user_answer"]:
+                    wrong_answers += 1
+        elif get_test_object.sub_category in [2, 3, 4]:
+            for i in user_response:
+                if i["user_answer"] == "YES":
+                    correct_answers += 1
+                elif i["user_answer"] == "":
+                    remaining_answers += 1
+                elif i["user_answer"] == "NO":
+                    wrong_answers += 1
+        get_test_object.correct_answers = correct_answers
+        get_test_object.wrong_answers = wrong_answers
+        get_test_object.remaining_answers = remaining_answers
+        get_test_object.result = user_response
+        get_test_object.save()    
+        data = {"correct_answers": correct_answers, "wrong_answers": wrong_answers, "remaining_answers": remaining_answers}    
+        return {"data": data, "message": messages.TEST_SUBMITTED, "status": 200}
     
     def previous_tests_listing(self, request):
-        previous_tests = CategoryModel.objects.filter(user_id=request.user.id,
-                                                      is_active=False,
-                                                      category=1
-                                                      )
-        serializer = categorySerializer.GetPreviousTestSerializer(previous_tests, many=True)
-        return {"data": serializer.data, "message": messages.TESTING_CATEGORY_PAST_TESTS, "status": 200}
+        previous_tests = TestingModel.objects.filter(user_id=request.user.id).order_by("-updated_at")
+        pagination_obj = CustomPagination()
+        search_keys = []
+        result = pagination_obj.custom_pagination(request, search_keys, categorySerializer.GetPreviousTestSerializer, previous_tests)
+        return {"data": result, "message": messages.TESTING_CATEGORY_PAST_TESTS, "status": 200}
 
 
 # filesumarization
@@ -1580,9 +1602,14 @@ class CategoryService:
     def text_translation(self, request):
         text = request.data.get("text")
         if isinstance(text, list):
-            query = "You are english to arabic translator. Translate all the words to arabic wherever you find which I provide you and don't translate the key names. Format should be python json list."
+            # query = "You are english to arabic translator. Translate all the words to arabic wherever you find which I provide you and don't translate the key names. Format should be python json list."
+            query = f"""
+                        Translate the following text from English to Arabic:
+                        {text}
+                    """
             text = json.dumps(text)
             result = self.gemini_solution_for_text_translation(text, query)
+            print(result, '---result----')
             final_response = json.loads(result)
         else:
             query = "You are english to arabic translator. Translate the text to arabic which I provide you.Output format should be proper human readable text ."    
@@ -2042,6 +2069,8 @@ class CategoryService:
     def download_article(self, request):
         try:
             file = self.html_to_pdf(request)
+            if isinstance(file, dict):
+                return {"data": file["message"], "message": messages.WENT_WRONG, "status": 400}    
             return {"data": file, "message":messages.UPDATED,"status":200}
         except Exception as err:    
             return {"data": str(err), "message": messages.WENT_WRONG, "status": 400}    
@@ -2061,119 +2090,8 @@ class CategoryService:
             return{"data":None,"message":messages.WENT_WRONG,"status":400}
 
 
-###ablities 
-
-    def ability_by_AI_and_self(self, request):
-        sub_category = request.data["sub_category"]
-        type = request.data["type"]  # type is ai =1  or self=2
-        if type == 1:
-            try:
-                data = AbilityModel.objects.all()
-                result = adminSerializer.CreateAbilitySerializer(data, many = True)
-                return {"data":result.data,"message":messages.FETCH,"status":200}
-            except Exception as e:
-                return {"data":None,"message":messages.WENT_WRONG,"status":400}
-        elif type == 2:
-            try:
-                key = request.data["key"] # pdf=1 or image=2
-                if key == "image":
-                    final_response=[]
-                    # if file_link in request:
-                    file_link = request.data["file_link"]
-                    print(file_link,"kasklfjhalsdkjhflksdjhlaksjdhf")
-                    # media_id = []
-                    # media_detials = UploadMediaModel.objects.filter(media_url__in=file_link)
-                    # for i in media_detials:
-                    #     media_id.append(i.id)
-
-                    # print(media_id,"12345678902345678sdfghxcvbsdfgh123456sdfghxcvbasdfghj12345678")
-                    for file in file_link:
-                        query = f"generate {settings.NUMBER_OF_QUESTIONS} mcqs with options and answers for this image and make in python json list format."
-                        result = image_processing(file, query)
-                        json_result = self.jsonify_response(result)
-                        final_response += json_result
-                        print(final_response,"sdkhfalkshdflakjhdslfkjashdflk")
-                    create_category = CategoryModel.objects.create(user_id=request.user.id, 
-                                                        category=1, #static because this api is for testing category
-                                                        #    media = media_detials.id,
-                                                        sub_category=request.data["sub_category"],
-                                                        result=final_response
-                                                        )     
-                    print(final_response,"1234567888888888888888888888888888888888")       
-                    return {"data": final_response, "message": messages.MCQ_GENERATED, "status": 200}
-                elif key == "pdf":
-                    final_response=[]
-                    file_link = request.data["file_link"]
-                    for file in file_link:
-                        query = f"generate important mcqs with options and answers for this image and make in python json list format."
-                        result = pdf_processing(file , query)
-                        json_result = self.jsonify_response(result)
-                        final_response += json_result
-                    create_category = CategoryModel.objects.create(user_id=request.user.id, 
-                                                           category=1, #static because this api is for testing category
-                                                        #    media = media_detials.id,
-                                                           sub_category=request.data["sub_category"],
-                                                           result=final_response
-                                                           )  
-                    return {"data": final_response, "message": messages.MCQ_GENERATED, "status": 200}
-            except Exception as e:
-                return {"data":None,"message":str(e),"status":400}
-
-
 ##achivement
 
-    def achievement_by_AI_and_self(self, request):
-        sub_category = request.data["sub_category"]
-        type = request.data["type"]  # type is ai =1  or self=2
-        if type == 1:
-            try:
-                subject = request.data["subject"]
-                data = AchievementModel.objects.filter(subject=subject)
-                result = adminSerializer.CreateAcheivementSerializer(data, many = True)
-                return {"data":result.data,"message":messages.FETCH,"status":200}
-            except Exception as e:
-                return {"data":None,"message":messages.WENT_WRONG,"status":400}
-        elif type == 2:
-            try:
-                key = request.data["key"] # pdf=1 or image=2
-                if key == "image":
-                    final_response=[]
-                    file_link = request.data["file_link"]
-                    # media_id = []
-                    # media_detials = UploadMediaModel.objects.filter(media_url__in=file_link)
-                    # for i in media_detials:
-                    #     media_id.append(i.id)
-
-                    # print(media_id,"12345678902345678sdfghxcvbsdfgh123456sdfghxcvbasdfghj12345678")
-                    for file in file_link:
-                        query = f"generate {settings.NUMBER_OF_QUESTIONS} mcqs with options and answers for this image and make in python json list format."
-                        result = image_processing(file, query)
-                        json_result = self.jsonify_response(result)
-                        final_response += json_result
-                    create_category = CategoryModel.objects.create(user_id=request.user.id, 
-                                                           category=1, #static because this api is for testing category
-                                                        #    media = media_detials.id,
-                                                           sub_category=request.data["sub_category"],
-                                                           result=final_response
-                                                           )            
-                    return {"data": final_response, "message": messages.MCQ_GENERATED, "status": 200}
-                elif key == "pdf":
-                    final_response=[]
-                    file_link = request.data["file_link"]
-                    for file in file_link:
-                        query = f"generate important mcqs with options and answers for this image and make in python json list format."
-                        result = pdf_processing(file , query)
-                        json_result = self.jsonify_response(result)
-                        final_response += json_result
-                    create_category = CategoryModel.objects.create(user_id=request.user.id, 
-                                                           category=1, #static because this api is for testing category
-                                                        #    media = media_detials.id,
-                                                           sub_category=request.data["sub_category"],
-                                                           result=final_response
-                                                           )  
-                    return {"data":final_response,"message":messages.MCQ_GENERATED ,"status":200}
-            except Exception as e:
-                return {"data":None,"message":str(e),"status":400}
 
     def download_file_without_answer(self, request,id):
         sub_category = request.data["sub_category"]
@@ -2286,3 +2204,65 @@ class CategoryService:
             return {"data": serializer.data, "message": "File converted successfully", "status": 200} 
         except Exception as err:
             return {"data": str(err), "message": "Please upload the file again.", "status": 400} 
+
+    def ability(self, request):
+        try:
+            count = AbilityModel.objects.filter(is_arabic=False).count()
+            if count <= 20:
+                questions = AbilityModel.objects.filter(is_arabic=False).order_by('?')
+            else:
+                random_ids = random.sample(list(AbilityModel.objects.filter(is_arabic=False).values_list('id', flat=True)), 20)
+                questions = AbilityModel.objects.filter(id__in=random_ids, is_arabic=False)
+            serialized_questions = [
+                {
+                    "question_no": idx + 1,
+                    "question": question.question,
+                    "answer_option": question.answer_option,
+                    "correct_answer": question.corect_answer,
+                    "user_answer": ""
+                }
+                for idx, question in enumerate(questions)
+            ]
+            save_record = TestingModel.objects.create(user_id=request.user.id,
+                                                 sub_category=3, 
+                                                result=serialized_questions,
+                                                remaining_answers=len(serialized_questions))
+            return {"data":serialized_questions, "record_id": save_record.id, "message":messages.FETCH,"status":200}
+        except Exception as e:
+            return {"data":None,"message":messages.WENT_WRONG,"status":400}
+        
+    def achievement(self, request,id):
+        try:
+            count = AchievementModel.objects.filter(subject_id=id, is_arabic=False).count()
+            if count <= 20:
+                questions = AchievementModel.objects.filter(subject_id=id, is_arabic=False).order_by('?')
+            else:
+                random_ids = AchievementModel.objects.filter(subject_id=id, is_arabic=False).order_by('?').values_list('id', flat=True)[:20]
+                questions = AchievementModel.objects.filter(id__in=random_ids,is_arabic=False)
+            serialized_questions = [
+                {
+                    "question_no": idx + 1,
+                    "question": question.question,
+                    "answer_option": question.answer_option,
+                    "correct_answer": question.corect_answer,
+                    "user_answer": ""
+                }
+                for idx, question in enumerate(questions)
+            ]
+            save_record = TestingModel.objects.create(user_id=request.user.id, 
+                                                 sub_category=4,
+                                                result=serialized_questions,
+                                                remaining_answers=len(serialized_questions))
+            return {"data": serialized_questions, "record_id": save_record.id, "message":messages.FETCH,"status":200}
+        except Exception as e:
+            return {"data":None,"message":messages.WENT_WRONG,"status":400}
+        
+    def get_testing_record_by_id(self, request, id):
+        try:
+            record = TestingModel.objects.get(id=id)
+            serializer = categorySerializer.GetPreviousTestSerializer(record)
+            return {"data": serializer.data, "message": messages.WENT_WRONG, "status": 200}
+        except TestingModel.DoesNotExist:
+            return {"data": None, "message": messages.RECORD_NOT_FOUND, "status": 400}
+        except:
+            return {"data": None, "message": messages.WENT_WRONG, "status": 400}
