@@ -2089,17 +2089,6 @@ class CategoryService:
         except Exception as e:
             return{"data":None,"message":messages.WENT_WRONG,"status":400}
 
-
-##achivement
-
-
-    def download_file_without_answer(self, request,id):
-        sub_category = request.data["sub_category"]
-        data = CategoryModel.objects.get(id = id).result
-        questions = []
-        for i in data:
-            questions.append[{"question":i["question"]}]
-        return {"data":questions, "message":messages.FETCH,"status":200}
     
     def emu_to_pixels(self, emu):
     # Convert EMUs to pixels

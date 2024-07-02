@@ -285,12 +285,6 @@ class DownloadArticleView(APIView):
         result = category_obj.download_article(request)
         return Response(result, status = result["status"])
 
-class downloadQuestionWithoutAnswerView(APIView):
-    permission_classes = [AllowAny]
-    def post(self, request, id):
-        result = category_obj.download_file_without_answer(request, id)
-        return Response(result, status=result["status"])
-
 class NewServiceView(APIView):
     def post(self, request):
         result = category_obj.new_service(request)

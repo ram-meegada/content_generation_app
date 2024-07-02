@@ -12,8 +12,6 @@ urlpatterns = [
     path("testing/achievements/<int:id>/",categoryView.AchievementView.as_view()),
     path("download-file/", categoryView.DownloadArticleView.as_view()),
 
-    path("testing/download-questions-without-answers/",categoryView.downloadQuestionWithoutAnswerView.as_view()),
-
     ### file summarization ###
     path("file/summarization/", categoryView.FileSummarizationView.as_view()),
     path("file/summarization-vocab/", categoryView.FileSummarizationVocabView.as_view()),
