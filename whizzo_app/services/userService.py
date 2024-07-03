@@ -306,6 +306,7 @@ class UserService:
             customer_id=request.user.id,  
             username=request.data["fullname"],
             queries=request.data["query"],
+            email=request.data["email"],
         )
         return {"data": "", "message": "Query sent to admin successfully", "status": 200}
     
