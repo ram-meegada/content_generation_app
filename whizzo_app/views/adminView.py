@@ -432,7 +432,7 @@ class GetAllTestimonialView(APIView):
     
 
 class GetCmsDetailView(APIView):
-    # permission_classes = [AllowAny]
+    permission_classes = [AllowAny]
     def get(self,request):
         result=admin_obj.get_all_cms_details(request)
         return Response(result, status=result["status"])

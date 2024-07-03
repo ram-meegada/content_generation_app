@@ -303,7 +303,6 @@ class UserService:
 
     def send_query_to_admin(self, request):
         customer_support = CustomerSupportModel.objects.create(
-            customer_id=request.user.id,  
             username=request.data["fullname"],
             queries=request.data["query"],
             email=request.data["email"],
