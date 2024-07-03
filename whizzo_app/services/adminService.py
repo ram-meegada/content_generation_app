@@ -637,7 +637,7 @@ class AdminService:
     def get_all_sub_admin(self, request):
         sub_obj = UserModel.objects.filter(role=3).order_by("-created_at")
         pagination_obj = CustomPagination()
-        search_keys = ["username__icontains", "email__icontains"]
+        search_keys = ["username__icontains","name__icontains","email__icontains"]
         result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.GetSubAdminSerializer, sub_obj)
         return{'data': result,'message':  messages.FETCH, 'status': 200}
     
