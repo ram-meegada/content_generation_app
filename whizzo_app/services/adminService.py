@@ -541,7 +541,19 @@ class AdminService:
             return {"data": serializer.errors,"message": messages.WENT_WRONG, "status": 400}
         except Exception as e:
             return {"error": str(e),"message": messages.RECORD_NOT_FOUND, "status":400}
-        
+
+    def update_role(self, request, role_id):
+        try:
+            role = SubRoleModel.objects.get(id=role_id)
+        except SubRoleModel.DoesNotExist:
+            return {"data": None, "message":messages.RECORD_NOT_FOUND, "status": 400}
+        serializer = adminSerializer.CreateRoleSubAdminSerializer(role, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return {"data": serializer.data, "message": messages.ROLE_UPDATED, "status": 200}
+        return {"data": None, "message": serializer.errors, "status": 400}        
+
+
 
     def get_role_sub_admin(self,request):
         try:
@@ -637,7 +649,7 @@ class AdminService:
     def get_all_sub_admin(self, request):
         sub_obj = UserModel.objects.filter(role=3).order_by("-created_at")
         pagination_obj = CustomPagination()
-        search_keys = ["username__icontains", "email__icontains"]
+        search_keys = ["username__icontains","name__icontains","email__icontains"]
         result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.GetSubAdminSerializer, sub_obj)
         return{'data': result,'message':  messages.FETCH, 'status': 200}
     

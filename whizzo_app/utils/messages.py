@@ -62,6 +62,7 @@ SUBJECT_UPDATED="Subject updated successfully"
 SUBJECT_DELETED="Subject deleted successfully"
 
 ROLE_ADDED= "Role added successfully"
+ROLE_UPDATED ="Role updated successfully"
 MODULE_ADDED= "Module added successfully"
 
 INTERNAL_SERVER_ERROR= "Internal server error"
