@@ -541,7 +541,19 @@ class AdminService:
             return {"data": serializer.errors,"message": messages.WENT_WRONG, "status": 400}
         except Exception as e:
             return {"error": str(e),"message": messages.RECORD_NOT_FOUND, "status":400}
-        
+
+    def update_role(self, request, role_id):
+        try:
+            role = SubRoleModel.objects.get(id=role_id)
+        except SubRoleModel.DoesNotExist:
+            return {"data": None, "message":messages.RECORD_NOT_FOUND, "status": 400}
+        serializer = adminSerializer.CreateRoleSubAdminSerializer(role, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return {"data": serializer.data, "message": messages.ROLE_UPDATED, "status": 200}
+        return {"data": None, "message": serializer.errors, "status": 400}        
+
+
 
     def get_role_sub_admin(self,request):
         try:

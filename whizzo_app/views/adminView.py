@@ -179,6 +179,12 @@ class CreateSubRoleView(APIView):
         result = admin_obj.add_role_sub_admin(request)
         return Response(result, status=result["status"])
     
+class UpdateRoleView(APIView):
+    # permission_classes = [AllowAny]
+    def put(self, request,role_id):
+        result = admin_obj.update_role(request, role_id)
+        return Response(result, status=result["status"])
+    
 class GetAllSubRoleView(APIView):
     # permission_classes = [AllowAny]
     def get(self, request):

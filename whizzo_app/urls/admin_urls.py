@@ -38,6 +38,7 @@ urlpatterns = [
     path("delete-subject/<int:id>/", adminView.DeleteSubjectView.as_view()),
 
     path("add-sub-role/", adminView.CreateSubRoleView.as_view()),
+    path("update-role/<int:role_id>/", adminView.UpdateRoleView.as_view()),
     path("get-all-sub-role/", adminView.GetAllSubRoleView.as_view()),
 
     path("add-module/", adminView.CreateModuleView.as_view()),
