@@ -976,6 +976,13 @@ class AdminService:
             file_link = request.FILES.get("file_link")
             try:
                 result = self.gemini_solution_admin(file_link)
+                if result == "Please upload valid file.":
+                    return {"message": "Please upload a proper pdf file.","status": 400}
+                if isinstance(result, dict):
+                    message = result.get('message')
+                    if message == "Empty file provided.":
+                        return {"message": "Empty file provided.","status": 400}
+                
                 final_response = ""
                 try:
                     for i in range(len(result)-1, -1, -1):
@@ -1029,10 +1036,15 @@ class AdminService:
     def gemini_solution_admin(self, file_link):
         llm = ChatGoogleGenerativeAI(model="gemini-pro")
         text_data = self.extract_text_admin(file_link)
+        if isinstance(text_data, dict):
+            message = text_data.get('message')
+            if message == "Empty file provided.":
+                return {"message": "Empty file provided."}
+        
         message = HumanMessage(
             content=[
                 {"type": "text",
-                    "text": "generate 20 multiple choice questions with  four different options to choose and correct answers for this document. Fomrat should be in python json list format with these keys (question , answer_option ,correct_answer(make sure the spellings remain same as here for keys ), (generate data in same language as text data(language options available english and arabic))). Make sure to keep constraint on non ascii characters"},
+                    "text": "generate 20 multiple choice questions with  four different options to choose and correct answers for this document. Fomrat should be in python json list format with these keys (question , answer_option ,correct_answer(make sure the spellings remain same as here for keys ), (generate data in same language as text data(language options available english and arabic))). Make sure to keep constraint on non ascii characters.If you find that the provided data is not sufficient strictly return the output as 'Please upload valid file.'"},
                 {"type": "text", "text":text_data}
             ]
         )
@@ -1048,4 +1060,6 @@ class AdminService:
             pdf_reader = PdfReader(pdf_stream)
             for page in pdf_reader.pages:
                 pdf_text += page.extract_text()
+                if isinstance(pdf_text, str) and pdf_text.strip() == "":
+                    return {"message": "Empty file provided."}
         return pdf_text
