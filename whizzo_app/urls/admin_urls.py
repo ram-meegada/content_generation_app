@@ -100,5 +100,6 @@ urlpatterns = [
     path("delete-notification/<int:id>/", adminView.DeleteNotificationByIdView.as_view()),
 
     path("csv-users/",adminView.ExportUsersCsvView.as_view()),
+    path("customers-queries-csv/", adminView.CustomerSupportCSV.as_view()),
 
 ]

@@ -255,7 +255,7 @@ class CustomerSupportListSerializer(serializers.ModelSerializer):
     customer = serializers.SerializerMethodField()
     class Meta:
         model = CustomerSupportModel
-        fields = ['id',  'customer', 'username',  'email', 'queries', 'reverted_back']
+        fields = ['id',  'customer', 'username',  'email', 'queries', 'reverted_back', 'answer']
     def get_customer(self, obj):
         try:
             data = {}

@@ -38,12 +38,6 @@ class GetAllManageUserView(APIView):
         result = admin_obj.get_all_user_admin(request)
         return Response(result, status=result["status"])
     
-class ExportUsersCsvView(APIView):
-    permission_classes = [AllowAny]
-    def get(self, request):
-        result = admin_obj.export_users_to_csv()
-        return JsonResponse(result, status=result["status"])
-    
 class GetManageUserByIdView(APIView):
     # permission_classes = [AllowAny]
     def get(self, request,id):
@@ -479,4 +473,85 @@ class GenerateAbilityQuestionsFromPDFViewPdf(APIView):
     def post(self, request):
         result = admin_obj.generate_questions_for_ability_in_admin(request)
         return Response(result, status = result["status"])
+    
+class ExportUsersCsvView(APIView):
+    def get(self, request):
+        from whizzo_app.models import UserModel
+        from whizzo_app.utils.customPagination import CustomPagination
+        from whizzo_app.serializers import adminSerializer
+        import pandas as pd
+        from io import BytesIO
+        from django.core.files.uploadedfile import InMemoryUploadedFile
+        from whizzo_app.services.uploadMediaService import UploadMediaService 
 
+        sub_obj = UserModel.objects.filter(role=2).order_by("-created_at")
+        pagination_obj = CustomPagination()
+        search_keys = ["first_name__icontains", "email__icontains"]
+        result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.GetAdminManageUserSerializer, sub_obj)
+        df = pd.DataFrame(result["response_object"])
+        excel_buffer = BytesIO()
+        with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name='Users')
+        excel_buffer.seek(0)
+        excel_file = InMemoryUploadedFile(
+            excel_buffer, 
+            'media', 
+            'users.xlsx', 
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 
+            excel_buffer.getbuffer().nbytes, 
+            None
+        )
+        upload_media_service = UploadMediaService()
+        excel_upload_result = upload_media_service.create_upload_media_xl(request, excel_file)
+        url = excel_upload_result['file_url']
+        
+        # Construct your response data
+        response_data = {
+            "file_urls": url,
+            "messages": "Excel file uploaded successfully.",
+            "status": 200
+        }
+
+        # Return JSON response
+        return JsonResponse(response_data)    
+
+class CustomerSupportCSV(APIView):
+    def post(self, request, * args , **kwargs):
+        from whizzo_app.models import CustomerSupportModel
+        from whizzo_app.utils.customPagination import CustomPagination
+        from whizzo_app.serializers import adminSerializer
+        import pandas as pd
+        from io import BytesIO
+        from django.core.files.uploadedfile import InMemoryUploadedFile
+        from whizzo_app.services.uploadMediaService import UploadMediaService 
+
+        customer_support = CustomerSupportModel.objects.filter(reverted_back=request.data["reverted_back"]).order_by("-updated_at")
+        pagination_obj = CustomPagination()
+        search_keys = ["username__icontains", "email__icontains"]
+        result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.CustomerSupportListSerializer, customer_support)
+        df = pd.DataFrame(result["response_object"])
+        excel_buffer = BytesIO()
+        with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name='Users')
+        excel_buffer.seek(0)
+        excel_file = InMemoryUploadedFile(
+            excel_buffer, 
+            'media', 
+            'customers_queries.xlsx', 
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 
+            excel_buffer.getbuffer().nbytes, 
+            None
+        )
+        upload_media_service = UploadMediaService()
+        excel_upload_result = upload_media_service.create_upload_media_xl(request, excel_file)
+        url = excel_upload_result['file_url']
+        
+        # Construct your response data
+        response_data = {
+            "file_urls": url,
+            "messages": "Excel file uploaded successfully.",
+            "status": 200
+        }
+
+        # Return JSON response
+        return JsonResponse(response_data)

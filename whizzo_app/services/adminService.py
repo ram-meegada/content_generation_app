@@ -875,7 +875,7 @@ class AdminService:
 ##########CUSTOMER SUPPORT
     
     def get_all_customer_support(self,request):
-        customer_support = CustomerSupportModel.objects.all().order_by("-created_at")
+        customer_support = CustomerSupportModel.objects.filter(reverted_back=request.data["reverted_back"]).order_by("-updated_at")
         pagination_obj = CustomPagination()
         search_keys = ["username__icontains", "email__icontains"]
         result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.CustomerSupportListSerializer, customer_support)
@@ -887,7 +887,7 @@ class AdminService:
             query.answer = request.data["answer"]
             query.reverted_back = True
             query.save()
-            send_notification_to_mail(query.customer.email, "Hello user this is your response for query", request.data["answer"])
+            send_notification_to_mail(query.email, "Hello user this is your response for query", request.data["answer"])
                 # try:
                 #     user = UserModel.objects.filter(id=faq.customer_id)
                 #     try:
