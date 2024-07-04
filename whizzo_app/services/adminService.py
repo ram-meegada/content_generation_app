@@ -929,72 +929,26 @@ class AdminService:
 
 
     def add_notification_by_admin(self, request, format=None):
-        user_ids, all_email_to_send, device_tokens = [], [], []
         try:
-            if request.data["notification_for"] == 1:
-                users = UserModel.objects.filter(role__in=[3,2])
-                for i in users:
-                    user_ids.append(i.id)
-                    all_email_to_send.append(i.email)
-                    # try:
-                    #     device_tokens.append(UserSession.objects.get(user_id=i.id).device_token)
-                    # except:
-                    #     pass
-            elif request.data["notification_for"] == 2:
-                users = UserModel.objects.filter(role__in=[2])
-                for i in users:
-                    user_ids.append(i.id)
-                    all_email_to_send.append(i.email)
-                    print(all_email_to_send)
-                    # try:
-                    #     device_tokens.append(UserSession.objects.get(user_id=i.id).device_token)
-                    # except:
-                    #     pass
-
-            elif request.data["notification_for"] == 3:
-                users = UserModel.objects.filter(role__in=[3])
-                for i in users:
-                    user_ids.append(i.id)
-                    all_email_to_send.append(i.email)
-                    # print(all_email_to_send)
-                    # try:
-                    #     device_tokens.append(UserSession.objects.get(user_id=i.id).device_token)
-                    # except:
-                    #     pass
-            for email in all_email_to_send:
+            notification_for = request.data["notification_for"]
+            users_count = len(notification_for)
+            if not notification_for:         
+                notification_for = UserModel.objects.filter(role=2).values_list("email", flat=True)
+                users_count = 0
+            for email in request.data["notification_for"]:
                 title=request.data['notification_title']
                 message=request.data["notification_message"]
                 
                 send_notification_to_mail(email, title, message)
-
-            # for i in device_tokens:
-            #     try:
-            #         push_service = FCMNotification(api_key=None)
-            #         result = push_service.notify_single_device(
-            #             registration_id=f"{i}",
-            #             message_title=request.data["notification_title"],
-            #             message_body=request.data["notification_message"],
-            #             )
-            #     except:
-            #         pass
-            # starting_id_of_push_model = []
-            # for id in user_ids:
-            #     create_notification_obj = NotificationModel.objects.create(
-            #         title = request.data['notification_title'],
-            #         message = request.data['notification_message'],
-            #         # for_user_id = id,
-            #         notification_type = request.data['notification_type'],
-            #         notification_for=request.data["notification_for"]
-            #     )
-            #     if len(starting_id_of_push_model) < 1: starting_id_of_push_model.append(create_notification_obj.id)
-            return {'data':None, 'message':"NOTIFICATION_SENT", 'status':200}
+            NotificationModel.objects.create(title=request.data['notification_title'], message=request.data["notification_message"], notification_for=users_count)    
+            return {'data':None, 'message': "Notification sent successfully", 'status':200}
         except Exception as e:
             return {'data':None, 'message':f"{e}", 'status':400}
         
     def get_all_notifications(self,request):
         notifications = NotificationModel.objects.all().order_by("-created_at")
         pagination_obj = CustomPagination()
-        search_keys = ["username__icontains", "email__icontains"]
+        search_keys = ["title__icontains"]
         result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.NotificationListSerializer, notifications)
         return {"data": result, "message": "retrieved successfully", "status": 200}
     

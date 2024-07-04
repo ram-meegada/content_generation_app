@@ -266,9 +266,18 @@ class CustomerSupportListSerializer(serializers.ModelSerializer):
             return obj.customer
 
 class NotificationListSerializer(serializers.ModelSerializer):
+    notification_for = serializers.SerializerMethodField()
     class Meta:
         model = NotificationModel
-        fields = ['title',  'message', 'notification_for',"title_ar","message_ar"]
+        fields = ['id', 'title',  'message', 'notification_for',"title_ar","message_ar", "created_at"]
+    def get_notification_for(self, obj):
+        try:
+            if obj.notification_for == 0:
+                return "All Users"
+            else:
+                return f"{obj.notification_for} Users"
+        except:
+            return None    
 
 class UsersCsvSerializer(serializers.ModelSerializer):
     class Meta:
