@@ -249,6 +249,8 @@ def pdf_processing(pdf_file , query):
     if pdf_file:
         try:
             text_data = extract_text(pdf_file)
+            if text_data.strip() == "":
+                return {"message": "Empty file provided."}
             message = HumanMessage(
                 content=[
                     {"type": "text", 
@@ -1326,13 +1328,15 @@ class CategoryService:
             # words=int(page)*300
             tone = request.data.get("tone")
             reference = request.data.get("reference")
-            # data=f"Generate research of {topic} having approximate of {PAGE_REFERENCES[page][0]} to {PAGE_REFERENCES[page][1]} words, answer with tone of voice {tone} by using reference of {reference} and also reduce recitation should be {reduce_citation}. Format should be like numbered side headings and matter of side heading should be in numbered points."
-            data=f"You are a topics list generator. Generate research topics list based on {topic}. Output should contain only three topics headings(numbered like 1,2,3) and strictly two side headings(numbered like i, ii, iii)."
+            data=f"You are a topics list generator. Generate research topics list based on {topic}. Output should contain topics headings(strictly numbered like 1,2,3,.....) and slide headings(strictly numbered like i, ii, iii , ......). If any input I provide you has no meaning give error message strictly as 'Invalid input provided'."
+            # data=f"You are a topics list generator. Generate research topics list based on {topic}. Output should contain only three topics headings(numbered like 1,2,3) and strictly two side headings(numbered like i, ii, iii)."
             query = data
             llm = ChatGoogleGenerativeAI(model="gemini-pro")
             try:
                 response = llm.invoke(query)
                 result = to_markdown(response.content)
+                if "Invalid input provided" in result:
+                    return{"data": None, "message": "Invalid input provided", "status": 400}
                 save_to_db = CategoryModel.objects.create(
                                 user_id=request.user.id,
                                 topic=topic,
@@ -1342,7 +1346,6 @@ class CategoryService:
                                 category=4,
                                 result=result
                 )
-                print(result, '-----result=======')
                 return{"data":result, "record_id": save_to_db.id, "message":messages.FETCH,"status":200}
             except Exception as e:
                 return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
@@ -1412,12 +1415,13 @@ class CategoryService:
             description = request.data.get("description", "")
             reduce_citation = True if request.data.get("reduce_citation") == "true" else False
             image_links = []
-            print(dict(request.data)["files"], '-----')
             for img in dict(request.data)["files"]:
                 get_link = save_image(img)
                 image_links.append(get_link[0])
             query = f"You are topics list generator. Generate research topics list based on links I provide to you with reduce citations as {reduce_citation}. Output should contain only three topics headings(numbered like 1,2,3) and strictly two side headings(numbered like i, ii, iii)."
             response = pdf_processing(image_links[0], query)
+            if isinstance(response, dict):
+                return {"data": None, "message": response["message"], "status": 400}
             # message_content = [
             #     {
             #         "type": "text",
@@ -1432,6 +1436,7 @@ class CategoryService:
             # message = HumanMessage(content=message_content)
             # response = llm.invoke([message])
             final_response = response.replace("*", "").replace("-", "")
+            print(final_response, '-----final response-----')
             save_to_db = CategoryModel.objects.create(
                                     user_id=request.user.id,
                                     description=description,
@@ -2255,3 +2260,32 @@ class CategoryService:
             return {"data": None, "message": messages.RECORD_NOT_FOUND, "status": 400}
         except:
             return {"data": None, "message": messages.WENT_WRONG, "status": 400}
+
+    def get_presentation_text(self, request):
+        topic=request.data.get("topic")
+        slides=request.data.get("slides")
+    
+        data=f"You are a presentation maker.Give me contents to make a presentation of {slides} slides on the topic - {topic}.The content of each slide should be more than 150-200 words strictly.So fill up the content part in pointers. Give me result in python JSON format with names for key should be  strictly as (number, heading ,content(the matter in content should be around 150-200 words for each slide strictly))"
+        # data=f"You are a topics list generator. Generate research topics list based on {topic}. Output should contain only three topics headings(numbered like 1,2,3) and strictly two side headings(numbered like i, ii, iii)."
+        query = data
+        llm = ChatGoogleGenerativeAI(model="gemini-pro")
+        try:
+            response = llm.invoke(query)
+            # result =response.content
+            result = to_markdown(response.content)
+            # if "Invalid input provided" in result:
+            #     return{"data": None, "message": result, "status": 400}
+            # save_to_db = CategoryModel.objects.create(
+            #                 user_id=request.user.id,
+            #                 topic=topic,
+            #                 page=page,
+            #                 tone=tone,
+            #                 reference=reference,
+            #                 category=4,
+            #                 result=result
+            # )
+            print(result, '-----result=======')
+            return{"data":result,  "message":messages.FETCH,"status":200}
+        except:
+            return {"data": None, "message": messages.WENT_WRONG, "status": 400}
+

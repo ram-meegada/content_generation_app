@@ -83,7 +83,6 @@ class GetDashboardUserGraphDataView(APIView):
 
 
 class CreateAbilityView(APIView):
-    # permission_classes = [AllowAny]
     def post(self, request):
         result = admin_obj.add_ability(request)
         return Response(result, status=result["status"])
@@ -101,7 +100,6 @@ class DeleteAbilityView(APIView):
         return Response(result, status=result["status"])
     
 class GetAllAbilityView(APIView):
-    # permission_classes=(AllowAny,)
     def post(self, request):
         result = admin_obj.get_all_ability(request)
         return Response(result, status=result["status"])

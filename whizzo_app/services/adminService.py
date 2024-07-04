@@ -180,6 +180,10 @@ class AdminService:
     
 # testimonial
     def add_testimonial(self, request):
+        check_email = TestimonialModel.objects.filter(email=request.data["email"])
+        if check_email.exists():
+            return {"data": None, "message": messages.EMAIL_ALREADY_EXISTS, "status": 400}
+
         serializer = adminSerializer.TestimonialSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -389,6 +393,11 @@ class AdminService:
             #     "correct_answer":request.data.get("corect_answer"),
             #     "is_mcq":request.data.get("is_mcq")
             # }
+            question = request.data.get("question")
+            is_mcq = request.data.get("is_mcq")
+            if AbilityModel.objects.filter(question=question, is_mcq=is_mcq).exists():
+                return {"data": None, "message": "Ability with this question and value's already exists", "status": 400}
+
             serializer=adminSerializer.CreateAbilitySerializer(data=request.data)
             if serializer.is_valid():
                 serializer.save()

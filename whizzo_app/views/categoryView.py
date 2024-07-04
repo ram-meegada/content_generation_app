@@ -138,6 +138,7 @@ class GetResearchAnswerView(APIView):
     def post(self, request):
         result = category_obj.get_research_answer(request)
         return Response(result, status = result["status"])
+    
 
 class RegenerateResearchAnswerView(APIView):
     def get(self, request, id):
@@ -311,3 +312,8 @@ class GetRecordByIdView(APIView):
         result = category_obj.get_testing_record_by_id(request, id)
         return Response(result, status=result["status"])
     
+class GetSlideContentView(APIView):
+    permission_classes =[AllowAny]
+    def post(self, request):
+        result = category_obj.get_presentation_text(request)
+        return Response(result, status = result["status"])

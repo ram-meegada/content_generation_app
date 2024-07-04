@@ -80,6 +80,8 @@ urlpatterns = [
     path("send-file-to-mail/",categoryView.SendFileToMailByToken.as_view()),
 
 
+    #### presentation #####
+    path("get-slide-text/", categoryView.GetSlideContentView.as_view()),
 ]
 
 
