@@ -958,7 +958,7 @@ class AdminService:
             notifications = NotificationModel.objects.get(pk=id)
         except UserModel.DoesNotExist:
             return {"data": None,"message": messages.NOTIFICATION_NOT_FOUND, "status": 404}
-        notifications.is_deleted = True
+        notifications.delete()
         return {"data": None,"message": messages.NOTIFICATION_DELETED, "status": 200}    
 
 
@@ -977,7 +977,7 @@ class AdminService:
             try:
                 result = self.gemini_solution_admin(file_link)
                 if result == "Please upload valid file.":
-                    return {"message": "Please upload a proper pdf file.","status": 400}
+                    return {"message": "Please upload a file which contains sufficient information.","status": 400}
                 if isinstance(result, dict):
                     message = result.get('message')
                     if message == "Empty file provided.":
