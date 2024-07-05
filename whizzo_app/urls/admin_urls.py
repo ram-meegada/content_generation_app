@@ -96,6 +96,7 @@ urlpatterns = [
 
 
     path("add/notification/", adminView.AddNotificationView.as_view()),
+    path("users-listing-for-notification/", adminView.UsersListingView.as_view()),
     path("all-notifications/", adminView.AllNotificationView.as_view()),
     path("delete-notification/<int:id>/", adminView.DeleteNotificationByIdView.as_view()),
 

@@ -271,9 +271,12 @@ def pdf_processing(pdf_file , query):
 class CategoryService:
     def generate_testing_category_result(self, request):
         try:
-            file_links = request.data["file"]
-            sub_category = request.data["sub_category"]
-            api_type = request.data["type"]
+            file_links = []
+            files = dict(request.data)["file"]
+            for i in files:
+                file_links.append(save_image(i)[0])
+            sub_category = int(request.data["sub_category"])
+            api_type = int(request.data["type"])
             final_response = []
             if sub_category == 1:
                 if api_type == 1:

@@ -945,6 +945,11 @@ class AdminService:
         except Exception as e:
             return {'data':None, 'message':f"{e}", 'status':400}
         
+    def users_listing(self, request):
+        users = UserModel.objects.filter(role=2).values("first_name", "last_name", "email")
+        return {'data': users, 'message': "Users listing", 'status':200}
+
+        
     def get_all_notifications(self,request):
         notifications = NotificationModel.objects.all().order_by("-created_at")
         pagination_obj = CustomPagination()

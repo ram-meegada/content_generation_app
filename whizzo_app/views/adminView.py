@@ -451,9 +451,13 @@ class DeleteQueryByIdView(APIView):
         return Response(result, status=result["status"])
     
 class AddNotificationView(APIView):
-    permission_classes = [AllowAny]
     def post(self, request):
         result = admin_obj.add_notification_by_admin(request)
+        return Response(result, status=result["status"])
+
+class UsersListingView(APIView):
+    def get(self, request):
+        result = admin_obj.users_listing(request)
         return Response(result, status=result["status"])
     
 class AllNotificationView(APIView):
