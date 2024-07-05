@@ -8,6 +8,8 @@ USER_LOGGED_IN = "Logged In successfully"
 OTP_SENT_PHONE = "We have sent otp to your phone no"
 WRONG_EMAIL = "Email is unacceptable. Please check again."
 
+TESTIMONIAL_EMAIL_ALREADY_EXISTS = "Testimonial with this email already exists."
+
 PASSWORD_WRONG = "Incorrect password"
 USER_NOT_FOUND = "User not found"
 UPDATED_SUCCESSFULLY="Profile updated Successfully"

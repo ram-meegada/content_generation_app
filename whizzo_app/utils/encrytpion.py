@@ -38,10 +38,8 @@ def payload_decrypt(data):
     decrypted = decrypted_bytes.decode('utf-8')
     # cleaned_string = re.sub(r'[^a-zA-Z0-9\s{}:,._@""()\[\]]', '', a_decrypted)
     # converted_string = json.loads(cleaned_string)
-    # print(converted_string,'converted_string')
     # return converted_string
     # for i in decrypted: 
-        # print(i,'decrypted')
     decrypted_string = ''
     for i in range(len(decrypted)-1,0,-1):
         if decrypted[i] == '}' or decrypted[i] == ']':
@@ -49,7 +47,6 @@ def payload_decrypt(data):
             break
     # if "null" in decrypted_string:
     json_ans = json.loads(decrypted_string)
-    print(json_ans, "---------- json ans -------------")
     return json_ans
     # json_ans = ast.literal_eval(decrypted_string)
     # return json_ans
@@ -71,7 +68,6 @@ def header_decrypt(data):
             break
     json_ans = ast.literal_eval(decrypted_string)
     return json_ans
-    # print(decrypted_bytes,'string_data')
     # if '\x08' in string_data:
     #     clean_string = string_data.replace('\x08','')
     #     data_dict = json.loads(clean_string)

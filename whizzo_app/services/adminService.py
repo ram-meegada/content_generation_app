@@ -154,7 +154,6 @@ class AdminService:
         except UserModel.DoesNotExist:
             return {"data":None,"message": messages.USER_NOT_FOUND, "status": 400}
         serializer = adminSerializer.UpdateAdminManageUserSerializer(user, data=request.data )
-        print(serializer)
         if serializer.is_valid():
             serializer.save()
         return {"data": serializer.data,"message": messages.USER_UPDATED, "status": 200}
@@ -182,13 +181,14 @@ class AdminService:
     def add_testimonial(self, request):
         check_email = TestimonialModel.objects.filter(email=request.data["email"])
         if check_email.exists():
-            return {"data": None, "message": messages.EMAIL_ALREADY_EXISTS, "status": 400}
+            return {"data": None, "message": messages.TESTIMONIAL_EMAIL_ALREADY_EXISTS, "status": 400}
 
         serializer = adminSerializer.TestimonialSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return {"data": serializer.data, "message":messages.TESTIMONIAL_ADDED, "status": 201}
-        return {"data": None, "message": serializer.errors, "status": 400}
+        else:
+            return {"data": None, "message": serializer.errors, "status": 400}
     
     def get_testimonial(self, request, id):
         try:
@@ -365,10 +365,8 @@ class AdminService:
 # ability
 
     def get_all_ability(self, request):
-        print(request.data, '---------------')
         try:
             data = AbilityModel.objects.all().order_by("-created_at")
-            print(data, '---data----')
             pagination_obj = CustomPagination()
             search_keys = ["question__icontains", "answer_option__icontains"]
             result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.CreateAbilitySerializer, data)
@@ -470,6 +468,8 @@ class AdminService:
             sub_obj = SubjectModel.objects.get(id=id)
         except:
             return {"data": None, "message": messages.RECORD_NOT_FOUND, "status": 400}
+        if AchievementModel.objects.filter(subject=sub_obj.id).exists():
+            return {"data": None, "message": "This action cannot be done.", "status": 400}
         sub_obj.delete()
         return {"data": None, "message": messages.SUBJECT_DELETED, "status": 200}
         
@@ -1002,7 +1002,6 @@ class AdminService:
                     final_response = result[result.index("["): i+1] + "]"
                     final_response = json.loads(final_response)
                 except Exception as err:
-                    print(err, "1111111111111111")
                     pass
                 try:
                     is_arabic = True
@@ -1013,12 +1012,10 @@ class AdminService:
                             is_arabic = False
                             break
                 except Exception as err:
-                    print(err, "5555555555555555555555555555555555555")
 
                     pass
                 try:
                     for i in final_response:
-                        print(i,"123456789234567890345678")
                         if not i.get("answer_option"):
                             i["question_type"] = True
                         elif not i["answer_option"]:
@@ -1034,7 +1031,6 @@ class AdminService:
                         )
                         final_data.save()
                 except Exception as err:
-                    print(err, "2222222222222222222")
                     pass         
                 if not final_response:
                     return {"data": None, "message": "Please upload the file again", "status": 200}
@@ -1060,7 +1056,6 @@ class AdminService:
             ]
         )
         response = llm.invoke([message])
-        print(response.content)
         # result = self.to_markdown_admin(response.content)
         return response.content
     

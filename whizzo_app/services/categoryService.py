@@ -441,7 +441,6 @@ class CategoryService:
                     self.translate_text_for_file_summarization(result, save_file_summary_record)
                 except:
                     pass    
-                print(result, "resulkt----------------------------------------")
                 return {"data": result, "record_id": save_file_summary_record.id, "message": messages.SUMMARY_GENERATED, "status": 200}
             except Exception as err:
                 return {"error": str(err), "message": messages.PLEASE_UPLOAD_AGAIN, "status": 400}
@@ -582,7 +581,6 @@ class CategoryService:
                                                             )        
             return {"data": data, "message": messages.PDF_TO_WORD, "status": 200}
         except Exception as err:
-            print(str(err), '-----')
             return {"data": str(err), "message": messages.PLEASE_UPLOAD_AGAIN, "status": 400}
 
     def convert_pdf_to_excel(self , request):
@@ -1053,7 +1051,6 @@ class CategoryService:
             slide_images = []
 
             for slide in prs.slides:
-                print(slide, '-------------', prs)
                 # slide_img_base = os.path.join(temp_dir, f"slide_{prs.slides.index(slide)}")
                 slide_path = f"slide_{prs.slides.index(slide)}"
                 success = self.save_slide_as_image(slide, slide_path)
@@ -1063,10 +1060,8 @@ class CategoryService:
                     return {"message": "Error while converting.", "status": 400}
                 # return {"message": "slide saved", "status": 400}
             if slide_images:
-                print(slide_images[0], 'if slide_images111')
                 first_image = Image.open(slide_images[0] + "_0.jpg")  # Assuming the first image's index is 0
                 first_image.save(pdf_path, save_all=True, append_images=[Image.open(f"{img}_0.png") for img in slide_images[1:]])
-                print("if slide end222222")
 
             # Clean up temporary image files
             for slide_img_base in slide_images:
@@ -1090,7 +1085,6 @@ class CategoryService:
         try:
             img = Image.new(mode="RGB", size=(1024, 768))
             img_draw = ImageDraw.Draw(img)
-            print(slide, '---- slide ----')
             for shape in slide.shapes:
                 if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
                     img.paste(shape.image, (shape.left, shape.top))
@@ -1099,13 +1093,11 @@ class CategoryService:
                 img.save(f"{output_path}.jpg")    
             return True
         except Exception as err:
-            print(err, '-----err------err-----err------')
             return False
 
     # def save_slide_as_image(self, slide, img_path_base):
     #     try:
     #         # os.makedirs(os.path.dirname(img_path_base), exist_ok=True)
-    #         print(slide.shapes, '--------slide1111111111111')
     #         for idx, shape in enumerate(slide.shapes):
     #             if not hasattr(shape, 'image'):
     #                 continue
@@ -1113,11 +1105,9 @@ class CategoryService:
     #             image_bytes = image.blob
     #             img_path = f"{img_path_base}_{idx}.png"
     #             with open(img_path, 'wb') as img_file:
-    #                 print("came here-------------")
     #                 img_file.write(image_bytes)
     #         return True  # Indicate successful operation
     #     except Exception as e:
-    #         print(e, '-----error-----------')
     #         return False  # Indicate failure    
     
         
@@ -1291,7 +1281,6 @@ class CategoryService:
             try:
                 answer = ast.literal_eval(answer)
             except Exception as err:
-                print(err, type(err), '======')
                 pass    
             return {"data": answer, "message": messages.FETCH, "status": 200}
         except Exception as e:
@@ -1383,7 +1372,6 @@ class CategoryService:
                     response = llm.invoke(QUERY)
 
                     result = to_markdown(response.content)
-                    print(result, '------')
                     return {"data": result, "message": "Research topics generated successfully", "status": 200}
                 elif get_research_record.research_type == 2:    
                     image_links = get_research_record.research_file_links
@@ -1409,7 +1397,6 @@ class CategoryService:
                 return {"data": str(err), "message": messages.WENT_WRONG, "status": 400}
         else:
             result = self.generate_detailed_research_based_on_topics(request, id)
-            print(result, '---result----')
             return result
         
     def research_based_on_reference(self,request):
@@ -1439,7 +1426,6 @@ class CategoryService:
             # message = HumanMessage(content=message_content)
             # response = llm.invoke([message])
             final_response = response.replace("*", "").replace("-", "")
-            print(final_response, '-----final response-----')
             save_to_db = CategoryModel.objects.create(
                                     user_id=request.user.id,
                                     description=description,
@@ -1505,7 +1491,6 @@ class CategoryService:
         # get_research_record.result = final_response
         # get_research_record.save()
         ##
-        # print(final_response, '=== final_response ====')
         return {"data": final_response, "message": "Detailed research generated successfully", "status": 200}
     
     def save_research_topic_list(self, request, id):
@@ -1617,13 +1602,11 @@ class CategoryService:
                     """
             text = json.dumps(text)
             result = self.gemini_solution_for_text_translation(text, query)
-            print(result, '---result----')
             final_response = json.loads(result)
         else:
             query = "You are english to arabic translator. Translate the text to arabic which I provide you.Output format should be proper human readable text ."    
             result = self.gemini_solution_for_text_translation(text, query)
             final_response = result
-            print(result, '------')
         return {"data": final_response, "message": "Text translated successfully.", "status": 200}
    
     def gemini_solution_for_text_translation(self, text, query):
@@ -1771,7 +1754,6 @@ class CategoryService:
         # Wrap the BytesIO object with Django's File class
             django_file = File(in_memory_file, name=os.path.basename(file))
             result = self.gemini_solution_review(django_file)
-            print(result, '----result-----')
             final_response = ""
             last_ele = 0
             try:
@@ -1782,12 +1764,10 @@ class CategoryService:
                 final_response = result[result.index("["): i+1] + "]"
                 final_response = json.loads(final_response)
             except ValueError:
-                print("except ValueError-- except ValueError---")
                 if result[0] == "{":
                     result = "[" + result[result.index("{"): last_ele+1] + "]"
                     final_response = json.loads(result)
             except Exception as err:
-                print(err, type(err), '========')
                 return{"data": "Please try again.", "message": "Please try again", "status": 400}
             try:
                 for i in final_response:
@@ -1813,7 +1793,6 @@ class CategoryService:
                 return {"data": "Empty Response", "message": "Please try again", "status": 400}
             return {"data": final_response, "message": "Review generated successfully", "status": 200}
         except Exception as error:
-            print(error, type(error), "2222222222222")
             return{"data": str(error), "message": "Please try again", "status": 400}
         
     def get_assignment_solution_review_func(self, request):
@@ -2163,7 +2142,6 @@ class CategoryService:
                 "status": status.HTTP_200_OK
             }
         except Exception as err:
-            print(err, '----errore============')
             return {"data": str(err), "message": "Something went wrong", "status": 400}
         
     def new_doc_to_pdf_service(self, request):
@@ -2287,7 +2265,6 @@ class CategoryService:
             #                 category=4,
             #                 result=result
             # )
-            print(result, '-----result=======')
             return{"data":result,  "message":messages.FETCH,"status":200}
         except:
             return {"data": None, "message": messages.WENT_WRONG, "status": 400}

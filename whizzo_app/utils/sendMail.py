@@ -12,21 +12,16 @@ def send_otp_to_mail(email, otp,name="User"):
         msg = EmailMultiAlternatives("Dont reply" ,temp, settings.DEFAULT_FROM_EMAIL, [email])
         msg.content_subtype = "html"
         msg.send()
-        print(settings.DEFAULT_FROM_EMAIL,"########## sent ###########")
     except Exception as error:
-        print(error, "----------error---------")  
-
+        pass
 # def send_otp_to_mail(email, otp):
-#     print(otp,"22222222222222222222222222222222222222")
 #     try:
 #         context = {"otp": otp}
 #         temp = render_to_string("sendOtpToMail.html", context=context)
 #         msg = EmailMultiAlternatives("Dont reply" ,temp, settings.DEFAULT_FROM_EMAIL, [email])
 #         msg.content_subtype = "html"
 #         msg.send()
-#         print(settings.DEFAULT_FROM_EMAIL,"########## sent ###########")
 #     except Exception as error:
-#         print(error, "----------error---------")    
 
 def generate_otp():
     # otp = random.randint(0000, 9999)
@@ -66,7 +61,6 @@ class EmailThread(threading.Thread):
         msg = EmailMultiAlternatives(f"{self.title}", temp, settings.DEFAULT_FROM_EMAIL, [self.recipient_list])
         msg.content_subtype = 'html'
         msg.send()
-        print('sent')
         return None
 def send_notification_to_mail(recipient_list, title, message):
     EmailThread(recipient_list, title, message).start()
@@ -80,6 +74,5 @@ def send_pdf_file_to_mail(email,file_link):
         msg = EmailMultiAlternatives("Dont reply" ,temp, settings.DEFAULT_FROM_EMAIL, [email])
         msg.content_subtype = "html"
         msg.send()
-        print("########## sent ###########")
     except Exception as error:
-        print(error, "----------error---------")  
+        pass

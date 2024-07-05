@@ -227,7 +227,6 @@ class UserService:
         }
     
     def update_profile(self, request):
-        print(request.data,"=================payload=========")
         EMAIL_CHANGED = False
         check_email = UserModel.objects.filter(email=request.data["email"])
         if request.user.email != request.data["email"]:
