@@ -464,8 +464,6 @@ class AdminService:
         search_keys = ["subject_name__icontains",]
         result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.GetSubjectSerializer, sub_obj)
         return {"data":result,"message":messages.FETCH,"status":200}
-        
-    
 
     def delete_subject(self, request, id):
         try:
@@ -484,6 +482,14 @@ class AdminService:
             #     "subject":request.data.get("subject"),
             #     "answer_option":request.data.get("answer_option",[])
             # }
+            subject_id = request.data.get("subject")     
+            question = request.data.get("question")
+            if AchievementModel.objects.filter(question=question, subject_id=subject_id).exists():
+                return {"data": None, "message": "This combination of question and subject already exists.", "status": 400}
+   
+            if not SubjectModel.objects.filter(id=subject_id, is_active=True).exists():
+                return {"data": None, "message": "Subject is inactive or does not exist", "status": 400}
+        
             serializer=adminSerializer.CreateAcheivementSerializer(data=request.data)
             if serializer.is_valid():
                 serializer.save()
