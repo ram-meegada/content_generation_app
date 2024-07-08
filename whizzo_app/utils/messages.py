@@ -62,8 +62,10 @@ ACHIEVEMENT_DELETED="Achievement deleted successfully"
 SUBJECT_ADDED="Subject added successfully"
 SUBJECT_UPDATED="Subject updated successfully"
 SUBJECT_DELETED="Subject deleted successfully"
+SUBJECT_CANNOT_DELETED = "This action cannot be done. There are achievements based on this subject."
 
-ROLE_ADDED= "Role added successfully"
+ROLE_ADDED = "Role added successfully"
+ROLE_EXISTS = "Role already exists."
 ROLE_UPDATED ="Role updated successfully"
 MODULE_ADDED= "Module added successfully"
 
@@ -104,7 +106,7 @@ FAQ_DELETED="Faq deleted successfully"
 PLEASE_UPLOAD_AGAIN = "Please upload file again.There may be some issue with network"
 EMPTY_EXCEL = "Input excel file is empty. It must contain atleast one row."
 PROTECTED_PDF = "The file you provided is password protected. We donot have access to this file"
-
+TRY_AGAIN = "Please try again. There might be some issue with the network."
 
 RESEARCH_GENERATED = "Research generated successfully."
 RESEARCH_SAVED = "Research topics saved successfully"

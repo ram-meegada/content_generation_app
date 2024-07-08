@@ -81,7 +81,7 @@ urlpatterns = [
 
 
     #### presentation #####
-    path("get-slide-text/", categoryView.GetSlideContentView.as_view()),
+    path("generate-slide-text/", categoryView.GetSlideContentView.as_view()),
 ]
 
 

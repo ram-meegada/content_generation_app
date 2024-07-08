@@ -313,7 +313,6 @@ class GetRecordByIdView(APIView):
         return Response(result, status=result["status"])
     
 class GetSlideContentView(APIView):
-    permission_classes =[AllowAny]
     def post(self, request):
         result = category_obj.get_presentation_text(request)
         return Response(result, status = result["status"])

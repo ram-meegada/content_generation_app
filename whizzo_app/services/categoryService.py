@@ -290,6 +290,7 @@ class CategoryService:
                     query = f"Generate {settings.NUMBER_OF_QUESTIONS} mcqs with options and answers for this input. Format should be in python json list. Keys should be 'question_no', 'question', 'answer_option', 'correct_answer'."
                     result = pdf_processing(file_links[0], query)
                     json_result = self.jsonify_response(result)
+                    print(json_result, '---json result-----')
                     final_response = json_result
             elif sub_category == 2:
                 if api_type == 1:        
@@ -372,7 +373,14 @@ class CategoryService:
         get_test_object.remaining_answers = remaining_answers
         get_test_object.result = user_response
         get_test_object.save()    
-        data = {"correct_answers": correct_answers, "wrong_answers": wrong_answers, "remaining_answers": remaining_answers}    
+        total_questions = len(user_response)
+        correct_answers_percentage = round((correct_answers/total_questions)*100, 2)
+        wrong_answers_percentage = round((wrong_answers/total_questions)*100, 2)
+        remaining_answers_percentage = round((remaining_answers/total_questions)*100, 2)
+
+        data = {"correct_answers": correct_answers, "wrong_answers": wrong_answers, "remaining_answers": remaining_answers,\
+                 "correct_answers_percentage": correct_answers_percentage, "wrong_answers_percentage": wrong_answers_percentage, \
+                    "remaining_answers_percentage": remaining_answers_percentage}    
         return {"data": data, "message": messages.TEST_SUBMITTED, "status": 200}
     
     def previous_tests_listing(self, request):
@@ -2246,14 +2254,16 @@ class CategoryService:
         topic=request.data.get("topic")
         slides=request.data.get("slides")
     
-        data=f"You are a presentation maker.Give me contents to make a presentation of {slides} slides on the topic - {topic}.The content of each slide should be more than 150-200 words strictly.So fill up the content part in pointers. Give me result in python JSON format with names for key should be  strictly as (number, heading ,content(the matter in content should be around 150-200 words for each slide strictly))"
+        data=f"You are a presentation maker.Give me contents to make a presentation of {slides} slides on the topic - {topic}.The content of each slide should be more than 15000 words strictly.So fill up the content part in pointers. Give me result in python JSON format with names for key should be  strictly as (number, heading ,content(the matter in content should be around 150-200 words for each slide strictly))"
         # data=f"You are a topics list generator. Generate research topics list based on {topic}. Output should contain only three topics headings(numbered like 1,2,3) and strictly two side headings(numbered like i, ii, iii)."
         query = data
         llm = ChatGoogleGenerativeAI(model="gemini-pro")
         try:
             response = llm.invoke(query)
-            # result =response.content
             result = to_markdown(response.content)
+            reversed_result = result[::-1]
+            response =  result[result.index("{"):len(result) - (reversed_result.index("}")) + 1]
+            final_response = json.loads(response)
             # if "Invalid input provided" in result:
             #     return{"data": None, "message": result, "status": 400}
             # save_to_db = CategoryModel.objects.create(
@@ -2265,7 +2275,7 @@ class CategoryService:
             #                 category=4,
             #                 result=result
             # )
-            return{"data":result,  "message":messages.FETCH,"status":200}
+            return{"data": final_response, "message":messages.FETCH, "status":200}
         except:
-            return {"data": None, "message": messages.WENT_WRONG, "status": 400}
+            return {"data": None, "message": messages.TRY_AGAIN, "status": 400}
 

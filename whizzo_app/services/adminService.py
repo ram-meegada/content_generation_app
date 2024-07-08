@@ -445,13 +445,15 @@ class AdminService:
     def edit_status_subject(self, request, id):
         try:   
             sub_obj = SubjectModel.objects.get(id=id)
+            if AchievementModel.objects.filter(subject=sub_obj.id).exists():
+                return {"data": None, "message": messages.SUBJECT_CANNOT_DELETED, "status": 400}
             serializer=adminSerializer.EditSubjectSerializer(sub_obj,data=request.data)
             if serializer.is_valid():
                 serializer.save()
                 return {"data": serializer.data, "message": messages.SUBJECT_UPDATED, "status": 200}
             return {"data": serializer.errors, "message": messages.WENT_WRONG, "status": 400}
-        except:
-            return {"data": None, "message": messages.RECORD_NOT_FOUND, "status": 400}
+        except Exception as err:
+            return {"data": str(err), "message": messages.WENT_WRONG, "status": 400}
     
     def get_all_subject(self, request):
         try:   
@@ -466,6 +468,8 @@ class AdminService:
     def delete_subject(self, request, id):
         try:
             sub_obj = SubjectModel.objects.get(id=id)
+            if AchievementModel.objects.filter(subject=sub_obj.id).exists():
+                return {"data": None, "message": messages.SUBJECT_CANNOT_DELETED, "status": 400}
         except:
             return {"data": None, "message": messages.RECORD_NOT_FOUND, "status": 400}
         if AchievementModel.objects.filter(subject=sub_obj.id).exists():
@@ -549,13 +553,15 @@ class AdminService:
 
     def add_role_sub_admin(self, request):
         try:
+            if SubRoleModel.objects.filter(role_name__iexact=request.data["role_name"].lower()).exists():
+                return {"data": None,"message": messages.ROLE_EXISTS, "status": 400}
             serializer=adminSerializer.CreateRoleSubAdminSerializer(data=request.data)
             if serializer.is_valid():
                 serializer.save()
                 return {"data": serializer.data,"message": messages.ROLE_ADDED, "status": 200}
             return {"data": serializer.errors,"message": messages.WENT_WRONG, "status": 400}
         except Exception as e:
-            return {"error": str(e),"message": messages.RECORD_NOT_FOUND, "status":400}
+            return {"error": str(e),"message": messages.WENT_WRONG, "status":400}
 
     def update_role(self, request, role_id):
         try:
