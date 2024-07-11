@@ -352,7 +352,7 @@ class CategoryService:
         get_test_object = TestingModel.objects.get(id=id)
         user_response = request.data.get("user_response")
         correct_answers, wrong_answers, remaining_answers = 0, 0, 0
-        if get_test_object.sub_category == 1:
+        if get_test_object.sub_category == 1 or (get_test_object.sub_category in [3, 4] and get_test_object.sub_category_type in [1]):
             for i in user_response:
                 if i["correct_answer"] == i["user_answer"]:
                     correct_answers += 1
@@ -360,7 +360,7 @@ class CategoryService:
                     remaining_answers += 1
                 elif i["correct_answer"] != i["user_answer"]:
                     wrong_answers += 1
-        elif get_test_object.sub_category in [2, 3, 4]:
+        elif get_test_object.sub_category in [2] or (get_test_object.sub_category in [3, 4] and get_test_object.sub_category_type in [2]):
             for i in user_response:
                 if i["user_answer"] == "YES":
                     correct_answers += 1
@@ -384,7 +384,10 @@ class CategoryService:
         return {"data": data, "message": messages.TEST_SUBMITTED, "status": 200}
     
     def previous_tests_listing(self, request):
-        previous_tests = TestingModel.objects.filter(user_id=request.user.id).order_by("-updated_at")
+        if "sub_category" not in request.data:
+            previous_tests = TestingModel.objects.filter(user_id=request.user.id).order_by("-updated_at")
+        elif "sub_category" in request.data:
+            previous_tests = TestingModel.objects.filter(user_id=request.user.id, sub_category__in=request.data["sub_category"]).order_by("-updated_at")
         pagination_obj = CustomPagination()
         search_keys = []
         result = pagination_obj.custom_pagination(request, search_keys, categorySerializer.GetPreviousTestSerializer, previous_tests)
@@ -1535,6 +1538,8 @@ class CategoryService:
         
     def download_research_file(self, request,id):
         try:
+            if not request.data.get("html_text").strip():
+                return {"data": None, "message": "You cannot download empty file", "status": 400}
             assignment = CategoryModel.objects.get(id=id)
             if request.data["type"] == 1:
                 if request.data["new"] is True:
@@ -2189,25 +2194,29 @@ class CategoryService:
             return {"data": str(err), "message": "Please upload the file again.", "status": 400} 
 
     def ability(self, request):
+        print(request.GET.get("type"), '---------------request.GET.get("type")-0------')
         try:
-            count = AbilityModel.objects.filter(is_arabic=False).count()
+            api_type = True if request.GET.get("type") == "1" else False
+            count = AbilityModel.objects.filter(is_arabic=False, is_mcq=api_type).count()
             if count <= 20:
-                questions = AbilityModel.objects.filter(is_arabic=False).order_by('?')
+                questions = AbilityModel.objects.filter(is_arabic=False, is_mcq=api_type).order_by('?')
             else:
-                random_ids = random.sample(list(AbilityModel.objects.filter(is_arabic=False).values_list('id', flat=True)), 20)
-                questions = AbilityModel.objects.filter(id__in=random_ids, is_arabic=False)
+                random_ids = random.sample(list(AbilityModel.objects.filter(is_arabic=False, is_mcq=api_type).values_list('id', flat=True)), 20)
+                questions = AbilityModel.objects.filter(id__in=random_ids, is_arabic=False, is_mcq=api_type)
             serialized_questions = [
                 {
                     "question_no": idx + 1,
                     "question": question.question,
                     "answer_option": question.answer_option,
                     "correct_answer": question.corect_answer,
+                    "answer": question.corect_answer,
                     "user_answer": ""
                 }
                 for idx, question in enumerate(questions)
             ]
             save_record = TestingModel.objects.create(user_id=request.user.id,
                                                  sub_category=3, 
+                                                 sub_category_type=int(request.GET.get("type")),
                                                 result=serialized_questions,
                                                 remaining_answers=len(serialized_questions))
             return {"data":serialized_questions, "record_id": save_record.id, "message":messages.FETCH,"status":200}
@@ -2216,29 +2225,34 @@ class CategoryService:
         
     def achievement(self, request,id):
         try:
-            count = AchievementModel.objects.filter(subject_id=id, is_arabic=False).count()
+            api_type = True if request.GET.get("type") == "1" else False
+            count = AchievementModel.objects.filter(subject_id=id, is_arabic=False, is_mcq=api_type).count()
             if count <= 20:
-                questions = AchievementModel.objects.filter(subject_id=id, is_arabic=False).order_by('?')
+                questions = AchievementModel.objects.filter(subject_id=id, is_arabic=False, is_mcq=api_type).order_by('?')
             else:
-                random_ids = AchievementModel.objects.filter(subject_id=id, is_arabic=False).order_by('?').values_list('id', flat=True)[:20]
-                questions = AchievementModel.objects.filter(id__in=random_ids,is_arabic=False)
+                random_ids = AchievementModel.objects.filter(subject_id=id, is_arabic=False, is_mcq=api_type).order_by('?').values_list('id', flat=True)[:20]
+                questions = AchievementModel.objects.filter(id__in=random_ids,is_arabic=False, is_mcq=api_type)
             serialized_questions = [
                 {
                     "question_no": idx + 1,
                     "question": question.question,
                     "answer_option": question.answer_option,
                     "correct_answer": question.corect_answer,
+                    "answer": question.corect_answer,
                     "user_answer": ""
                 }
                 for idx, question in enumerate(questions)
             ]
+            if not serialized_questions:
+                return {"data": messages.NO_QUESTIONS, "message": messages.NO_QUESTIONS, "status": 400}
             save_record = TestingModel.objects.create(user_id=request.user.id, 
                                                  sub_category=4,
                                                 result=serialized_questions,
+                                                sub_category_type=int(request.GET.get("type")),
                                                 remaining_answers=len(serialized_questions))
             return {"data": serialized_questions, "record_id": save_record.id, "message":messages.FETCH,"status":200}
         except Exception as e:
-            return {"data":None,"message":messages.WENT_WRONG,"status":400}
+            return {"data":str(e),"message":messages.WENT_WRONG,"status":400}
         
     def get_testing_record_by_id(self, request, id):
         try:

@@ -7,14 +7,41 @@ from whizzo_app.models.uploadMediaModel import UploadMediaModel
 
 class GetPreviousTestSerializer(serializers.ModelSerializer):
     sub_category = serializers.SerializerMethodField()
+    correct_answers_percentage = serializers.SerializerMethodField()
+    wrong_answers_percentage = serializers.SerializerMethodField()
+    remaining_answers_percentage = serializers.SerializerMethodField()
     class Meta:
         model = TestingModel
-        fields = ["id", "sub_category", "created_at", "updated_at", "result", "correct_answers", "wrong_answers", "remaining_answers"]
+        fields = ["id", "sub_category", "created_at", "updated_at", "result", "correct_answers", "wrong_answers", "remaining_answers","correct_answers_percentage","wrong_answers_percentage","remaining_answers_percentage", "sub_category_type"]
     def get_sub_category(self, obj):
         try:
             return obj.get_sub_category_display()
         except:
             return obj.sub_category
+    
+    def get_correct_answers_percentage(self, obj):
+        try:
+            total_questions = len(obj.result)
+            correct_answers_percentage = round((obj.correct_answers/total_questions)*100, 2)
+            return correct_answers_percentage
+        except:
+            return 0
+        
+    def get_wrong_answers_percentage(self, obj):
+        try:
+            total_questions = len(obj.result)
+            wrong_answers_percentage = round((obj.wrong_answers/total_questions)*100, 2)
+            return wrong_answers_percentage
+        except:
+            return 0
+        
+    def get_remaining_answers_percentage(self, obj):
+        try:
+            total_questions = len(obj.result)
+            remaining_answers_percentage = round((obj.remaining_answers/total_questions)*100, 2)
+            return remaining_answers_percentage
+        except:
+            return 0
         
 class GetFileSummarySerializer(serializers.ModelSerializer):
     category = serializers.SerializerMethodField()

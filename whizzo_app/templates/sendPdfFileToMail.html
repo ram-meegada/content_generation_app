@@ -1,12 +1,263 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pdf File</title>
-</head>
-<body>
-    <p>FIle link :{{link}}</a> </p>
-    <a href="{{link}}">Download the file here</a>
-</body>
+<html>
+  <head>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+    />
+  </head>
+  <body
+    style="
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Urbanist', sans-serif;
+      background-color: #f1f3f4;
+    "
+  >
+    <table
+      style="
+        border-bottom: 4px solid #8a61ff;
+        width: 650px;
+        margin: 0px auto;
+        background: #fff;
+        border-spacing: 0;
+      "
+    >
+    <tr>
+      <td style="padding: 0; background-color: #22252D;">
+          <figure style="margin: auto;  text-align: center; padding: 20px;width: 120px;height: auto;">
+              <img src="images/logo.png" style="width: 100%; height: auto;;">
+          </figure>
+      </td>
+  </tr>
+      <tr>
+        <td style="padding: 20px 20px 0px">
+          <p
+            style="
+              margin: 0;
+              font-size: 18px;
+              color: #000000;
+              font-weight: 500;
+              line-height: 1.5;
+            "
+          >
+            Dear User
+          </p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 0 20px 18px">
+          <p
+            style="
+              margin: 8px 0 30px;
+              font-size: 16px;
+              color: #000000;
+              font-weight: 500;
+              line-height: 1.5;
+            "
+          >
+            Thank you for using Whizzo. As per your request, you can download
+            your PDF document using the link below:
+          </p>
+          <a
+            href="{{ link }}"
+            style="
+              background: transparent
+                linear-gradient(180deg, #6b9cf5 0%, #b548fe 100%) 0% 0%
+                no-repeat padding-box;
+              color: #ede7e7;
+              text-decoration: none;
+              border-radius: 30px;
+              padding: 13px 37px;
+              font-weight: 600;
+              font-size: 16px;
+            "
+            >Download PDF</a
+          >
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 0 20px 40px; text-align: left">
+          <p
+            style="
+              margin: 15px 0 0;
+              font-size: 16px;
+              color: #000000;
+              font-weight: 500;
+              line-height: 1.5;
+            "
+          >
+            If you have any questions or need further assistance, please feel
+            free to reach out.
+          </p>
+          <p style="font-size: 16px; margin: 10px 0 0; color: #000000">
+            Best regards,
+          </p>
+          <p
+            style="
+              margin: 15px 0 0;
+              font-size: 16px;
+              color: #000000;
+              font-weight: 500;
+              line-height: 1.5;
+              word-break: break-word;
+            "
+          >
+            Whizzo team
+          </p>
+        </td>
+      </tr>
+      <tr>
+        <td
+          style="
+            text-align: center;
+            padding: 15px 25px;
+            color: #fff;
+            background: #1d1d1d;
+          "
+        >
+          <ul style="padding-bottom: 10px; list-style: none">
+            <li style="display: inline-block; margin-right: 5px">
+              <a
+                style="
+                  cursor: pointer;
+                  margin-right: 7px;
+                  display: inline-flex;
+                  justify-content: center;
+                  align-items: center;
+                  width: 30px;
+                  height: 30px;
+                  border-radius: 35px;
+                  background: transparent
+                    linear-gradient(180deg, #6b9cf5 0%, #b548fe 100%) 0% 0%
+                    no-repeat padding-box;
+                  padding: 5px;
+                "
+              >
+                <figure
+                  style="margin: 0; width: 30px; height: 30px; padding: 5px"
+                >
+                  <img
+                    src="images/instagram.png"
+                    style="
+                      width: 100%;
+                      height: 100%;
+                      object-fit: contain;
+                      filter: brightness(0) invert(1);
+                    "
+                  />
+                </figure>
+              </a>
+            </li>
+            <li style="display: inline-block">
+              <a
+                style="
+                  cursor: pointer;
+                  margin-right: 5px;
+                  display: inline-flex;
+                  justify-content: center;
+                  align-items: center;
+                  width: 30px;
+                  height: 30px;
+                  border-radius: 35px;
+                  background: transparent
+                    linear-gradient(180deg, #6b9cf5 0%, #b548fe 100%) 0% 0%
+                    no-repeat padding-box;
+                  padding: 7px;
+                "
+              >
+                <figure
+                  style="margin: 0; width: 30px; height: 30px; padding: 10px"
+                >
+                  <img
+                    src="images/facebook.png"
+                    style="
+                      width: 100%;
+                      height: 100%;
+                      object-fit: contain;
+                      filter: brightness(0) invert(1);
+                    "
+                  />
+                </figure>
+              </a>
+            </li>
+            <li style="display: inline-block">
+              <a
+                style="
+                  cursor: pointer;
+                  margin-right: 5px;
+                  display: inline-flex;
+                  justify-content: center;
+                  align-items: center;
+                  width: 30px;
+                  height: 30px;
+                  border-radius: 35px;
+                  background: transparent
+                    linear-gradient(180deg, #6b9cf5 0%, #b548fe 100%) 0% 0%
+                    no-repeat padding-box;
+                  padding: 7px;
+                "
+              >
+                <figure
+                  style="margin: 0; width: 30px; height: 30px; padding: 5px"
+                >
+                  <img
+                    src="images/linkdin.png"
+                    style="
+                      width: 100%;
+                      height: 100%;
+                      object-fit: contain;
+                      filter: brightness(0) invert(1);
+                    "
+                  />
+                </figure>
+              </a>
+            </li>
+            <li style="display: inline-block">
+              <a
+                style="
+                  cursor: pointer;
+                  margin-right: 5px;
+                  display: inline-flex;
+                  justify-content: center;
+                  align-items: center;
+                  width: 30px;
+                  height: 30px;
+                  border-radius: 35px;
+                  background: transparent
+                    linear-gradient(180deg, #6b9cf5 0%, #b548fe 100%) 0% 0%
+                    no-repeat padding-box;
+                  padding: 7px;
+                "
+              >
+                <figure
+                  style="margin: 0; width: 30px; height: 30px; padding: 5px"
+                >
+                  <img
+                    src="images/youtube.png"
+                    style="
+                      width: 100%;
+                      height: 100%;
+                      object-fit: contain;
+                      filter: brightness(0) invert(1);
+                    "
+                  />
+                </figure>
+              </a>
+            </li>
+          </ul>
+          <p style="margin: 0 0 5px; font-size: 13px; font-weight: 500">
+            Copyright © 2024 . All rights reserved
+          </p>
+        </td>
+      </tr>
+    </table>
+  </body>
 </html>

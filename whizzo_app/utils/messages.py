@@ -34,6 +34,9 @@ MEDIA_UPLOADED = "Media uploaded successfully"
 ####### common ########
 WENT_WRONG = "Something went wrong"
 RECORD_NOT_FOUND = "Record not found"
+ACTION_RESTRICTED = "Atleat one purpose required."
+
+NO_QUESTIONS = "No questions to display."
 
 ###### category #######
 INCOMPLETE_PREVIOUS_TEST = "You have incomplete previous test. Please complete the existing one and create new test."
@@ -63,6 +66,7 @@ SUBJECT_ADDED="Subject added successfully"
 SUBJECT_UPDATED="Subject updated successfully"
 SUBJECT_DELETED="Subject deleted successfully"
 SUBJECT_CANNOT_DELETED = "This action cannot be done. There are achievements based on this subject."
+SUBJECT_EXISTS = "Subject already exists."
 
 ROLE_ADDED = "Role added successfully"
 ROLE_EXISTS = "Role already exists."

@@ -10,6 +10,8 @@ urlpatterns = [
     
     path("get-dashboard-data/", adminView.GetDashboardDataView.as_view()),
     path("get-dashboard-user-graph-data/", adminView.GetDashboardUserGraphDataView.as_view()),
+    path("get-dashboard-revenue-graph-data/", adminView.GetDashboardRevenueGraphDataView.as_view()),
+    path("get-dashboard-subscription-graph-data/", adminView.GetDashboardSubscriptionGraphDataView.as_view()),
 
     path("get-all-manage-user/", adminView.GetAllManageUserView.as_view()),
     path("get-manage-user/<int:id>/", adminView.GetManageUserByIdView.as_view()),
@@ -102,5 +104,6 @@ urlpatterns = [
 
     path("csv-users/",adminView.ExportUsersCsvView.as_view()),
     path("customers-queries-csv/", adminView.CustomerSupportCSV.as_view()),
+    path("users-graph-csv/", adminView.ExportUsersGraphCsvView.as_view()),
 
 ]

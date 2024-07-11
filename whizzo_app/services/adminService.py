@@ -14,7 +14,7 @@ import csv
 from io import StringIO
 from whizzo_project import settings
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from whizzo_app.utils.saveImage import save_file_conversion_csv
 from whizzo_app.utils.sendMail import send_notification_to_mail
 from langchain_core.messages import HumanMessage
@@ -26,7 +26,11 @@ import string
 import urllib.request as urlopener
 from PyPDF2 import PdfReader
 from io import BytesIO
-
+import calendar
+from dateutil.relativedelta import relativedelta
+import pandas as pd
+from django.core.files.uploadedfile import InMemoryUploadedFile
+from whizzo_app.services.uploadMediaService import UploadMediaService
 
 class AdminService:
 # onboarding
@@ -108,27 +112,66 @@ class AdminService:
     
 
     def get_admin_user_graph_data(self, request, format=None):
-        # interval = request.data.get("interval")
-        now = timezone.now()
-
+        interval = request.GET.get("interval")
         filtered_users = UserModel.objects.filter(role=2)
-        # if not interval:
-        current_year = now.year
-        start_date = timezone.datetime(current_year, 1, 1).date()
-        end_date = now.date()
-        date_counts = {}
+        result = {}
+        TODAY_DATETIME = datetime.now()
+        YEAR = TODAY_DATETIME.year
+        MONTH = TODAY_DATETIME.month
+        if interval == "1":
+            start_date = TODAY_DATETIME - timedelta(days=TODAY_DATETIME.weekday()+1)
+            for i in range(7):
+                filtered_users_count = filtered_users.filter(created_at__date=start_date).count()
+                result[datetime.strftime(start_date, "%a")] = filtered_users_count
+                start_date += timedelta(days=1)
+        elif interval == "2":
+            starting_dates = list(self.extract_month_dates(YEAR, MONTH))
+            for idx, value in enumerate(starting_dates):
+                filtered_users_count = filtered_users.filter(created_at__gte=value, created_at__lte=value+timedelta(days=7)).count()
+                result[f"week{idx+1}"] = filtered_users_count
+        elif interval == "3":
+            for i in range(1, 13):
+                filtered_users_count = filtered_users.filter(created_at__year=YEAR, created_at__month=i).count()
+                result[datetime.strftime(datetime(YEAR, i, 1), "%b")] = filtered_users_count
+        elif interval == "4":
+            year = TODAY_DATETIME
+            for i in range(10):
+                year_label = year.year
+                filtered_users_count = filtered_users.filter(created_at__year=year_label).count()
+                result[str(year_label)] = filtered_users_count
+                year -= relativedelta(years=1)
+        return {'data': result, 'message': messages.FETCH, "status": 200}
+    
+    def get_revenue_graph_data(self, request, format=None):
+        interval = request.GET.get("interval")
+        if interval == "1":
+            result = {'Sun': 0, 'Mon': 0, 'Tue': 0, 'Wed': 0, 'Thu': 0, 'Fri': 0, 'Sat': 0}
+        elif interval == "2":
+            result = {'week1': 0, 'week2': 0, 'week3': 0, 'week4': 0, 'week5': 0}    
+        elif interval == "3":
+            result = {'Jan': 0, 'Feb': 0, 'Mar': 0, 'Apr': 0, 'May': 0, 'Jun': 0, 'Jul': 0, 'Aug': 0, 'Sep': 0, 'Oct': 0, 'Nov': 0, 'Dec': 0}
+        elif interval == "4":
+            result = {'2024': 0, '2023': 0, '2022': 0, '2021': 0, '2020': 0, '2019': 0, '2018': 0, '2017': 0, '2016': 0, '2015': 0}    
+        return {'data': result, 'message': messages.FETCH, "status": 200}
 
-        current_date = start_date
-        while current_date <= end_date:
-            count = filtered_users.filter(created_at__year=current_year, created_at__month=current_date.month).count()
-            date_counts[current_date.strftime("%Y-%m")] = count
-            current_date = current_date.replace(month=current_date.month + 1)
-        
-        # Organize data into label and value arrays
-        labels = list(date_counts.keys())
-        values = list(date_counts.values())
-        
-        return {"labels": labels, "values": values, 'message': messages.FETCH,"status": 200}
+    def get_subscription_graph_data(self, request, format=None):
+        interval = request.GET.get("interval")
+        if interval == "1":
+            result = {'Sun': 0, 'Mon': 0, 'Tue': 0, 'Wed': 0, 'Thu': 0, 'Fri': 0, 'Sat': 0}
+        elif interval == "2":
+            result = {'week1': 0, 'week2': 0, 'week3': 0, 'week4': 0, 'week5': 0}    
+        elif interval == "3":
+            result = {'Jan': 0, 'Feb': 0, 'Mar': 0, 'Apr': 0, 'May': 0, 'Jun': 0, 'Jul': 0, 'Aug': 0, 'Sep': 0, 'Oct': 0, 'Nov': 0, 'Dec': 0}
+        elif interval == "4":
+            result = {'2024': 0, '2023': 0, '2022': 0, '2021': 0, '2020': 0, '2019': 0, '2018': 0, '2017': 0, '2016': 0, '2015': 0}    
+        return {'data': result, 'message': messages.FETCH, "status": 200}
+
+    def extract_month_dates(self, year, month):
+        month_range = calendar.monthrange(year, month)[1]
+        for i in range(1, month_range + 1, 7):
+            yield datetime(year, month, i)
+    
+    # def revenue_graph
 
 # manage user
 
@@ -264,6 +307,8 @@ class AdminService:
     
     def edit_purpose_status_by_id(self,request, purpose_id):
         try:
+            if request.data["is_active"] is False and len(PurposeModel.objects.filter(is_active=True)) == 1:
+                return {"data": None, "message": messages.ACTION_RESTRICTED, "status": 400}
             sub_obj = PurposeModel.objects.get(pk=purpose_id)
         except PurposeModel.DoesNotExist:
             return {"data":None,"message": messages.RECORD_NOT_FOUND, "status": 404}
@@ -274,6 +319,8 @@ class AdminService:
     
     def delete_purpose(self, request, purpose_id):
         try:
+            if len(PurposeModel.objects.filter(is_active=True)) == 1:
+                return {"data": None, "message": messages.ACTION_RESTRICTED, "status": 400}
             address = PurposeModel.objects.get(id=purpose_id)
         except PurposeModel.DoesNotExist:
             return {"data": None, "message": messages.RECORD_NOT_FOUND, "status": 400}
@@ -434,13 +481,15 @@ class AdminService:
    
     def add_subject(self, request):
         try:   
+            if SubjectModel.objects.filter(subject_name__iexact=request.data["subject_name"]):
+                return {"data": None, "message": messages.SUBJECT_EXISTS, "status": 400}
             serializer=adminSerializer.CreateSubjectSerializer(data=request.data)
             if serializer.is_valid():
                 serializer.save()
                 return {"data": serializer.data, "message": messages.SUBJECT_ADDED, "status": 200}
             return {"data": serializer.errors, "message": messages.WENT_WRONG, "status": 400}
-        except:
-            return {"data": None, "message": messages.RECORD_NOT_FOUND, "status": 400}
+        except Exception as err:
+            return {"data": str(err), "message": messages.WENT_WRONG, "status": 400}
         
     def edit_status_subject(self, request, id):
         try:   
@@ -1075,3 +1124,68 @@ class AdminService:
                 if isinstance(pdf_text, str) and pdf_text.strip() == "":
                     return {"message": "Empty file provided."}
         return pdf_text
+    
+    def export_users_graph_csv(self, request):
+        try:
+            interval = request.GET.get("interval")
+            api_type = request.GET.get("type")
+            if api_type == "1":
+                filtered_users = UserModel.objects.filter(role=2)
+                result = {}
+                TODAY_DATETIME = datetime.now()
+                YEAR = TODAY_DATETIME.year
+                MONTH = TODAY_DATETIME.month
+                if interval == "1":
+                    start_date = TODAY_DATETIME - timedelta(days=TODAY_DATETIME.weekday()+1)
+                    for i in range(7):
+                        filtered_users |= filtered_users.filter(created_at__date=start_date)
+                        start_date += timedelta(days=1)
+                elif interval == "2":
+                    starting_dates = list(self.extract_month_dates(YEAR, MONTH))
+                    for idx, value in enumerate(starting_dates):
+                        filtered_users |= filtered_users.filter(created_at__gte=value, created_at__lte=value+timedelta(days=7))
+                elif interval == "3":
+                    for i in range(1, 13):
+                        filtered_users |= filtered_users.filter(created_at__year=YEAR, created_at__month=i)
+                elif interval == "4":
+                    year = TODAY_DATETIME
+                    for i in range(10):
+                        year_label = year.year
+                        filtered_users |= filtered_users.filter(created_at__year=year_label)
+                        year -= relativedelta(years=1)
+
+                result = adminSerializer.GetAdminManageUserSerializer(filtered_users, many=True)        
+                graph_data = result.data
+            elif api_type == "2":
+                graph_data = []
+            elif api_type == "3":
+                graph_data = []
+            if not graph_data:
+                return {"data": None, "message": "No data to export", "status": 400}    
+            df = pd.DataFrame(graph_data)
+            excel_buffer = BytesIO()
+            with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
+                df.to_excel(writer, index=False, sheet_name='Users')
+            excel_buffer.seek(0)
+            excel_file = InMemoryUploadedFile(
+                excel_buffer, 
+                'media', 
+                'users.xlsx', 
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 
+                excel_buffer.getbuffer().nbytes, 
+                None
+            )
+            upload_media_service = UploadMediaService()
+            excel_upload_result = upload_media_service.create_upload_media_xl(request, excel_file)
+            url = excel_upload_result['file_url']
+            
+            # Construct your response data
+            response_data = {
+                "file_urls": url,
+                "messages": "Excel file uploaded successfully.",
+                "status": 200
+            }
+            return {"data": response_data, "message": "Csv exported successfully", "status": 200}
+        except Exception as err:
+            return {"data": str(err), "message": messages.WENT_WRONG, "status": 400}
+

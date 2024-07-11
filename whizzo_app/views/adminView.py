@@ -75,6 +75,15 @@ class GetDashboardUserGraphDataView(APIView):
         result = admin_obj.get_admin_user_graph_data(request)
         return Response(result, status=result["status"])
 
+class GetDashboardRevenueGraphDataView(APIView):
+    def get(self, request):
+        result = admin_obj.get_revenue_graph_data(request)
+        return Response(result, status=result["status"])
+
+class GetDashboardSubscriptionGraphDataView(APIView):
+    def get(self, request):
+        result = admin_obj.get_subscription_graph_data(request)
+        return Response(result, status=result["status"])
 
 class CreateAbilityView(APIView):
     def post(self, request):
@@ -559,3 +568,8 @@ class CustomerSupportCSV(APIView):
 
         # Return JSON response
         return JsonResponse(response_data)
+    
+class ExportUsersGraphCsvView(APIView):
+    def get(self, request):
+        result = admin_obj.export_users_graph_csv(request)
+        return Response(result, status = result["status"])

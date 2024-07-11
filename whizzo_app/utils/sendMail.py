@@ -74,5 +74,6 @@ def send_pdf_file_to_mail(email,file_link):
         msg = EmailMultiAlternatives("Dont reply" ,temp, settings.DEFAULT_FROM_EMAIL, [email])
         msg.content_subtype = "html"
         msg.send()
+        print("----------------------------------", file_link, email)
     except Exception as error:
         pass

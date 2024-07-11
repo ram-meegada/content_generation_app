@@ -62,6 +62,8 @@ class UserService:
             password = request.data["password"]
             try:
                 user = UserModel.objects.get(email = email, role=2)
+                if user.profile_status == 1:
+                    return {"data": None, "message": "User not found", "status": 400}
                 if user.is_deleted is True:
                     return {"data": None, "message": "Your account is temporarily blocked by admin", "status": 400}
             except UserModel.DoesNotExist:
