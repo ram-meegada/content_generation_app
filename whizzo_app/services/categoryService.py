@@ -280,6 +280,7 @@ class CategoryService:
             api_type = int(request.data["type"])
             final_response = []
             if sub_category == 1:
+                sub_category_type = 1
                 if api_type == 1:
                     number_of_questions = int(settings.NUMBER_OF_QUESTIONS)//len(file_links)
                     for file in file_links:
@@ -294,6 +295,7 @@ class CategoryService:
                     json_result = self.jsonify_response(result)
                     final_response = json_result
             elif sub_category == 2:
+                sub_category_type = 2
                 if api_type == 1:        
                     number_of_questions = int(settings.NUMBER_OF_QUESTIONS)//len(file_links)
                     for file in file_links:
@@ -310,9 +312,9 @@ class CategoryService:
             save_data = TestingModel.objects.create(user_id=request.user.id, 
                                                            sub_category=request.data["sub_category"],
                                                            result=final_response,
-                                                           remaining_answers=len(final_response)
+                                                           remaining_answers=len(final_response),
+                                                           sub_category_type=sub_category_type
                                                            )
-            print(final_response, '----final_response----final_response----')
             return {"data": final_response, "record_id": save_data.id, "message": "Result generated successfully", "status": 200}
         except Exception as error:
             return {"data": str(error), "message": "Something went wrong", "status": 400}
@@ -353,6 +355,7 @@ class CategoryService:
     def submit_test_and_update_result(self, request, id):
         get_test_object = TestingModel.objects.get(id=id)
         user_response = request.data.get("user_response")
+        print(user_response, '------user response-------')
         correct_answers, wrong_answers, remaining_answers = 0, 0, 0
         if get_test_object.sub_category == 1 or (get_test_object.sub_category in [3, 4] and get_test_object.sub_category_type in [1]):
             for i in user_response:
@@ -373,7 +376,7 @@ class CategoryService:
         get_test_object.correct_answers = correct_answers
         get_test_object.wrong_answers = wrong_answers
         get_test_object.remaining_answers = remaining_answers
-        get_test_object.result = user_response
+        # get_test_object.result = user_response
         get_test_object.save()    
         total_questions = len(user_response)
         correct_answers_percentage = round((correct_answers/total_questions)*100, 2)

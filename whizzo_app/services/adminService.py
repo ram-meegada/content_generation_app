@@ -1008,7 +1008,7 @@ class AdminService:
             return {'data':None, 'message':f"{e}", 'status':400}
         
     def users_listing(self, request):
-        users = UserModel.objects.filter(role=2).values("first_name", "last_name", "email")
+        users = UserModel.objects.filter(role=2, is_active=True).values("first_name", "last_name", "email")
         return {'data': users, 'message': "Users listing", 'status':200}
 
         
@@ -1107,7 +1107,7 @@ class AdminService:
         message = HumanMessage(
             content=[
                 {"type": "text",
-                    "text": "generate 20 multiple choice questions with  four different options to choose and correct answers for this document. Fomrat should be in python json list format with these keys (question , answer_option ,correct_answer(make sure the spellings remain same as here for keys ), (generate data in same language as text data(language options available english and arabic))). Make sure to keep constraint on non ascii characters.If you find that the provided data is not sufficient strictly return the output as 'Please upload valid file.'"},
+                    "text": "Generate multiple choice questions with  atlest two different options and correct answers for this input. Format should be in python json list format with these keys (question , answer_option ,correct_answer(make sure the spellings remain same as here for keys ), (generate data in same language as text data(language options available english and arabic))). Make sure to keep constraint on non ascii characters and correct_answer key should not be empty. If you find that the provided data is not sufficient strictly return the output as 'Please upload valid file.'"},
                 {"type": "text", "text":text_data}
             ]
         )
