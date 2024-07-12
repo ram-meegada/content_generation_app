@@ -66,6 +66,8 @@ class UserService:
                     return {"data": None, "message": "User not found", "status": 400}
                 if user.is_deleted is True:
                     return {"data": None, "message": "Your account is temporarily blocked by admin", "status": 400}
+                if user.is_active is False:
+                    return {"data": None, "message": "Your account is temporarily blocked by admin", "status": 400}
             except UserModel.DoesNotExist:
                 return {"data": None, "message": messages.EMAIL_NOT_FOUND, "status": 400}
             verify_password = check_password(password, user.password)

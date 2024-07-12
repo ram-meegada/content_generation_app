@@ -218,6 +218,7 @@ class AdminService:
         except UserModel.DoesNotExist:
             return {"data": None,"message": messages.USER_NOT_FOUND, "status": 404}
         user_obj.is_deleted = True
+        user_obj.save()
         return {"data": None,"message": messages.USER_DELETED, "status": 200}
     
 # testimonial
@@ -1071,6 +1072,7 @@ class AdminService:
                     pass
                 try:
                     for i in final_response:
+                        print(i, '----iiiiiiii-----')
                         if not i.get("answer_option"):
                             i["question_type"] = True
                         elif not i["answer_option"]:
@@ -1084,7 +1086,6 @@ class AdminService:
                             is_mcq=i["question_type"],
                             is_arabic=is_arabic  
                         )
-                        final_data.save()
                 except Exception as err:
                     pass         
                 if not final_response:

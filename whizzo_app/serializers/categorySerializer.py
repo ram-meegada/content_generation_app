@@ -113,7 +113,7 @@ class GetResearchSerializer(serializers.ModelSerializer):
 class CreateAssignmentSerializers(serializers.ModelSerializer):
     class Meta:
         model = AssignmentModel
-        fields = ["id","user","result"]
+        fields = ["id","user","result", "created_at"]
 
 class FileConversionlistingSerializer(serializers.ModelSerializer):
     converted_media = CreateUpdateUploadMediaSerializer()

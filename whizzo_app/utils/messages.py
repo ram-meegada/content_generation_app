@@ -37,6 +37,7 @@ RECORD_NOT_FOUND = "Record not found"
 ACTION_RESTRICTED = "Atleat one purpose required."
 
 NO_QUESTIONS = "No questions to display."
+NO_FLASHCARDS = "No flashcards to display."
 
 ###### category #######
 INCOMPLETE_PREVIOUS_TEST = "You have incomplete previous test. Please complete the existing one and create new test."

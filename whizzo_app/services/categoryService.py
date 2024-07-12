@@ -271,6 +271,7 @@ def pdf_processing(pdf_file , query):
 class CategoryService:
     def generate_testing_category_result(self, request):
         try:
+            print(request.data, '---------payload--------------')
             file_links = []
             files = dict(request.data)["file"]
             for i in files:
@@ -289,8 +290,8 @@ class CategoryService:
                 elif api_type == 2:
                     query = f"Generate {settings.NUMBER_OF_QUESTIONS} mcqs with options and answers for this input. Format should be in python json list. Keys should be 'question_no', 'question', 'answer_option', 'correct_answer'."
                     result = pdf_processing(file_links[0], query)
+                    print(result, '-----result--------')
                     json_result = self.jsonify_response(result)
-                    print(json_result, '---json result-----')
                     final_response = json_result
             elif sub_category == 2:
                 if api_type == 1:        
@@ -311,6 +312,7 @@ class CategoryService:
                                                            result=final_response,
                                                            remaining_answers=len(final_response)
                                                            )
+            print(final_response, '----final_response----final_response----')
             return {"data": final_response, "record_id": save_data.id, "message": "Result generated successfully", "status": 200}
         except Exception as error:
             return {"data": str(error), "message": "Something went wrong", "status": 400}
@@ -2214,6 +2216,12 @@ class CategoryService:
                 }
                 for idx, question in enumerate(questions)
             ]
+            if not serialized_questions:
+                print(api_type is True, api_type is False)
+                if api_type is True:
+                    return {"data": messages.NO_QUESTIONS, "message": messages.NO_QUESTIONS, "status": 400}
+                elif api_type is False:    
+                    return {"data": messages.NO_FLASHCARDS, "message": messages.NO_FLASHCARDS, "status": 400}
             save_record = TestingModel.objects.create(user_id=request.user.id,
                                                  sub_category=3, 
                                                  sub_category_type=int(request.GET.get("type")),
@@ -2226,6 +2234,7 @@ class CategoryService:
     def achievement(self, request,id):
         try:
             api_type = True if request.GET.get("type") == "1" else False
+            print(api_type, '-----')
             count = AchievementModel.objects.filter(subject_id=id, is_arabic=False, is_mcq=api_type).count()
             if count <= 20:
                 questions = AchievementModel.objects.filter(subject_id=id, is_arabic=False, is_mcq=api_type).order_by('?')
@@ -2244,7 +2253,10 @@ class CategoryService:
                 for idx, question in enumerate(questions)
             ]
             if not serialized_questions:
-                return {"data": messages.NO_QUESTIONS, "message": messages.NO_QUESTIONS, "status": 400}
+                if api_type is True:
+                    return {"data": messages.NO_QUESTIONS, "message": messages.NO_QUESTIONS, "status": 400}
+                elif api_type is False:    
+                    return {"data": messages.NO_FLASHCARDS, "message": messages.NO_FLASHCARDS, "status": 400}
             save_record = TestingModel.objects.create(user_id=request.user.id, 
                                                  sub_category=4,
                                                 result=serialized_questions,
