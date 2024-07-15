@@ -2009,49 +2009,52 @@ class CategoryService:
         return result    
        
     def generate_detailed_article_based_on_topics(self, request):
-        llm = ChatGoogleGenerativeAI(model="gemini-pro")
-        if "record_id" not in request.data:
-            topic = request.data.get("topic")
-            words = request.data.get("words")
-            language = request.data.get("language")
-            region = request.data.get("region")
-            tone = request.data.get("tone")
-            pov = request.data.get("pronouns")
-        elif "record_id" in request.data:
-            get_article_record = ArticleModel.objects.get(id=request.data.get("record_id"))
-            topic = get_article_record.topic
-            tone = get_article_record.tone
-            pov = get_article_record.pov
-            language = get_article_record.language
-            region = get_article_record.region
-            words = get_article_record.words
-        ####
-        QUERY = f"You are article generator. Generate an article on {topic} in the point of view of {pov} which I provide you. Whole Article should be in {language} and of approximately {words} words with voice of tone as {tone} and article should belongs to {region} region. Format should be descriptive. Strictly keep Headings(numbered as 1,2,3) and side headings(numbered as i, ii, iii)."
-        message_content = [
-            {
-                "type": "text",
-                "text": QUERY
-            }
-        ]
-        message = HumanMessage(content=message_content)
-        response = llm.invoke([message])
-        final_response = response.content.replace("*", "").replace("#", "").replace("-", "")
-        ## save record
-        if "record_id" not in request.data:
-            get_article_record = ArticleModel.objects.create(
-                    user_id=request.user.id,
-                    topic=topic,
-                    language=language,
-                    region=region,
-                    pov=pov,
-                    words=words,
-                    tone=tone,
-                    result=final_response
-                )
-        elif "record_id" in request.data:
-            get_article_record.result = final_response
-            get_article_record.save()
-        return {"data": final_response, "record_id": get_article_record.id, "message": "Detailed article generated successfully", "status": 200}
+        try:
+            llm = ChatGoogleGenerativeAI(model="gemini-pro")
+            if "record_id" not in request.data:
+                topic = request.data.get("topic")
+                words = request.data.get("words")
+                language = request.data.get("language")
+                region = request.data.get("region")
+                tone = request.data.get("tone")
+                pov = request.data.get("pronouns")
+            elif "record_id" in request.data:
+                get_article_record = ArticleModel.objects.get(id=request.data.get("record_id"))
+                topic = get_article_record.topic
+                tone = get_article_record.tone
+                pov = get_article_record.pov
+                language = get_article_record.language
+                region = get_article_record.region
+                words = get_article_record.words
+            ####
+            QUERY = f"You are article generator. Generate an article on {topic} in the point of view of {pov} which I provide you. Whole Article should be in {language} and of approximately {words} words with voice of tone as {tone} and article should belongs to {region} region. Format should be descriptive. Strictly keep Headings(numbered as 1,2,3) and side headings(numbered as i, ii, iii)."
+            message_content = [
+                {
+                    "type": "text",
+                    "text": QUERY
+                }
+            ]
+            message = HumanMessage(content=message_content)
+            response = llm.invoke([message])
+            final_response = response.content.replace("*", "").replace("#", "").replace("-", "")
+            ## save record
+            if "record_id" not in request.data:
+                get_article_record = ArticleModel.objects.create(
+                        user_id=request.user.id,
+                        topic=topic,
+                        language=language,
+                        region=region,
+                        pov=pov,
+                        words=words,
+                        tone=tone,
+                        result=final_response
+                    )
+            elif "record_id" in request.data:
+                get_article_record.result = final_response
+                get_article_record.save()
+            return {"data": final_response, "record_id": get_article_record.id, "message": "Detailed article generated successfully", "status": 200}
+        except Exception as err:
+            return {"data": None, "message": "Please upload the file again", "status": 400}    
     
     def get_article_history(self, request):
         try:
