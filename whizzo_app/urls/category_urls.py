@@ -86,4 +86,7 @@ urlpatterns = [
     path("get-presentation/<int:id>/", categoryView.GetPresentationByIdView.as_view()),
     path("update-presentation/<int:id>/", categoryView.UpdatePresentationByIdView.as_view()),
     path("presentation-history/", categoryView.PresentationHistoryView.as_view()),
+
+    #### notes #####
+    path("save-notes/", categoryView.SaveNotesView.as_view()),
 ]

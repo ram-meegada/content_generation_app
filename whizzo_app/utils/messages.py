@@ -117,3 +117,5 @@ TRY_AGAIN = "Please try again."
 
 RESEARCH_GENERATED = "Research generated successfully."
 RESEARCH_SAVED = "Research topics saved successfully"
+
+NOTES_ADDED = "Notes added successfully"
