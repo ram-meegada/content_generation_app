@@ -4,6 +4,7 @@ from whizzo_app.models.categoryModel import CategoryModel
 from whizzo_app.models import FileSumarizationModel, NoteModel, ReseaerchModel, FileConversationModel, ArticleModel, TestingModel
 from whizzo_app.serializers.uploadMediaSerializer import CreateUpdateUploadMediaSerializer
 from whizzo_app.models.uploadMediaModel import UploadMediaModel
+from whizzo_app.models import PresentationModel
 
 class GetPreviousTestSerializer(serializers.ModelSerializer):
     sub_category = serializers.SerializerMethodField()
@@ -54,7 +55,10 @@ class GetFileSummarySerializer(serializers.ModelSerializer):
         except:
             return obj.category
         
-
+class PresentationHistorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PresentationModel
+        fields = ["id", "created_at", "updated_at", "template_id"]
 
 class GetNoteListSerializer(serializers.ModelSerializer):
     media = CreateUpdateUploadMediaSerializer()

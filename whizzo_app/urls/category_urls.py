@@ -82,8 +82,8 @@ urlpatterns = [
 
     #### presentation #####
     path("generate-slide-text/", categoryView.GetSlideContentView.as_view()),
+    path("presentation-binary-data/", categoryView.SavePresentationBinaryDataView.as_view()),
+    path("get-presentation/<int:id>/", categoryView.GetPresentationByIdView.as_view()),
+    path("update-presentation/<int:id>/", categoryView.UpdatePresentationByIdView.as_view()),
+    path("presentation-history/", categoryView.PresentationHistoryView.as_view()),
 ]
-
-
-
-

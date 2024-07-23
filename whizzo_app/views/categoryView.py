@@ -316,3 +316,23 @@ class GetSlideContentView(APIView):
     def post(self, request):
         result = category_obj.get_presentation_text(request)
         return Response(result, status = result["status"])
+
+class SavePresentationBinaryDataView(APIView):
+    def post(self, request):
+        result = category_obj.save_presentation_binary_data(request)
+        return Response(result, status = result["status"])
+
+class PresentationHistoryView(APIView):
+    def post(self, request):
+        result = category_obj.presentation_history(request)
+        return Response(result, status = result["status"])
+
+class GetPresentationByIdView(APIView):
+    def get(self, request, id):
+        result = category_obj.get_presentation_by_id(request, id)
+        return Response(result, status = result["status"])
+
+class UpdatePresentationByIdView(APIView):
+    def put(self, request, id):
+        result = category_obj.update_presentation_by_id(request, id)
+        return Response(result, status = result["status"])

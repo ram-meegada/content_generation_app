@@ -57,6 +57,7 @@ class UserService:
     
     def login_user(self, request):
         otp=sendMail.generate_otp()
+        print(request.data, '------------------')
         if request.data.get("email"):
             email = request.data["email"]
             password = request.data["password"]

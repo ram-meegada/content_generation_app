@@ -19,7 +19,7 @@ import textwrap
 import urllib.request as urlopener
 from PyPDF2 import PdfReader
 from io import BytesIO
-from whizzo_app.models import FaqModel,CmsModel, UserModel, FileSumarizationModel, NoteModel, TestingModel
+from whizzo_app.models import FaqModel,CmsModel, UserModel, FileSumarizationModel, NoteModel, TestingModel, PresentationModel
 from whizzo_app.utils import messages
 from whizzo_app.serializers import categorySerializer, adminSerializer
 from deep_translator import GoogleTranslator
@@ -210,7 +210,7 @@ def image_processing(image_link , query):
     '''processing the image and generate the mcq with options and answer 
        image_link is the s3 bucket link of image and query is string 
        which we use to generate the mcq of flashcards'''
-    llm = ChatGoogleGenerativeAI(model="gemini-pro-vision")
+    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
         # example
     message = HumanMessage(
         content=[
@@ -1336,7 +1336,7 @@ class CategoryService:
             # words=int(page)*300
             tone = request.data.get("tone")
             reference = request.data.get("reference")
-            data=f"You are a topics list generator. Generate research topics list based on {topic}. Output should contain topics headings(strictly numbered like 1,2,3,.....) and slide headings(strictly numbered like i, ii, iii , ......). If any input I provide you has no meaning give error message strictly as 'Invalid input provided'."
+            data=f"You are a topics list generator. Generate research topics list based on {topic}. Output should contain topics headings(strictly numbered like 1,2,3,.....) and slide headings(strictly numbered like i, ii, iii , ......)."
             # data=f"You are a topics list generator. Generate research topics list based on {topic}. Output should contain only three topics headings(numbered like 1,2,3) and strictly two side headings(numbered like i, ii, iii)."
             query = data
             llm = ChatGoogleGenerativeAI(model="gemini-pro")
@@ -1344,7 +1344,7 @@ class CategoryService:
                 response = llm.invoke(query)
                 result = to_markdown(response.content)
                 if "Invalid input provided" in result:
-                    return{"data": None, "message": "Invalid input provided", "status": 400}
+                    return{"data": "Invalid input provided", "message": "Invalid input provided", "status": 400}
                 save_to_db = CategoryModel.objects.create(
                                 user_id=request.user.id,
                                 topic=topic,
@@ -1356,6 +1356,7 @@ class CategoryService:
                 )
                 return{"data":result, "record_id": save_to_db.id, "message":messages.FETCH,"status":200}
             except Exception as e:
+                print(e, '------ererro---------')
                 return{"data":str(e),"message":messages.WENT_WRONG,"status":400}
         
         pdf_link =request.data['upload_reference']
@@ -1417,7 +1418,7 @@ class CategoryService:
         
     def research_based_on_reference(self,request):
         try:
-            llm = ChatGoogleGenerativeAI(model="gemini-pro-vision")
+            llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
             description = request.data.get("description", "")
             reduce_citation = True if request.data.get("reduce_citation") == "true" else False
             image_links = []
@@ -1615,12 +1616,18 @@ class CategoryService:
         if isinstance(text, list):
             # query = "You are english to arabic translator. Translate all the words to arabic wherever you find which I provide you and don't translate the key names. Format should be python json list."
             query = f"""
-                        Translate the following text from English to Arabic:
-                        {text}
+                        Translate the following list from English to Arabic:
+                        {text}. Strictly follow the format
                     """
             text = json.dumps(text)
             result = self.gemini_solution_for_text_translation(text, query)
-            final_response = json.loads(result)
+            try:
+                final_response = json.loads(result)
+            except json.decoder.JSONDecodeError:
+                final_response = ast.literal_eval(result)
+            except Exception as err:
+                return {"data": None, "message": "Please try again", "status": 400}
+            print(final_response, '-----------final------')    
         else:
             query = "You are english to arabic translator. Translate the text to arabic which I provide you.Output format should be proper human readable text ."    
             result = self.gemini_solution_for_text_translation(text, query)
@@ -1713,7 +1720,7 @@ class CategoryService:
         '''processing the image and generate the mcq with options and answer 
             image_link is the s3 bucket link of image and query is string 
             which we use to generate the mcq of flashcards'''
-        llm = ChatGoogleGenerativeAI(model="gemini-pro-vision")
+        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
             # example
         message = HumanMessage(
             content=[
@@ -1885,6 +1892,7 @@ class CategoryService:
                     file_summary.save()
             return {"data": file, "message":messages.UPDATED,"status":200}
         except Exception as err:    
+            print(err, '========file error=========')
             return {"data": str(err), "message": messages.WENT_WRONG, "status": 400}
 
     def html_to_pdf(self, request):
@@ -2027,7 +2035,7 @@ class CategoryService:
                 region = get_article_record.region
                 words = get_article_record.words
             ####
-            QUERY = f"You are article generator. Generate an article on {topic} in the point of view of {pov} which I provide you. Whole Article should be in {language} and of approximately {words} words with voice of tone as {tone} and article should belongs to {region} region. Format should be descriptive. Strictly keep Headings(numbered as 1,2,3) and side headings(numbered as i, ii, iii)."
+            QUERY = f"You are article generator. Generate an article on {topic} in the point of view of {pov} which I provide you. Whole Article should be in {language} and of approximately {words} words with voice of tone as {tone} and article should belongs to {region} region. Format should be descriptive. Strictly keep Headings(numbered as 1,2,3)."
             message_content = [
                 {
                     "type": "text",
@@ -2052,9 +2060,10 @@ class CategoryService:
             elif "record_id" in request.data:
                 get_article_record.result = final_response
                 get_article_record.save()
+            print(final_response, '-----final_response----final_response-----')    
             return {"data": final_response, "record_id": get_article_record.id, "message": "Detailed article generated successfully", "status": 200}
         except Exception as err:
-            return {"data": None, "message": "Please upload the file again", "status": 400}    
+            return {"data": str(err), "message": "Please try again", "status": 400}    
     
     def get_article_history(self, request):
         try:
@@ -2286,28 +2295,67 @@ class CategoryService:
         topic=request.data.get("topic")
         slides=request.data.get("slides")
     
-        data=f"You are a presentation maker.Give me contents to make a presentation of {slides} slides on the topic - {topic}.The content of each slide should be more than 15000 words strictly.So fill up the content part in pointers. Give me result in python JSON format with names for key should be  strictly as (number, heading ,content(the matter in content should be around 150-200 words for each slide strictly))"
+        data=f"You are a presentation maker. Give me contents to make a presentation of {slides} slides on the topic - {topic}.The content of each slide should be more than 15000 words strictly with proper headings. So fill up the content part in pointers. Format should be in python json dictionary and keys should be strictly (number, heading ,content(the matter in content should be around 150-200 words for each slide strictly))"
         # data=f"You are a topics list generator. Generate research topics list based on {topic}. Output should contain only three topics headings(numbered like 1,2,3) and strictly two side headings(numbered like i, ii, iii)."
         query = data
         llm = ChatGoogleGenerativeAI(model="gemini-pro")
         try:
             response = llm.invoke(query)
             result = to_markdown(response.content)
+            print(result, '-----')
+            result = result.replace("Slide ", '')
             reversed_result = result[::-1]
             response =  result[result.index("{"):len(result) - (reversed_result.index("}")) + 1]
-            final_response = json.loads(response)
-            # if "Invalid input provided" in result:
-            #     return{"data": None, "message": result, "status": 400}
-            # save_to_db = CategoryModel.objects.create(
-            #                 user_id=request.user.id,
-            #                 topic=topic,
-            #                 page=page,
-            #                 tone=tone,
-            #                 reference=reference,
-            #                 category=4,
-            #                 result=result
-            # )
-            return{"data": final_response, "message":messages.FETCH, "status":200}
-        except:
+            final_response = ast.literal_eval(response)
+            final_response = list(map(lambda v:v, final_response.values()))
+            return{"data": final_response, "message": messages.PRESENTATION_GENERATED, "status": 200}
+        except Exception as err:
+            print(err, '-------------err-----------')
             return {"data": None, "message": messages.TRY_AGAIN, "status": 400}
 
+    def save_presentation_binary_data(self, request):
+        try:
+            presentation_obj = PresentationModel()
+            presentation_obj.user_id = request.user.id
+            presentation_obj.template_id = request.data.get("template_id", 1)
+            presentation_obj.slides = request.data.get("slides", 6)
+            presentation_obj.text = request.data.get("topic")
+            presentation_obj.binary_data = request.data.get("binary_data")
+            presentation_obj.save()
+            return {"data": {"record_id": presentation_obj.id}, "message": "Binary data saved successfully", "status": 200}
+        except Exception as err:    
+            return {"data": str(err), "message": messages.TRY_AGAIN, "status": 400}
+
+    def update_presentation_by_id(self, request, id):
+        try:
+            presentation_obj = PresentationModel.objects.get(id=id)
+            presentation_obj.binary_data = request.data.get("binary_data")
+            presentation_obj.template_id = request.data.get("template_id")
+            presentation_obj.save()
+            return {"data": [], "message": "Presentation updated successfully", "status": 200}
+        except Exception as err:    
+            return {"data": str(err), "message": messages.TRY_AGAIN, "status": 400}
+
+    def get_presentation_by_id(self, request, id):
+        try:
+            presentation_obj = PresentationModel.objects.get(id=id)
+            data = {}
+            data["id"] = presentation_obj.id
+            data["slides"] = presentation_obj.slides
+            data["text"] = presentation_obj.text
+            data["template_id"] = presentation_obj.template_id
+            data["binary_data"] = ast.literal_eval(presentation_obj.binary_data)
+            return {"data": data, "message": "Presentation fetched successfully", "status": 200}
+        except Exception as err:    
+            return {"data": str(err), "message": messages.TRY_AGAIN, "status": 400}
+
+    def presentation_history(self, request):
+        try:
+            presentation_objs = PresentationModel.objects.filter(user=request.user).order_by("-updated_at")
+            pagination_obj = CustomPagination()
+            search_keys = []
+            result = pagination_obj.custom_pagination(request, search_keys, categorySerializer.PresentationHistorySerializer, presentation_objs)
+            return {"data": result, "message": "Presentation history fetched successfully", "status": 200}
+        except Exception as err:    
+            return {"data": str(err), "message": messages.TRY_AGAIN, "status": 400}
+        

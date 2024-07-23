@@ -59,6 +59,8 @@ FETCH = "Data Fetched successfully"
 ABILITY_UPDATED="Abilty updated successfully"
 ABILITY_DELETED="Abilty deleted successfully"
 
+PRESENTATION_GENERATED = "Presentation generated successfully."
+
 ACHIEVEMENT_ADDED="Achievement added successfully"
 ACHIEVEMENT_UPDATED="Achievement updated successfully"
 ACHIEVEMENT_DELETED="Achievement deleted successfully"
@@ -111,7 +113,7 @@ FAQ_DELETED="Faq deleted successfully"
 PLEASE_UPLOAD_AGAIN = "Please upload file again.There may be some issue with network"
 EMPTY_EXCEL = "Input excel file is empty. It must contain atleast one row."
 PROTECTED_PDF = "The file you provided is password protected. We donot have access to this file"
-TRY_AGAIN = "Please try again. There might be some issue with the network."
+TRY_AGAIN = "Please try again."
 
 RESEARCH_GENERATED = "Research generated successfully."
 RESEARCH_SAVED = "Research topics saved successfully"
