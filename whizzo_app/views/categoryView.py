@@ -336,3 +336,8 @@ class UpdatePresentationByIdView(APIView):
     def put(self, request, id):
         result = category_obj.update_presentation_by_id(request, id)
         return Response(result, status = result["status"])
+
+class SaveNotesView(APIView):
+    def post(self, request):
+        result = category_obj.save_notes(request)
+        return Response(result, status = result["status"])
