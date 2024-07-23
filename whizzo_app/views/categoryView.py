@@ -30,7 +30,7 @@ class TestingCategoryPastListingView(APIView):
 
 class FileSummarizationView(APIView):
     def post(self, request):
-        result = category_obj.generate_file_summary(request)
+        result = category_obj.generate_file_summary(request) 
         return Response(result, status = result["status"])
     
 

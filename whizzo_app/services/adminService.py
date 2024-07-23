@@ -31,7 +31,7 @@ from dateutil.relativedelta import relativedelta
 import pandas as pd
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from whizzo_app.services.uploadMediaService import UploadMediaService
-
+ 
 class AdminService:
 # onboarding
     def login_admin(self, request):

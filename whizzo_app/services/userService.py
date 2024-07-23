@@ -291,7 +291,7 @@ class UserService:
     #                 user = UserModel()
     #                 created = True
     #             user.social_login_id = social_login_id
-    #             user.social_login_type = social_login_type
+    #             user.social_login_type = social_login_type 
     #             user.is_active = True
     #             user.profile_status = 1
     #             user.save()

@@ -8,4 +8,4 @@ class SubscriptionModel(BaseModel):
     features = models.ManyToManyField(FeaturesModel)
     plan_type = models.IntegerField(choices=PLAN_CHOICES, blank=True, null=True)
     class Meta:
-        db_table = "Subscription"
+        db_table = "Subscription" 

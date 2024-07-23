@@ -2245,7 +2245,7 @@ class CategoryService:
             return {"data":serialized_questions, "record_id": save_record.id, "message":messages.FETCH,"status":200}
         except Exception as e:
             return {"data":None,"message":messages.WENT_WRONG,"status":400}
-        
+
     def achievement(self, request,id):
         try:
             api_type = True if request.GET.get("type") == "1" else False

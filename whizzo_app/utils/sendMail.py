@@ -4,7 +4,7 @@ from django.template.loader import render_to_string
 from django.core.mail import EmailMultiAlternatives
 import threading
 from whizzo_app.models.uploadMediaModel import UploadMediaModel
-
+ 
 def send_otp_to_mail(email, otp,name="User"):
     try:
         context = {"name":name,"otp": otp, "logo_link":"https://enilcon.s3.ap-south-1.amazonaws.com/213448_logo.svg"}
