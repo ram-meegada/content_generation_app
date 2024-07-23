@@ -50,7 +50,7 @@ class updateUserSerializer(serializers.ModelSerializer):
                 return None
         return None
     
-
+ 
 class updateWithoutPPUserSerializer(serializers.ModelSerializer):
     purpose = serializers.SerializerMethodField()
     class Meta:

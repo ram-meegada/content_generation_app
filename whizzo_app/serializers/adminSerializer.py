@@ -250,7 +250,7 @@ class GetTestimonialSerializer(serializers.ModelSerializer):
         model = TestimonialModel
         fields = ["id","first_name","last_name","email","rating","message","profile_picture","country_code", "phone_no","is_active", "first_name_ar","last_name_ar","message_ar"]
 
-
+ 
 class CustomerSupportListSerializer(serializers.ModelSerializer):
     customer = serializers.SerializerMethodField()
     class Meta:

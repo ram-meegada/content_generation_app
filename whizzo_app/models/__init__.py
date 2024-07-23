@@ -25,3 +25,4 @@ from .fileConversionModel import FileConversationModel
 from .articleModel import ArticleModel
 from .testingModel import TestingModel
 from .presentationModel import PresentationModel
+from .noteTakingModel import NoteTakingModel

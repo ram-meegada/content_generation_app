@@ -30,7 +30,7 @@ class TestingCategoryPastListingView(APIView):
 
 class FileSummarizationView(APIView):
     def post(self, request):
-        result = category_obj.generate_file_summary(request)
+        result = category_obj.generate_file_summary(request) 
         return Response(result, status = result["status"])
     
 
@@ -335,4 +335,9 @@ class GetPresentationByIdView(APIView):
 class UpdatePresentationByIdView(APIView):
     def put(self, request, id):
         result = category_obj.update_presentation_by_id(request, id)
+        return Response(result, status = result["status"])
+
+class SaveNotesView(APIView):
+    def post(self, request):
+        result = category_obj.save_notes(request)
         return Response(result, status = result["status"])

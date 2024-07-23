@@ -16,7 +16,7 @@ urlpatterns = [
 
     path("send-otp-to-new-mail/", userView.SendOtpToNewMailView.as_view()),
     path("verify-new-mail/", userView.VerifyNewMailView.as_view()),
-
+ 
 
     #### customer support
     path("send-query/",userView.QueryToAdminView.as_view()),

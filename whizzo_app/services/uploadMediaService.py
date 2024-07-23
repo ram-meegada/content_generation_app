@@ -27,7 +27,7 @@ class UploadMediaService:
             return {"data": response_data, "message": messages.MEDIA_UPLOADED, "status": 200}
         except Exception as error:        
             return {"data": str(error), "message": messages.WENT_WRONG, "status": 400}
-        
+         
     def create_upload_media_xl(self, request, file):
         media_list = []
         

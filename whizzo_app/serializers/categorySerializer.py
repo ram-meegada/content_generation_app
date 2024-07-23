@@ -19,7 +19,7 @@ class GetPreviousTestSerializer(serializers.ModelSerializer):
             return obj.get_sub_category_display()
         except:
             return obj.sub_category
-    
+     
     def get_correct_answers_percentage(self, obj):
         try:
             total_questions = len(obj.result)

@@ -19,7 +19,7 @@ import textwrap
 import urllib.request as urlopener
 from PyPDF2 import PdfReader
 from io import BytesIO
-from whizzo_app.models import FaqModel,CmsModel, UserModel, FileSumarizationModel, NoteModel, TestingModel, PresentationModel
+from whizzo_app.models import FaqModel,CmsModel, UserModel, FileSumarizationModel, NoteModel, TestingModel, PresentationModel, NoteTakingModel
 from whizzo_app.utils import messages
 from whizzo_app.serializers import categorySerializer, adminSerializer
 from deep_translator import GoogleTranslator
@@ -2245,7 +2245,7 @@ class CategoryService:
             return {"data":serialized_questions, "record_id": save_record.id, "message":messages.FETCH,"status":200}
         except Exception as e:
             return {"data":None,"message":messages.WENT_WRONG,"status":400}
-        
+
     def achievement(self, request,id):
         try:
             api_type = True if request.GET.get("type") == "1" else False
@@ -2359,3 +2359,7 @@ class CategoryService:
         except Exception as err:    
             return {"data": str(err), "message": messages.TRY_AGAIN, "status": 400}
         
+    def save_notes(self, request):
+        if request.data["type"] == 1:
+            save_notes = NoteTakingModel.objects.create(**request.data)
+        return {"data": None, "message": messages.NOTES_ADDED, "status": 200}
