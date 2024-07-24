@@ -2389,3 +2389,14 @@ class CategoryService:
             return {"data": serializer.data, "message": "Notes fetched successfully", "status": 200}
         except Exception as err:    
             return {"data": str(err), "message": messages.WENT_WRONG, "status": 400}
+
+    def edit_notes_by_id(self, request, id):
+        try:
+            notes = NoteTakingModel.objects.get(id=id)
+            notes.canvas_height = request.data["canvas_height"]
+            notes.binary_data = request.data["binary_data"]
+            notes.note_screenshot = request.data["note_screenshot"]
+            notes.save()
+            return {"data": {}, "message": "Notes updated successfully", "status": 200}
+        except Exception as err:    
+            return {"data": str(err), "message": messages.WENT_WRONG, "status": 400}
