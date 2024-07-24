@@ -293,13 +293,23 @@ class CategoryService:
                         final_response += result
                 elif api_type == 2:
                     text_data = extract_data_from_url(file_links[0])
-                    number_of_questions = int(settings.NUMBER_OF_QUESTIONS)//len(text_data)
-                    query = f"First find the language of input and Generate {number_of_questions} mcqs with options and answers for that input in same language. Format should be in python json list. Keys should be 'question_no', 'question', 'answer_option', 'correct_answer'."
-
+                    number_of_questions =  int(settings.NUMBER_OF_QUESTIONS)//len(text_data)   
+                    query = f"First find the language of input and Generate minimum {number_of_questions} mcqs with options and answers for that input in same language. Format should be in python json list of objects(key-value pair). Key names of objects should be strictly 'question_no', 'question', 'answer_option' and 'correct_answer'."
                     for i in text_data:
                         result = chatGPT_pdf_processing(i, query)
                         for j in result:
                             final_response.append(j)
+                    for index, body in enumerate(final_response):
+                        if isinstance(body["answer_option"], dict):
+                            if "correct_answer" not in body and "correct_answer" in body["answer_option"]:
+                                correct_answer = body["answer_option"].pop("correct_answer")
+                                body["correct_answer"] = correct_answer
+                            if "correct_answer" in body:
+                                for key, val in body["answer_option"].items():
+                                    if key == body["correct_answer"]:
+                                        body["correct_answer"] = val
+                            body["answer_option"] = list(body["answer_option"].values())
+                        body["question_no"] = index + 1    
             elif sub_category == 2:
                 if api_type == 1:        
                     number_of_questions = int(settings.NUMBER_OF_QUESTIONS)//len(file_links)
@@ -322,7 +332,6 @@ class CategoryService:
                                                            remaining_answers=len(final_response),
                                                            sub_category_type=sub_category
                                                            )
-            print("333333333333333333333333")
             return {"data": final_response, "record_id": save_data.id, "message": "Result generated successfully", "status": 200}
         except Exception as error:
             return {"data": str(error), "message": "Something went wrong", "status": 400}

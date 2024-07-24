@@ -13,10 +13,10 @@ API_KEY = config("OPENAI_KEY")
 def chatGPT_pdf_processing(text_data, query):
     messages=[
                     {"role": "system", "content": "You are a helpful assistant designed to output JSON."},
-                    {"role": "user", "content":[
-                        {"type": "text", "text": query},
-                        {"type": "text", "text":text_data}
-                    ]}
+                    {"role": "user", "content": [
+                            {"type": "text", "text": query},
+                            {"type": "text", "text": f"Input data: {text_data}"}
+                        ]}
                 ]
     chatbot = openai.ChatCompletion.create(
         model="gpt-3.5-turbo", messages=messages,response_format={ "type": "json_object" },temperature = 0.0,
@@ -24,9 +24,15 @@ def chatGPT_pdf_processing(text_data, query):
     reply = chatbot.choices[0].message.content
     final_data = json.loads(reply)
     data =[]
-    for i in final_data:
-        for j in final_data[i]:
-            data.append(j)
+    print(final_data, '----final data----')
+    try:
+        for i in final_data:
+            for j in final_data[i]:
+                data.append(j)
+    except TypeError:
+        data.append(final_data)            
+    except Exception as err:
+        print(err, type(err), '======')            
     return data
 
 def extract_data_from_url(pdf_file):
