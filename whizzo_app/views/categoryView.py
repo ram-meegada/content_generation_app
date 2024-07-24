@@ -341,3 +341,8 @@ class SaveNotesView(APIView):
     def post(self, request):
         result = category_obj.save_notes(request)
         return Response(result, status = result["status"])
+
+class NotesHistoryView(APIView):
+    def post(self, request):
+        result = category_obj.notes_history(request)
+        return Response(result, status = result["status"])

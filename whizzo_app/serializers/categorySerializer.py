@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from whizzo_app.models.assignmentModel import AssignmentModel
 from whizzo_app.models.categoryModel import CategoryModel
-from whizzo_app.models import FileSumarizationModel, NoteModel, ReseaerchModel, FileConversationModel, ArticleModel, TestingModel
+from whizzo_app.models import FileSumarizationModel, NoteModel, ReseaerchModel, FileConversationModel, ArticleModel, TestingModel, NoteTakingModel
 from whizzo_app.serializers.uploadMediaSerializer import CreateUpdateUploadMediaSerializer
 from whizzo_app.models.uploadMediaModel import UploadMediaModel
 from whizzo_app.models import PresentationModel
@@ -138,3 +138,15 @@ class FileConversionlistingSerializer(serializers.ModelSerializer):
             return serializer.data
         except:
             return obj.images
+
+
+class NoteTakingSerializer(serializers.ModelSerializer):
+    count = serializers.SerializerMethodField()
+    class Meta:
+        model = NoteTakingModel
+        fields = ["id", "type", "binary_data", "note_screenshot", "count"]
+    def get_count(self, obj):
+        try:
+            return NoteTakingModel.objects.count()
+        except:
+            return 0    
