@@ -2381,3 +2381,11 @@ class CategoryService:
             return {"data": result, "message": "Notes history fetched successfully", "status": 200}
         except Exception as err:    
             return {"data": str(err), "message": messages.TRY_AGAIN, "status": 400}
+
+    def notes_by_id(self, request, id):
+        try:
+            notes = NoteTakingModel.objects.get(id=id)
+            serializer = categorySerializer.NoteTakingSerializer(notes)
+            return {"data": serializer.data, "message": "Notes fetched successfully", "status": 200}
+        except Exception as err:    
+            return {"data": str(err), "message": messages.WENT_WRONG, "status": 400}
