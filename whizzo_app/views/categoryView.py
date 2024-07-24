@@ -351,3 +351,7 @@ class GetNotesByIdView(APIView):
     def get(self, request, id):
         result = category_obj.notes_by_id(request, id)
         return Response(result, status = result["status"])
+
+    def put(self, request, id):
+        result = category_obj.edit_notes_by_id(request, id)
+        return Response(result, status = result["status"])
