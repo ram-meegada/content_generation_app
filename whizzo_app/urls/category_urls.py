@@ -89,4 +89,5 @@ urlpatterns = [
 
     #### notes #####
     path("save-notes/", categoryView.SaveNotesView.as_view()),
+    path("notes-history/", categoryView.NotesHistoryView.as_view()),
 ]
