@@ -1,3 +1,4 @@
+from datetime import datetime
 import ast
 from ssl import SSL_ERROR_EOF
 from typing import final
@@ -78,7 +79,7 @@ from django.core.files.uploadedfile import UploadedFile
 # from spire.presentation import *
 from bs4 import BeautifulSoup
 from whizzo_app.models.articleModel import ArticleModel
-from whizzo_app.utils.Modules.testingModule import chatGPT_pdf_processing, extract_data_from_url
+from whizzo_app.utils.Modules.testingModule import chatGPT_pdf_processing, extract_data_from_url, chatGPT_image_processing
 
 
 
@@ -276,7 +277,6 @@ def pdf_processing(pdf_file , query):
 class CategoryService:
     def generate_testing_category_result(self, request):
         try:
-            print(request.data, '---------payload--------------')
             file_links = []
             files = dict(request.data)["file"]
             for i in files:
@@ -288,37 +288,34 @@ class CategoryService:
                 if api_type == 1:
                     number_of_questions = int(settings.NUMBER_OF_QUESTIONS)//len(file_links)
                     for file in file_links:
-                        query = f"Generate {number_of_questions} mcqs with options and answers for this image and make in python json list format. Keys should be 'question_no', 'question', 'answer_option', 'correct_answer'.). Response should be in the language of content only."
-                        result = self.chatGPT_image_processing(file, query)
+                        query = f"Generate {number_of_questions} mcqs with options and answers for this image and make in python json list format. Keys should be 'question_no', 'question', 'answer_option', 'correct_answer'.)"
+                        result = chatGPT_image_processing(file, query)
                         final_response += result
                 elif api_type == 2:
                     text_data = extract_data_from_url(file_links[0])
                     number_of_questions = int(settings.NUMBER_OF_QUESTIONS)//len(text_data)
                     query = f"First find the language of input and Generate {number_of_questions} mcqs with options and answers for that input in same language. Format should be in python json list. Keys should be 'question_no', 'question', 'answer_option', 'correct_answer'."
+
                     for i in text_data:
                         result = chatGPT_pdf_processing(i, query)
-                        print(result, type(result), '----nreeeessultrtruttttttt----------')
                         for j in result:
-                            print(j, type(j), '-------------------jjjjjjjjjjjjjjjjjjjjjjj')
                             final_response.append(j)
-
             elif sub_category == 2:
                 if api_type == 1:        
                     number_of_questions = int(settings.NUMBER_OF_QUESTIONS)//len(file_links)
                     for file in file_links:
-                        query = f"Generate {number_of_questions} flashcards for this input. Format should be in python json list. Keys should be 'question', 'answer'. Response should be in the language of content only."
-                        result = self.chatGPT_image_processing(file, query)
+                        query = f"Generate {number_of_questions} flashcards for this input. Format should be in python json list. Keys should be 'question', 'answer'."
+                        result = chatGPT_image_processing(file, query)
                         final_response += result
                 elif api_type == 2:
-                    query = f"Generate {settings.NUMBER_OF_QUESTIONS} flashcards for this input. Format should be in python json list. Keys should be 'question', 'answer'. Response should be in the language of content only."
-                    text_data = self.extract_data_from_url(file_links[0])
+                    number_of_questions = int(settings.NUMBER_OF_QUESTIONS)//len(text_data)
+                    query = f"First find the language of input and Generate {number_of_questions} flashcards for this input in same language. Format should be in python json list. Keys should be 'question', 'answer'."
+                    text_data = extract_data_from_url(file_links[0])
                     for i in text_data:
-                        result = self.chatGPT_pdf_processing(i, query)
+                        result = chatGPT_pdf_processing(i, query)
                         for i in result:
                             final_response.append(i)
-            print("11111111111111111111111")
             final_response = [i for i in final_response if isinstance(i, dict)]
-            print(final_response, '------22222222222------------')
             save_data = TestingModel.objects.create(user_id=request.user.id, 
                                                            sub_category=request.data["sub_category"],
                                                            result=final_response,
