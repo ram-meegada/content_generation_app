@@ -78,6 +78,10 @@ from django.core.files.uploadedfile import UploadedFile
 # from spire.presentation import *
 from bs4 import BeautifulSoup
 from whizzo_app.models.articleModel import ArticleModel
+from whizzo_app.utils.Modules.testingModule import chatGPT_pdf_processing, extract_data_from_url
+
+
+
 
 pytesseract.pytesseract.tesseract_cmd = 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
 
@@ -243,6 +247,7 @@ def pdf_processing(pdf_file , query):
         pdf_reader = PdfReader(pdf_stream)
         for page in pdf_reader.pages:
             pdf_text += page.extract_text()
+        print(pdf_text, '------pdf oodfsd')    
         return pdf_text
             
 
@@ -280,41 +285,47 @@ class CategoryService:
             api_type = int(request.data["type"])
             final_response = []
             if sub_category == 1:
-                sub_category_type = 1
                 if api_type == 1:
                     number_of_questions = int(settings.NUMBER_OF_QUESTIONS)//len(file_links)
                     for file in file_links:
-                        query = f"Generate {number_of_questions} mcqs with options and answers for this image and make in python json list format. Keys should be 'question_no', 'question', 'answer_option', 'correct_answer'."
-                        result = image_processing(file, query)
-                        json_result = self.jsonify_response(result)
-                        final_response += json_result
+                        query = f"Generate {number_of_questions} mcqs with options and answers for this image and make in python json list format. Keys should be 'question_no', 'question', 'answer_option', 'correct_answer'.). Response should be in the language of content only."
+                        result = self.chatGPT_image_processing(file, query)
+                        final_response += result
                 elif api_type == 2:
-                    query = f"Generate {settings.NUMBER_OF_QUESTIONS} mcqs with options and answers for this input. Format should be in python json list. Keys should be 'question_no', 'question', 'answer_option', 'correct_answer'."
-                    result = pdf_processing(file_links[0], query)
-                    print(result, '-----result--------')
-                    json_result = self.jsonify_response(result)
-                    final_response = json_result
+                    text_data = extract_data_from_url(file_links[0])
+                    number_of_questions = int(settings.NUMBER_OF_QUESTIONS)//len(text_data)
+                    query = f"First find the language of input and Generate {number_of_questions} mcqs with options and answers for that input in same language. Format should be in python json list. Keys should be 'question_no', 'question', 'answer_option', 'correct_answer'."
+                    for i in text_data:
+                        result = chatGPT_pdf_processing(i, query)
+                        print(result, type(result), '----nreeeessultrtruttttttt----------')
+                        for j in result:
+                            print(j, type(j), '-------------------jjjjjjjjjjjjjjjjjjjjjjj')
+                            final_response.append(j)
+
             elif sub_category == 2:
-                sub_category_type = 2
                 if api_type == 1:        
                     number_of_questions = int(settings.NUMBER_OF_QUESTIONS)//len(file_links)
                     for file in file_links:
-                        query = f"Generate {number_of_questions} flashcards for this input. Format should be in python json list. Keys should be 'question', 'answer'"
-                        result = image_processing(file, query)
-                        json_result = self.jsonify_response(result)
-                        final_response += json_result
+                        query = f"Generate {number_of_questions} flashcards for this input. Format should be in python json list. Keys should be 'question', 'answer'. Response should be in the language of content only."
+                        result = self.chatGPT_image_processing(file, query)
+                        final_response += result
                 elif api_type == 2:
-                    query = f"Generate {settings.NUMBER_OF_QUESTIONS} flashcards for this input. Format should be in python json list. Keys should be 'question', 'answer'"
-                    result = pdf_processing(file_links[0], query)
-                    json_result = self.jsonify_response(result)
-                    final_response = json_result
-
+                    query = f"Generate {settings.NUMBER_OF_QUESTIONS} flashcards for this input. Format should be in python json list. Keys should be 'question', 'answer'. Response should be in the language of content only."
+                    text_data = self.extract_data_from_url(file_links[0])
+                    for i in text_data:
+                        result = self.chatGPT_pdf_processing(i, query)
+                        for i in result:
+                            final_response.append(i)
+            print("11111111111111111111111")
+            final_response = [i for i in final_response if isinstance(i, dict)]
+            print(final_response, '------22222222222------------')
             save_data = TestingModel.objects.create(user_id=request.user.id, 
                                                            sub_category=request.data["sub_category"],
                                                            result=final_response,
                                                            remaining_answers=len(final_response),
-                                                           sub_category_type=sub_category_type
+                                                           sub_category_type=sub_category
                                                            )
+            print("333333333333333333333333")
             return {"data": final_response, "record_id": save_data.id, "message": "Result generated successfully", "status": 200}
         except Exception as error:
             return {"data": str(error), "message": "Something went wrong", "status": 400}
@@ -2361,5 +2372,15 @@ class CategoryService:
         
     def save_notes(self, request):
         if request.data["type"] == 1:
-            save_notes = NoteTakingModel.objects.create(**request.data)
+            save_notes = NoteTakingModel.objects.create(user_id=request.user.id, **request.data)
         return {"data": None, "message": messages.NOTES_ADDED, "status": 200}
+    
+    def notes_history(self, request):
+        try:
+            all_notes = NoteTakingModel.objects.filter(user=request.user).order_by("-updated_at")
+            pagination_obj = CustomPagination()
+            search_keys = []
+            result = pagination_obj.custom_pagination(request, search_keys, categorySerializer.NoteTakingSerializer, all_notes)
+            return {"data": result, "message": "Notes history fetched successfully", "status": 200}
+        except Exception as err:    
+            return {"data": str(err), "message": messages.TRY_AGAIN, "status": 400}
