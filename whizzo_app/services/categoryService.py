@@ -308,9 +308,9 @@ class CategoryService:
                         result = chatGPT_image_processing(file, query)
                         final_response += result
                 elif api_type == 2:
+                    text_data = extract_data_from_url(file_links[0])
                     number_of_questions = int(settings.NUMBER_OF_QUESTIONS)//len(text_data)
                     query = f"First find the language of input and Generate {number_of_questions} flashcards for this input in same language. Format should be in python json list. Keys should be 'question', 'answer'."
-                    text_data = extract_data_from_url(file_links[0])
                     for i in text_data:
                         result = chatGPT_pdf_processing(i, query)
                         for i in result:
@@ -1624,7 +1624,7 @@ class CategoryService:
         if isinstance(text, list):
             # query = "You are english to arabic translator. Translate all the words to arabic wherever you find which I provide you and don't translate the key names. Format should be python json list."
             query = f"""
-                        Translate the following list from English to Arabic:
+                        Translate the following list from (English to Arabic or Arabic to English) based on the language of text:
                         {text}. Strictly follow the format
                     """
             text = json.dumps(text)
