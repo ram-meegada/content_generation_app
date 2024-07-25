@@ -81,7 +81,7 @@ from django.core.files.uploadedfile import UploadedFile
 from bs4 import BeautifulSoup
 from whizzo_app.models.articleModel import ArticleModel
 from whizzo_app.utils.Modules.testingModule import chatGPT_pdf_processing, extract_data_from_url, chatGPT_image_processing
-
+from whizzo_app.utils.Modules.articlesModule import generate_article_util
 
 pytesseract.pytesseract.tesseract_cmd = 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
 
@@ -2107,17 +2107,27 @@ class CategoryService:
                 region = get_article_record.region
                 words = get_article_record.words
             ####
-            QUERY = f"You are article generator. Generate an article on {topic} in the point of view of {pov} which I provide you. Whole Article should be in {language} and of approximately {words} words with voice of tone as {tone} and article should belongs to {region} region. Format should be descriptive. Strictly keep Headings(numbered as 1,2,3)."
-            message_content = [
-                {
-                    "type": "text",
-                    "text": QUERY
-                }
-            ]
-            message = HumanMessage(content=message_content)
-            response = llm.invoke([message])
-            final_response = response.content.replace(
-                "*", "").replace("#", "").replace("-", "")
+            if language == "english":
+                QUERY = f"You are article generator. Generate an article on {topic} in the point of view of {pov} which I provide you. Whole Article should be in {language} and of approximately {words} words with voice of tone as {tone} and article should belongs to {region} region. Format should be descriptive. Strictly keep Headings(numbered as 1,2,3)."
+                message_content = [
+                    {
+                        "type": "text",
+                        "text": QUERY
+                    }
+                ]
+                message = HumanMessage(content=message_content)
+                response = llm.invoke([message])
+                final_response = response.content.replace(
+                    "*", "").replace("#", "").replace("-", "")
+            elif language == "arabic":
+                result = generate_article_util(topic, tone, pov, region, words)
+                final_response = ""
+                print(result, '----result-----result----')
+                try:
+                    for i, j in result["content"].items():
+                        final_response += i + ". " + j["heading"] + "\n\n" + j["content"] + "\n\n"
+                except:
+                    return {"data": None, "message": "Please try again", "status": 400}                
             # save record
             if "record_id" not in request.data:
                 get_article_record = ArticleModel.objects.create(
