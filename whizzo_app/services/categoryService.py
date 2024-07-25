@@ -2482,8 +2482,8 @@ class CategoryService:
                     for i in range(10):
                         date_wise_notes = NoteTakingModel.objects.filter(created_at__date=today_date.date(), user=request.user).values(
                             "id", "type", "note_screenshot", "canvas_height")
-                        notes_dict = {datetime.strftime(
-                            today_date, "%Y-%m-%d"): date_wise_notes, "count": len(date_wise_notes)}
+                        notes_dict = {"title": datetime.strftime(
+                            today_date, "%Y-%m-%d"), "count": len(date_wise_notes)}
                         today_date -= timedelta(days=1)
                         recent_notes.append(notes_dict)
             except Exception as err:
