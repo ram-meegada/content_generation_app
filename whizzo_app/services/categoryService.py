@@ -1,3 +1,4 @@
+from langdetect import detect
 from datetime import datetime
 import ast
 from ssl import SSL_ERROR_EOF
@@ -300,6 +301,8 @@ class CategoryService:
                         for j in result:
                             final_response.append(j)
                     for index, body in enumerate(final_response):
+                        if "answer_options" in i:
+                            i["answer_option"] = i.pop("answer_options")
                         if isinstance(body["answer_option"], dict):
                             if "correct_answer" not in body and "correct_answer" in body["answer_option"]:
                                 correct_answer = body["answer_option"].pop("correct_answer")
@@ -2311,8 +2314,12 @@ class CategoryService:
     def get_presentation_text(self, request):
         topic=request.data.get("topic")
         slides=request.data.get("slides")
+        if "ar" in detect(topic):
+            input_language = "arabic"
+        else:
+            input_language = "english"    
     
-        data=f"You are a presentation maker. Give me contents to make a presentation of {slides} slides on the topic - {topic}.The content of each slide should be more than 15000 words strictly with proper headings. So fill up the content part in pointers. Format should be in python json dictionary and keys should be strictly (number, heading ,content(the matter in content should be around 150-200 words for each slide strictly))"
+        data=f"You are a presentation maker. Give me contents to make a presentation of {slides} slides on the topic - {topic} in {input_language} language. The content of each slide should be more than 15000 words strictly with proper headings. So fill up the content part in pointers. Format should be in python json dictionary and keys should be strictly (number, heading ,content(the matter in content should be around 150-200 words for each slide strictly))"
         # data=f"You are a topics list generator. Generate research topics list based on {topic}. Output should contain only three topics headings(numbered like 1,2,3) and strictly two side headings(numbered like i, ii, iii)."
         query = data
         llm = ChatGoogleGenerativeAI(model="gemini-pro")
