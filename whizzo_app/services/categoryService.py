@@ -294,15 +294,20 @@ class CategoryService:
                         final_response += result
                 elif api_type == 2:
                     text_data = extract_data_from_url(file_links[0])
+                    if "ar" in detect(text_data[0]):
+                        input_language = "arabic"
+                    else:
+                        input_language = "english"
                     number_of_questions =  int(settings.NUMBER_OF_QUESTIONS)//len(text_data)   
-                    query = f"First find the language of input and Generate minimum {number_of_questions} mcqs with options and answers for that input in same language. Format should be in python json list of objects(key-value pair). Key names of objects should be strictly 'question_no', 'question', 'answer_option' and 'correct_answer'."
+                    query = f"Generate minimum of {number_of_questions} mcqs with options and answers for the input in {input_language} language. Format should be in python json list of objects(key-value pair). Key names of objects should be strictly 'question_no', 'question', 'answer_option' and 'correct_answer'."
                     for i in text_data:
                         result = chatGPT_pdf_processing(i, query)
                         for j in result:
                             final_response.append(j)
+                    print(final_response, '-----final response-----')        
                     for index, body in enumerate(final_response):
-                        if "answer_options" in i:
-                            i["answer_option"] = i.pop("answer_options")
+                        if "answer_options" in body:
+                            body["answer_option"] = body.pop("answer_options")
                         if isinstance(body["answer_option"], dict):
                             if "correct_answer" not in body and "correct_answer" in body["answer_option"]:
                                 correct_answer = body["answer_option"].pop("correct_answer")
@@ -337,6 +342,7 @@ class CategoryService:
                                                            )
             return {"data": final_response, "record_id": save_data.id, "message": "Result generated successfully", "status": 200}
         except Exception as error:
+            print(error, '-----error--------')
             return {"data": str(error), "message": "Something went wrong", "status": 400}
     
     def generate_testing_category_result_pdf(self , request):
