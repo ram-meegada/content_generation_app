@@ -1727,7 +1727,7 @@ class CategoryService:
                 for i in text_data:
                     result = assigment_chatGPT_pdf_processing(i, request.data.get("language", "english"))
                     final_response += result["questions"]
-                # else:
+                # else: 
                 #     result = self.gemini_solution(file_link)
                 #     final_response = ""
                 #     try:
