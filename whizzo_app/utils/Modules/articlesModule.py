@@ -18,7 +18,7 @@ def generate_article_util(topic, tone, pov, region, words):
             "title": "string",
             "content": {{
                 "1": {{
-                    "heading": "string of minimum 10 lettes",
+                    "heading": "string of minimum 10 letters",
                     "content": "string"
                 }}
             }}
