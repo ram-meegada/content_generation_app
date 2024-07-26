@@ -1722,32 +1722,22 @@ class CategoryService:
             file_link = request.FILES.get("file_link")
             try:
                 final_response = []
+                language = request.data.get("language", "english")
                 # if request.data.get("language") == "arabic":
                 text_data = assignment_extract_text(file_link)
                 for i in text_data:
-                    result = assigment_chatGPT_pdf_processing(i, request.data.get("language", "english"))
+                    result = assigment_chatGPT_pdf_processing(i, language)
                     final_response += result["questions"]
-                # else: 
-                #     result = self.gemini_solution(file_link)
-                #     final_response = ""
-                #     try:
-                #         for i in range(len(result)-1, -1, -1):
-                #             if result[i] == "}":
-                #                 break
-                #         final_response = result[result.index("["): i+1] + "]"
-                #         final_response = json.loads(final_response)
-                    # except:
-                    #     pass
-                    try:
-                        for i in final_response:
-                            if not i.get("options"):
-                                i["question_type"] = 1
-                            elif i["options"]:
-                                i["question_type"] = 2
-                    except:
-                        pass
+                try:
+                    for j, i in enumerate(final_response):
+                        i["question_no"] = j + 1
+                        if not i.get("options"):
+                            i["question_type"] = 1
+                        elif i["options"]:
+                            i["question_type"] = 2
+                except:
+                    pass
                     # image_info = upload_media_obj.upload_media(request)
-                print(final_response, '------final response -----------')    
                 final_data = AssignmentModel.objects.create(
                     user_id=request.user.id,
                     result=final_response
@@ -2100,7 +2090,7 @@ class CategoryService:
             if "record_id" not in request.data:
                 topic = request.data.get("topic")
                 words = request.data.get("words")
-                language = request.data.get("language")
+                language = request.data.get("language").lower()
                 region = request.data.get("region")
                 tone = request.data.get("tone")
                 pov = request.data.get("pronouns")
@@ -2110,7 +2100,7 @@ class CategoryService:
                 topic = get_article_record.topic
                 tone = get_article_record.tone
                 pov = get_article_record.pov
-                language = get_article_record.language
+                language = get_article_record.language.lower()
                 region = get_article_record.region
                 words = get_article_record.words
             ####
