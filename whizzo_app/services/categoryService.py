@@ -1738,17 +1738,18 @@ class CategoryService:
                 #         final_response = json.loads(final_response)
                     # except:
                     #     pass
-                    try:
-                        for i in final_response:
-                            if not i.get("options"):
-                                i["question_type"] = 1
-                            elif not i["options"]:
-                                i["question_type"] = 1
-                            elif i["options"]:
-                                i["question_type"] = 2
-                    except:
-                        pass
+                    # try:
+                    #     for i in final_response:
+                    #         if not i.get("options"):
+                    #             i["question_type"] = 1
+                    #         elif not i["options"]:
+                    #             i["question_type"] = 1
+                    #         elif i["options"]:
+                    #             i["question_type"] = 2
+                    # except:
+                    #     pass
                     # image_info = upload_media_obj.upload_media(request)
+                print(final_response, '------final response -----------')    
                 final_data = AssignmentModel.objects.create(
                     user_id=request.user.id,
                     result=final_response
