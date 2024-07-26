@@ -82,6 +82,7 @@ from bs4 import BeautifulSoup
 from whizzo_app.models.articleModel import ArticleModel
 from whizzo_app.utils.Modules.testingModule import chatGPT_pdf_processing, extract_data_from_url, chatGPT_image_processing
 from whizzo_app.utils.Modules.articlesModule import generate_article_util
+from whizzo_app.utils.Modules.assignmentSolutionsModule import assigment_chatGPT_pdf_processing, assignment_extract_text
 
 pytesseract.pytesseract.tesseract_cmd = 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
 
@@ -1720,27 +1721,34 @@ class CategoryService:
         if int(request.data["type"]) == 1:
             file_link = request.FILES.get("file_link")
             try:
-                result = self.gemini_solution(file_link)
-                final_response = ""
-                try:
-                    for i in range(len(result)-1, -1, -1):
-                        if result[i] == "}":
-                            break
-                    final_response = result[result.index("["): i+1] + "]"
-                    final_response = json.loads(final_response)
-                except:
-                    pass
-                try:
-                    for i in final_response:
-                        if not i.get("options"):
-                            i["question_type"] = 1
-                        elif not i["options"]:
-                            i["question_type"] = 1
-                        elif i["options"]:
-                            i["question_type"] = 2
-                except:
-                    pass
-                # image_info = upload_media_obj.upload_media(request)
+                final_response = []
+                # if request.data.get("language") == "arabic":
+                text_data = assignment_extract_text(file_link)
+                for i in text_data:
+                    result = assigment_chatGPT_pdf_processing(i, request.data.get("language", "english"))
+                    final_response += result["questions"]
+                # else: 
+                #     result = self.gemini_solution(file_link)
+                #     final_response = ""
+                #     try:
+                #         for i in range(len(result)-1, -1, -1):
+                #             if result[i] == "}":
+                #                 break
+                #         final_response = result[result.index("["): i+1] + "]"
+                #         final_response = json.loads(final_response)
+                    # except:
+                    #     pass
+                    try:
+                        for i in final_response:
+                            if not i.get("options"):
+                                i["question_type"] = 1
+                            elif not i["options"]:
+                                i["question_type"] = 1
+                            elif i["options"]:
+                                i["question_type"] = 2
+                    except:
+                        pass
+                    # image_info = upload_media_obj.upload_media(request)
                 final_data = AssignmentModel.objects.create(
                     user_id=request.user.id,
                     result=final_response
