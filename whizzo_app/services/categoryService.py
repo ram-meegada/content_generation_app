@@ -83,6 +83,7 @@ from whizzo_app.models.articleModel import ArticleModel
 from whizzo_app.utils.Modules.testingModule import chatGPT_pdf_processing, extract_data_from_url, chatGPT_image_processing
 from whizzo_app.utils.Modules.articlesModule import generate_article_util
 from whizzo_app.utils.Modules.assignmentSolutionsModule import assigment_chatGPT_pdf_processing, assignment_extract_text
+from whizzo_app.utils.Modules.presentationModule import generate_presentation_util
 
 pytesseract.pytesseract.tesseract_cmd = 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
 
@@ -2389,30 +2390,32 @@ class CategoryService:
             return {"data": None, "message": messages.WENT_WRONG, "status": 400}
 
     def get_presentation_text(self, request):
-        topic = request.data.get("topic")
-        slides = request.data.get("slides")
-        if "ar" in detect(topic):
-            input_language = "arabic"
-        else:
-            input_language = "english"
-
-        data = f"You are a presentation maker. Give me contents to make a presentation of {slides} slides on the topic - {topic} in {input_language} language. The content of each slide should be more than 15000 words strictly with proper headings. So fill up the content part in pointers. Format should be in python json dictionary and keys should be strictly (number, heading ,content(the matter in content should be around 150-200 words for each slide strictly))"
-        # data=f"You are a topics list generator. Generate research topics list based on {topic}. Output should contain only three topics headings(numbered like 1,2,3) and strictly two side headings(numbered like i, ii, iii)."
-        query = data
-        llm = ChatGoogleGenerativeAI(model="gemini-pro")
         try:
-            response = llm.invoke(query)
-            result = to_markdown(response.content)
-            print(result, '-----')
-            result = result.replace("Slide ", '')
-            reversed_result = result[::-1]
-            response = result[result.index(
-                "{"):len(result) - (reversed_result.index("}")) + 1]
-            final_response = ast.literal_eval(response)
-            final_response = list(map(lambda v: v, final_response.values()))
-            return {"data": final_response, "message": messages.PRESENTATION_GENERATED, "status": 200}
+            topic = request.data.get("topic")
+            slides = request.data.get("slides")
+            if "ar" in detect(topic):
+                input_language = "arabic"
+            else:
+                input_language = "english"
+            chatgpt_result = generate_presentation_util(topic, slides, input_language)
+        # data = f"You are a presentation maker. Give me contents to make a presentation of {slides} slides on the topic - {topic} in {input_language} language. The content of each slide should be more than 15000 words strictly with proper headings. So fill up the content part in pointers. Format should be in python json dictionary and keys should be strictly (number, heading ,content(the matter in content should be around 150-200 words for each slide strictly))"
+        # # data=f"You are a topics list generator. Generate research topics list based on {topic}. Output should contain only three topics headings(numbered like 1,2,3) and strictly two side headings(numbered like i, ii, iii)."
+        # query = data
+        # llm = ChatGoogleGenerativeAI(model="gemini-pro")
+        # try:
+        #     response = llm.invoke(query)
+        #     result = to_markdown(response.content)
+        #     print(result, '-----')
+        #     result = result.replace("Slide ", '')
+        #     reversed_result = result[::-1]
+        #     response = result[result.index(
+        #         "{"):len(result) - (reversed_result.index("}")) + 1]
+        #     final_response = ast.literal_eval(response)
+        #     final_response = list(map(lambda v: v, final_response.values()))
+            chatgpt_final_response = list(map(lambda v: v, chatgpt_result.values()))
+            return {"data": chatgpt_final_response, "message": messages.PRESENTATION_GENERATED, "status": 200}
         except Exception as err:
-            print(err, '-------------err-----------')
+            print(err, type(err), '-------------err-----------')
             return {"data": None, "message": messages.TRY_AGAIN, "status": 400}
 
     def save_presentation_binary_data(self, request):
