@@ -1391,13 +1391,19 @@ class CategoryService:
     def get_research_answer(self, request):
         reduce_citation = request.data.get("reduce_citation")
         description = request.data.get("description")
+
         if not request.data.get('upload_reference'):
             topic = request.data.get("topic")
             page = request.data.get("page")
             # words=int(page)*300
             tone = request.data.get("tone")
             reference = request.data.get("reference")
-            data = f"You are a topics list generator. Generate research topics list based on {topic}. Output should contain topics headings(strictly numbered like 1,2,3,.....) and slide headings(strictly numbered like i, ii, iii , ......)."
+            if "ar" in detect(topic):
+                input_language = "arabic"
+            else:
+                input_language = "english"
+            print(input_language, '---------------')
+            data = f"You are a topics list generator. Generate research topics list based on {topic} in {input_language} language. Output should contain topics headings(strictly numbered like 1,2,3,.....) and slide headings(strictly numbered like i, ii, iii , ......)."
             # data=f"You are a topics list generator. Generate research topics list based on {topic}. Output should contain only three topics headings(numbered like 1,2,3) and strictly two side headings(numbered like i, ii, iii)."
             query = data
             llm = ChatGoogleGenerativeAI(model="gemini-pro")
