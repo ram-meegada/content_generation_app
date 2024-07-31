@@ -12,7 +12,7 @@ API_KEY = config("OPENAI_KEY")
 
 def assigment_chatGPT_pdf_processing(text_data, language):
     query = f"""
-        "You are a teacher. Generate questions and answers based on the data I provide to you in {language} language. Format should be proper Python Javascript object notation list of dictionaries where every dictionary contains keys as 'question_no', 'question', 'correct_answer' and 'options'(if available)."
+        "You are a teacher. Generate questions and answers based on the data I provide to you and make sure to give output in {language} language only. Format should be proper Python Javascript object notation list of dictionaries where every dictionary contains keys as 'question_no', 'question', 'correct_answer' and 'options'(if available)."
         Additionally, ensure the response is formatted as a JSON object with the following structure:
         {{
             "question_no": "number",

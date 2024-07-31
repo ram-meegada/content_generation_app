@@ -330,18 +330,21 @@ class CategoryService:
                     number_of_questions = int(
                         settings.NUMBER_OF_QUESTIONS)//len(file_links)
                     for file in file_links:
-                        query = f"Generate {number_of_questions} flashcards for this input. Format should be in python json list. Keys should be 'question', 'answer'."
+                        query = f"Generate {number_of_questions} flashcards for this input. Format should be in python json list. Keys should be 'question', 'answer'. 'question' and 'answer' should be different. if the question has multiple answers give them in list."
                         result = chatGPT_image_processing(file, query)
                         final_response += result
                 elif api_type == 2:
                     text_data = extract_data_from_url(file_links[0])
                     number_of_questions = int(
                         settings.NUMBER_OF_QUESTIONS)//len(text_data)
-                    query = f"First find the language of input and Generate {number_of_questions} flashcards for this input in same language. Format should be in python json list. Keys should be 'question', 'answer'."
+                    query = f"First find the language of input and Generate {number_of_questions} flashcards for this input in same language. Format should be in python json list. Keys should be 'question', 'answer'. if the question has multiple answers give them in list."
                     for i in text_data:
                         result = chatGPT_pdf_processing(i, query)
                         for i in result:
                             final_response.append(i)
+                for i in final_response:
+                    if isinstance(i["answer"], str):
+                        i["answer"] = [i["answer"]]
             final_response = [i for i in final_response if isinstance(i, dict)]
             save_data = TestingModel.objects.create(user_id=request.user.id,
                                                     sub_category=request.data["sub_category"],
@@ -1391,19 +1394,13 @@ class CategoryService:
     def get_research_answer(self, request):
         reduce_citation = request.data.get("reduce_citation")
         description = request.data.get("description")
-
         if not request.data.get('upload_reference'):
             topic = request.data.get("topic")
             page = request.data.get("page")
             # words=int(page)*300
             tone = request.data.get("tone")
             reference = request.data.get("reference")
-            if "ar" in detect(topic):
-                input_language = "arabic"
-            else:
-                input_language = "english"
-            print(input_language, '---------------')
-            data = f"You are a topics list generator. Generate research topics list based on {topic} in {input_language} language. Output should contain topics headings(strictly numbered like 1,2,3,.....) and slide headings(strictly numbered like i, ii, iii , ......)."
+            data = f"You are a topics list generator. Generate research topics list based on {topic}. Output should contain topics headings(strictly numbered like 1,2,3,.....) and slide headings(strictly numbered like i, ii, iii , ......)."
             # data=f"You are a topics list generator. Generate research topics list based on {topic}. Output should contain only three topics headings(numbered like 1,2,3) and strictly two side headings(numbered like i, ii, iii)."
             query = data
             llm = ChatGoogleGenerativeAI(model="gemini-pro")
@@ -1692,23 +1689,49 @@ class CategoryService:
         if isinstance(text, list):
             # query = "You are english to arabic translator. Translate all the words to arabic wherever you find which I provide you and don't translate the key names. Format should be python json list."
             query = f"""
-                        Translate the following list from (English to Arabic or Arabic to English) based on the language of text:
-                        {text}. Strictly follow the format
+                        First find the language of input and Translate to arabic if it is english or translate to english if it is arabic:
+                        {text}. Strictly follow the format. Translate every question, every option and every answer.
                     """
             text = json.dumps(text)
-            result = self.gemini_solution_for_text_translation(text, query)
             try:
-                final_response = json.loads(result)
-            except json.decoder.JSONDecodeError:
-                final_response = ast.literal_eval(result)
-            except Exception as err:
-                return {"data": None, "message": "Please try again", "status": 400}
-            print(final_response, '-----------final------')
+                final_response = self.change_language_chatgpt(query, text)["questions"]
+            except:
+                final_response = self.change_language_chatgpt(query, text)
+
+            # result = self.gemini_solution_for_text_translation(text, query)
+            # try:
+            #     final_response = json.loads(result)
+            # except json.decoder.JSONDecodeError:
+            #     final_response = ast.literal_eval(result)
+            # except Exception as err:
+            #     return {"data": None, "message": "Please try again", "status": 400}
+            # print(final_response, '-----------final------')
         else:
             query = "You are english to arabic translator. Translate the text to arabic which I provide you.Output format should be proper human readable text ."
             result = self.gemini_solution_for_text_translation(text, query)
             final_response = result
         return {"data": final_response, "message": "Text translated successfully.", "status": 200}
+    
+    def change_language_chatgpt(self, query, input_data):
+        from decouple import config
+        import openai
+        openai.api_key = config("OPENAI_KEY")
+        try:
+            messages=[
+                            {"role": "system", "content": "You are a helpful assistant designed to output JSON."},
+                            {"role": "user", "content":[
+                                {"type": "text","text": query},
+                                {"type": "text","text": input_data},
+                            ]}
+                        ]
+            chatbot = openai.ChatCompletion.create(
+                model="gpt-4o", messages=messages,response_format={ "type": "json_object" },temperature = 0.0,
+            )
+            reply = chatbot.choices[0].message.content
+            final_data = json.loads(reply)
+            return final_data
+        except:
+            return []
 
     def gemini_solution_for_text_translation(self, text, query):
         llm = ChatGoogleGenerativeAI(model="gemini-pro")
@@ -2524,5 +2547,31 @@ class CategoryService:
             notes.note_screenshot = request.data["note_screenshot"]
             notes.save()
             return {"data": {}, "message": "Notes updated successfully", "status": 200}
+        except Exception as err:
+            return {"data": str(err), "message": messages.WENT_WRONG, "status": 400}
+
+    def notes_actions(self, request):
+        try:
+            if request.data.get("type") == 1:
+                message = "Selected records duplicated successfully"
+                records = NoteTakingModel.objects.filter(id__in=request.data.get("record_ids"), user=request.user)
+                for i in records:
+                    save_notes = NoteTakingModel.objects.create(
+                        user_id=request.user.id,
+                        type=i.type,
+                        binary_data=i.binary_data,
+                        note_screenshot=i.note_screenshot,
+                        canvas_height=i.canvas_height,
+                        is_duplicate=True
+                    )
+            elif request.data.get("type") == 2:
+                message = "Selected records marked as favourite successfully"
+                records = NoteTakingModel.objects.filter(id__in=request.data.get("record_ids"), user=request.user)
+                records.update(is_favourite=True)
+            elif request.data.get("type") == 3:
+                message = "Selected records deleted successfully"
+                records = NoteTakingModel.objects.filter(id__in=request.data.get("record_ids"), user=request.user)
+                records.delete()
+            return {"data": None, "message": message, "status": 200}
         except Exception as err:
             return {"data": str(err), "message": messages.WENT_WRONG, "status": 400}

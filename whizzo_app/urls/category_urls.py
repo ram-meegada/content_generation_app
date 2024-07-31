@@ -91,4 +91,5 @@ urlpatterns = [
     path("save-notes/", categoryView.SaveNotesView.as_view()),
     path("notes-history/", categoryView.NotesHistoryView.as_view()),
     path("notes/<int:id>/", categoryView.GetNotesByIdView.as_view()),
+    path("notes-actions/", categoryView.NotesActionsView.as_view()),
 ]
