@@ -2497,9 +2497,8 @@ class CategoryService:
             return {"data": str(err), "message": messages.TRY_AGAIN, "status": 400}
 
     def save_notes(self, request):
-        if request.data["type"] == 1:
-            save_notes = NoteTakingModel.objects.create(
-                user_id=request.user.id, **request.data)
+        save_notes = NoteTakingModel.objects.create(
+            user_id=request.user.id, **request.data)    
         return {"data": None, "message": messages.NOTES_ADDED, "status": 200}
 
     def notes_history(self, request):
@@ -2542,9 +2541,11 @@ class CategoryService:
     def edit_notes_by_id(self, request, id):
         try:
             notes = NoteTakingModel.objects.get(id=id)
-            notes.canvas_height = request.data["canvas_height"]
-            notes.binary_data = request.data["binary_data"]
-            notes.note_screenshot = request.data["note_screenshot"]
+            if "canvas_height" in request.data: notes.canvas_height = request.data["canvas_height"]
+            if "comments" in request.data: notes.comments = request.data["comments"]
+            if "text_timestamp" in request.data: notes.text_timestamp = request.data["text_timestamp"]
+            if "binary_data" in request.data: notes.binary_data = request.data["binary_data"]
+            if "note_screenshot" in request.data: notes.note_screenshot = request.data["note_screenshot"]
             notes.save()
             return {"data": {}, "message": "Notes updated successfully", "status": 200}
         except Exception as err:

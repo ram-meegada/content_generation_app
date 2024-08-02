@@ -11,5 +11,8 @@ class NoteTakingModel(BaseModel):
     is_favourite = models.BooleanField(default=False)
     is_duplicate = models.BooleanField(default=False)
 
+    comments = models.JSONField(default=list)
+    text_timestamp = models.CharField(max_length=100, default="")
+
     class Meta:
         db_table = "Note Taking"

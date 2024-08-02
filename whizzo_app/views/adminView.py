@@ -499,6 +499,7 @@ class ExportUsersCsvView(APIView):
 
         sub_obj = UserModel.objects.filter(role=2).order_by("-created_at")
         pagination_obj = CustomPagination()
+        request.data["search"] = request.GET.get("search", "dqws")
         search_keys = ["first_name__icontains", "email__icontains"]
         result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.GetAdminManageUserSerializer, sub_obj)
         df = pd.DataFrame(result["response_object"])
@@ -524,7 +525,7 @@ class ExportUsersCsvView(APIView):
             "messages": "Excel file uploaded successfully.",
             "status": 200
         }
-
+        print(response_data, '----response-data--------')
         # Return JSON response
         return JsonResponse(response_data)    
 

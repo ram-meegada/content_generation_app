@@ -144,7 +144,7 @@ class NoteTakingSerializer(serializers.ModelSerializer):
     count = serializers.SerializerMethodField()
     class Meta:
         model = NoteTakingModel
-        fields = ["id", "type", "binary_data", "note_screenshot", "count"]
+        fields = ["id", "type", "binary_data", "note_screenshot", "count", "canvas_height", "is_duplicate", "is_favourite", "comments", "text_timestamp"]
     def get_count(self, obj):
         try:
             return NoteTakingModel.objects.count()
@@ -155,7 +155,7 @@ class AllNotesSerializer(serializers.ModelSerializer):
     count = serializers.SerializerMethodField()
     class Meta:
         model = NoteTakingModel
-        fields = ["id", "type", "note_screenshot", "count", "canvas_height", "is_duplicate", "is_favourite"]
+        fields = ["id", "type", "note_screenshot", "count", "canvas_height", "is_duplicate", "is_favourite", "comments", "text_timestamp"]
     def get_count(self, obj):
         try:
             return NoteTakingModel.objects.count()

@@ -10,13 +10,15 @@ from rest_framework import status
 class CustomPagination:
     def custom_pagination(self, request, search_keys, serializer, queryset):
         length = request.data.get("length")
-        page = request.data.get("start")
-        search = request.data.get("search")
+        page = request.data.get("start", 1)
+        search = request.data.get("search", "")
         if search:
             filters = Q()
             for key in search_keys:
                 filters |= Q(**{key:search})
             queryset = queryset.filter(filters)    
+        if not length:
+            length = len(queryset)
         paginator = Paginator(queryset, length)
         try:
             paginated_data = paginator.page(page)
