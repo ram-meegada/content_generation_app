@@ -2526,7 +2526,7 @@ class CategoryService:
                         recent_notes.append(notes_dict)
             except Exception as err:
                 print(err)
-            return {"data": result, "recent_notes": recent_notes, "message": "Notes history fetched successfully", "status": 200}
+            return {"data": result, "recent_notes": recent_notes, "message": messages.NOTES_HISTORY, "status": 200}
         except Exception as err:
             return {"data": str(err), "message": messages.TRY_AGAIN, "status": 400}
 
@@ -2534,7 +2534,7 @@ class CategoryService:
         try:
             notes = NoteTakingModel.objects.get(id=id)
             serializer = categorySerializer.NoteTakingSerializer(notes)
-            return {"data": serializer.data, "message": "Notes fetched successfully", "status": 200}
+            return {"data": serializer.data, "message": messages.NOTES_FETCHED, "status": 200}
         except Exception as err:
             return {"data": str(err), "message": messages.WENT_WRONG, "status": 400}
 
@@ -2547,14 +2547,14 @@ class CategoryService:
             if "binary_data" in request.data: notes.binary_data = request.data["binary_data"]
             if "note_screenshot" in request.data: notes.note_screenshot = request.data["note_screenshot"]
             notes.save()
-            return {"data": {}, "message": "Notes updated successfully", "status": 200}
+            return {"data": {}, "message": messages.NOTES_UPDATED, "status": 200}
         except Exception as err:
             return {"data": str(err), "message": messages.WENT_WRONG, "status": 400}
 
     def notes_actions(self, request):
         try:
             if request.data.get("type") == 1:
-                message = "Selected records duplicated successfully"
+                message = messages.NOTES_DUPLICATED
                 records = NoteTakingModel.objects.filter(id__in=request.data.get("record_ids"), user=request.user)
                 for i in records:
                     save_notes = NoteTakingModel.objects.create(
@@ -2566,11 +2566,11 @@ class CategoryService:
                         is_duplicate=True
                     )
             elif request.data.get("type") == 2:
-                message = "Selected records marked as favourite successfully"
+                message = messages.NOTES_FAVOURITED
                 records = NoteTakingModel.objects.filter(id__in=request.data.get("record_ids"), user=request.user)
                 records.update(is_favourite=True)
             elif request.data.get("type") == 3:
-                message = "Selected records deleted successfully"
+                message = messages.NOTES_DELETED
                 records = NoteTakingModel.objects.filter(id__in=request.data.get("record_ids"), user=request.user)
                 records.delete()
             return {"data": None, "message": message, "status": 200}
