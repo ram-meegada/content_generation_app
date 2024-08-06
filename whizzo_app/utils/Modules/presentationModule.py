@@ -32,5 +32,4 @@ def generate_presentation_util(topic, slides, input_language):
     )
     reply = chatbot.choices[0].message.content
     final_data = json.loads(reply)
-    print(final_data, '-----chat gpt result------------')
     return final_data

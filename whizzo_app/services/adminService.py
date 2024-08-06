@@ -31,7 +31,8 @@ from dateutil.relativedelta import relativedelta
 import pandas as pd
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from whizzo_app.services.uploadMediaService import UploadMediaService
- 
+from threading import Thread
+
 class AdminService:
 # onboarding
     def login_admin(self, request):
@@ -675,7 +676,7 @@ class AdminService:
                 password="Test@123"
                 user_data.set_password(password)
                 user_data.save()
-                SendOtpToMail(password, [user_data.email]).start()
+                Thread(target=SendOtpToMail, args=(password, [user_data.email], user_data.name)).start()
                 for i in request.data['role_permission']:
                     role_serializer = adminSerializer.CreateRolePermissionSubAdminSerializer(data=i)
                     if role_serializer.is_valid():
@@ -688,6 +689,7 @@ class AdminService:
             else:
                 return {'data': user_serializer.errors, 'message': "Something went wrong",'status':400}
         except Exception as e:
+            print(e, '---------------')
             return {"error": str(e),"message": messages.INTERNAL_SERVER_ERROR, "status": 500}
         
     def update_sub_admin_by_id(self, request, sub_admin_id):

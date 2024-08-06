@@ -285,6 +285,7 @@ class CategoryService:
             files = dict(request.data)["file"]
             for i in files:
                 file_links.append(save_image(i)[0])
+            print(file_links, '--------')    
             sub_category = int(request.data["sub_category"])
             api_type = int(request.data["type"])
             final_response = []
@@ -453,22 +454,39 @@ class CategoryService:
             file_link = request.FILES.get("file_link")
             try:
                 text_data = self.extract_text(file_link)
+                print(text_data, '------ text data --------')
                 message = HumanMessage(
                     content=[
                         {"type": "text",
-                         "text": f"generate a summary of this pdf file and the length of the summary should be strictly atleast 2000 words and give me only text no * and extra symbols"},
+                         "text": f"generate a summary of the input I provide you and the length of the summary should be strictly atleast 2000 words and give me only text no * and extra symbols"},
                         {"type": "text", "text": text_data}
                     ]
                 )
                 response = llm.invoke([message])
                 result = to_markdown(response.content)
+                # message=[
+                #             {"role": "system", "content": "You are a helpful assistant designed to output JSON."},
+                #             {"role": "user", "content": [
+                #                     {"type": "text", "text": "Generate a summary of the input I provide you and the length of the summary should be strictly atleast 2000 words. Please maintain line breaks and intendations."},
+                #                     {"type": "text", "text": f"Input data: {text_data}"}
+                #                 ]}
+                #             ]
+                # chatbot = openai.ChatCompletion.create(
+                #     model="gpt-3.5-turbo", messages=message,response_format={ "type": "json_object" },temperature = 0.0,
+                # )
+                # reply = chatbot.choices[0].message.content
+                # try:
+                #     final_data = json.loads(reply)
+                # except:
+                #     final_data = ast.literal_eval(reply)    
+                # print(final_data, '----- text data ----------- text data ------')
+                # result = list(final_data.values())[0]
                 save_file_summary_record = FileSumarizationModel.objects.create(
                     user_id=request.user.id,
                     sub_category=5,
                     result=result
                 )
                 # Store the result in the session or a temporary variable
-                request.session['file_summary_result'] = result
                 return {"data": result, "record_id": save_file_summary_record.id, "message": messages.SUMMARY_GENERATED, "status": 200}
             except Exception as e:
                 return {"error": str(e), "message": messages.PLEASE_UPLOAD_AGAIN, "status": 400}
@@ -532,7 +550,7 @@ class CategoryService:
             pdf_stream = BytesIO(f.read())
             pdf_reader = PdfReader(pdf_stream)
             for page in pdf_reader.pages:
-                pdf_text += page.extract_text()
+                pdf_text += page.extract_text().strip() + " "
         return pdf_text
 
     def file_summary_history(self, request):
@@ -557,41 +575,42 @@ class CategoryService:
 
     def generate_file_important_vocabulary(self, request):
         # Get text_data from the request payload
+        from decouple import config
+        import openai
+        openai.api_key = config("OPENAI_KEY")
+        API_KEY = config("OPENAI_KEY")
         text_data = request.data.get('text_data')
-        if text_data is None:
-            text_data = request.session.get('file_summary_result')
-            if not text_data:
-                return {"error": "No summary result found. Please provide text data or generate the summary first.", "message": messages.WENT_WRONG, "status": 400}
-        llm = ChatGoogleGenerativeAI(model="gemini-pro")
+
         try:
-            # text_data = self.extract_text(file_link)
-            message = HumanMessage(
-                content=[
-                    {"type": "text",
-                     # "text": f"generate a summary of this pdf file and the length of the summary should be strictly atleast 2000 words and give me only text no * and extra symbols"},
-                     "text": f"Generate all the  vocabulary words you found in this pdf which you consider to be important as a reference point to the pdf from this pdf file. Format should be python list."},
-                    # "text": f"Find out important vocabulary words from the input which you consider to be important. Give only 20 percent of total words from the input. Format should be python list."},
-                    {"type": "text", "text": text_data}
-                ]
+            message=[
+                        {"role": "system", "content": "You are a helpful assistant designed to output JSON."},
+                        {"role": "user", "content": [
+                                {"type": "text", "text": "Generate only important vocabulary words you found in the input which you consider to be important as a reference point. Format should be python list of words. If there are no important vocabulary just return 'Cannot find vocabulary'"},
+                                {"type": "text", "text": f"Input data: {text_data}"}
+                            ]}
+                    ]
+            chatbot = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo", messages=message,response_format={ "type": "json_object" },temperature = 0.0,
             )
-            response = llm.invoke([message])
-            result = to_markdown(response.content)
-            start = result.index("[")
-            end = result.index("]")
-            final_response = result[start: end+1]
-            final_response = ast.literal_eval(final_response)
-            return {"data": final_response, "message": messages.SUMMARY_GENERATED, "status": 200}
+            reply = chatbot.choices[0].message.content
+            result = json.loads(reply)
+            if isinstance(list(result.values())[0], str):
+                final_response = []
+            else:
+               final_response = list(result.values())[0]
+            return {"data": final_response, "message": "Vocabulary generated successfully", "status": 200}
         except Exception as e:
+            print(str(e), type(e), '-----ee--e-e-e-e-e-e--e-----')
             return {"error": str(e), "message": messages.WENT_WRONG, "status": 400}
 
-    def extract_text(self, file_link):
-        pdf_text = ""
-        with file_link.open() as f:
-            pdf_stream = BytesIO(f.read())
-            pdf_reader = PdfReader(pdf_stream)
-            for page in pdf_reader.pages:
-                pdf_text += page.extract_text()
-        return pdf_text
+    # def extract_text(self, file_link):
+    #     pdf_text = ""
+    #     with file_link.open() as f:
+    #         pdf_stream = BytesIO(f.read())
+    #         pdf_reader = PdfReader(pdf_stream)
+    #         for page in pdf_reader.pages:
+    #             pdf_text += page.extract_text().strip() + "\n"
+    #     return pdf_text
     ############# FILE CONVERSIONS ###############
 
     # def word_to_pdf(self , request):
@@ -1686,6 +1705,7 @@ class CategoryService:
 # assignment solution
     def text_translation(self, request):
         text = request.data.get("text")
+        print(text, '--------')
         if isinstance(text, list):
             # query = "You are english to arabic translator. Translate all the words to arabic wherever you find which I provide you and don't translate the key names. Format should be python json list."
             query = f"""
@@ -1694,7 +1714,8 @@ class CategoryService:
                     """
             text = json.dumps(text)
             try:
-                final_response = self.change_language_chatgpt(query, text)["questions"]
+                final_response = self.change_language_chatgpt(query, text)[
+                    "questions"]
             except:
                 final_response = self.change_language_chatgpt(query, text)
 
@@ -1711,21 +1732,22 @@ class CategoryService:
             result = self.gemini_solution_for_text_translation(text, query)
             final_response = result
         return {"data": final_response, "message": "Text translated successfully.", "status": 200}
-    
+
     def change_language_chatgpt(self, query, input_data):
         from decouple import config
         import openai
         openai.api_key = config("OPENAI_KEY")
         try:
-            messages=[
-                            {"role": "system", "content": "You are a helpful assistant designed to output JSON."},
-                            {"role": "user", "content":[
-                                {"type": "text","text": query},
-                                {"type": "text","text": input_data},
-                            ]}
-                        ]
+            messages = [
+                {"role": "system",
+                    "content": "You are a helpful assistant designed to output JSON."},
+                {"role": "user", "content": [
+                    {"type": "text", "text": query},
+                    {"type": "text", "text": input_data},
+                ]}
+            ]
             chatbot = openai.ChatCompletion.create(
-                model="gpt-4o", messages=messages,response_format={ "type": "json_object" },temperature = 0.0,
+                model="gpt-4o", messages=messages, response_format={"type": "json_object"}, temperature=0.0,
             )
             reply = chatbot.choices[0].message.content
             final_data = json.loads(reply)
@@ -2152,9 +2174,10 @@ class CategoryService:
                 print(result, '----result-----result----')
                 try:
                     for i, j in result["content"].items():
-                        final_response += i + ". " + j["heading"] + "\n\n" + j["content"] + "\n\n"
+                        final_response += i + ". " + \
+                            j["heading"] + "\n\n" + j["content"] + "\n\n"
                 except:
-                    return {"data": None, "message": "Please try again", "status": 400}                
+                    return {"data": None, "message": "Please try again", "status": 400}
             # save record
             if "record_id" not in request.data:
                 get_article_record = ArticleModel.objects.create(
@@ -2197,9 +2220,18 @@ class CategoryService:
 
     def download_article(self, request):
         try:
-            file = self.html_to_pdf(request)
-            if isinstance(file, dict):
-                return {"data": file["message"], "message": messages.WENT_WRONG, "status": 400}
+            if request.data.get("type") == 2:
+                file = self.html_to_doc(request)
+                return {"data": file, "message": "Document downloaded successfully", "status": 200}
+            elif request.data.get("type") == 3:
+                file = self.html_to_pdf(request)
+                Thread(target=send_pdf_file_to_mail, args=(
+                    request.user.email, file)).start()
+                return {"data": None, "message": "Pdf sent to mail successfully", "status": 200}
+            else:
+                file = self.html_to_pdf(request)
+                if isinstance(file, dict):
+                    return {"data": file["message"], "message": messages.WENT_WRONG, "status": 400}
             return {"data": file, "message": messages.UPDATED, "status": 200}
         except Exception as err:
             return {"data": str(err), "message": messages.WENT_WRONG, "status": 400}
@@ -2347,7 +2379,7 @@ class CategoryService:
                     "question": question.question,
                     "answer_option": question.answer_option,
                     "correct_answer": question.corect_answer,
-                    "answer": question.corect_answer,
+                    "answer": [question.corect_answer],
                     "user_answer": ""
                 }
                 for idx, question in enumerate(questions)
@@ -2388,7 +2420,7 @@ class CategoryService:
                     "question": question.question,
                     "answer_option": question.answer_option,
                     "correct_answer": question.corect_answer,
-                    "answer": question.corect_answer,
+                    "answer": [question.corect_answer],
                     "user_answer": ""
                 }
                 for idx, question in enumerate(questions)
@@ -2426,7 +2458,8 @@ class CategoryService:
                 input_language = "arabic"
             else:
                 input_language = "english"
-            chatgpt_result = generate_presentation_util(topic, slides, input_language)
+            chatgpt_result = generate_presentation_util(
+                topic, slides, input_language)
         # data = f"You are a presentation maker. Give me contents to make a presentation of {slides} slides on the topic - {topic} in {input_language} language. The content of each slide should be more than 15000 words strictly with proper headings. So fill up the content part in pointers. Format should be in python json dictionary and keys should be strictly (number, heading ,content(the matter in content should be around 150-200 words for each slide strictly))"
         # # data=f"You are a topics list generator. Generate research topics list based on {topic}. Output should contain only three topics headings(numbered like 1,2,3) and strictly two side headings(numbered like i, ii, iii)."
         # query = data
@@ -2441,7 +2474,8 @@ class CategoryService:
         #         "{"):len(result) - (reversed_result.index("}")) + 1]
         #     final_response = ast.literal_eval(response)
         #     final_response = list(map(lambda v: v, final_response.values()))
-            chatgpt_final_response = list(map(lambda v: v, chatgpt_result.values()))
+            chatgpt_final_response = list(
+                map(lambda v: v, chatgpt_result.values()))
             return {"data": chatgpt_final_response, "message": messages.PRESENTATION_GENERATED, "status": 200}
         except Exception as err:
             print(err, type(err), '-------------err-----------')
@@ -2498,17 +2532,17 @@ class CategoryService:
 
     def save_notes(self, request):
         save_notes = NoteTakingModel.objects.create(
-            user_id=request.user.id, **request.data)    
+            user_id=request.user.id, **request.data)
         return {"data": None, "message": messages.NOTES_ADDED, "status": 200}
 
     def notes_history(self, request):
         try:
             if "filter" not in request.data:
                 all_notes = NoteTakingModel.objects.filter(
-                    user=request.user).order_by("-updated_at")
+                    user=request.user).order_by("-created_at")
             elif "filter" in request.data:
                 all_notes = NoteTakingModel.objects.filter(
-                    user=request.user, created_at__date=request.data["filter"]).order_by("-updated_at")
+                    user=request.user, created_at__date=request.data["filter"]).order_by("-created_at")
             pagination_obj = CustomPagination()
             search_keys = []
             result = pagination_obj.custom_pagination(
@@ -2541,11 +2575,16 @@ class CategoryService:
     def edit_notes_by_id(self, request, id):
         try:
             notes = NoteTakingModel.objects.get(id=id)
-            if "canvas_height" in request.data: notes.canvas_height = request.data["canvas_height"]
-            if "comments" in request.data: notes.comments = request.data["comments"]
-            if "text_timestamp" in request.data: notes.text_timestamp = request.data["text_timestamp"]
-            if "binary_data" in request.data: notes.binary_data = request.data["binary_data"]
-            if "note_screenshot" in request.data: notes.note_screenshot = request.data["note_screenshot"]
+            if "canvas_height" in request.data:
+                notes.canvas_height = request.data["canvas_height"]
+            if "comments" in request.data:
+                notes.comments = request.data["comments"]
+            if "text_timestamp" in request.data:
+                notes.text_timestamp = request.data["text_timestamp"]
+            if "binary_data" in request.data:
+                notes.binary_data = request.data["binary_data"]
+            if "note_screenshot" in request.data:
+                notes.note_screenshot = request.data["note_screenshot"]
             notes.save()
             return {"data": {}, "message": messages.NOTES_UPDATED, "status": 200}
         except Exception as err:
@@ -2555,7 +2594,8 @@ class CategoryService:
         try:
             if request.data.get("type") == 1:
                 message = messages.NOTES_DUPLICATED
-                records = NoteTakingModel.objects.filter(id__in=request.data.get("record_ids"), user=request.user)
+                records = NoteTakingModel.objects.filter(
+                    id__in=request.data.get("record_ids"), user=request.user)
                 for i in records:
                     save_notes = NoteTakingModel.objects.create(
                         user_id=request.user.id,
@@ -2567,11 +2607,18 @@ class CategoryService:
                     )
             elif request.data.get("type") == 2:
                 message = messages.NOTES_FAVOURITED
-                records = NoteTakingModel.objects.filter(id__in=request.data.get("record_ids"), user=request.user)
-                records.update(is_favourite=True)
+                records = NoteTakingModel.objects.filter(
+                    id__in=request.data.get("record_ids"), user=request.user)
+                for i in records:
+                    if i.is_favourite is True:
+                        i.is_favourite = False
+                    else:
+                        i.is_favourite = True
+                    i.save()
             elif request.data.get("type") == 3:
                 message = messages.NOTES_DELETED
-                records = NoteTakingModel.objects.filter(id__in=request.data.get("record_ids"), user=request.user)
+                records = NoteTakingModel.objects.filter(
+                    id__in=request.data.get("record_ids"), user=request.user)
                 records.delete()
             return {"data": None, "message": message, "status": 200}
         except Exception as err:

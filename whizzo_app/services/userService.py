@@ -204,7 +204,7 @@ class UserService:
         except UserModel.DoesNotExist:
             return {"data": None, "message":  messages.USER_NOT_FOUND, "status": 400}
         # Thread(target=sendMail.send_otp_to_mail, args=[request.data["email"], otp]).start()
-        Thread(target=sendMail.send_otp_to_mail, args=[ request.data["email"], otp,user.username]).start()
+        Thread(target=sendMail.send_otp_to_mail, args=[ request.data["email"], otp,user.name]).start()
         user.otp_sent_time= datetime.now(tz=pytz.UTC)
         user.otp = otp
         user.save()
@@ -223,6 +223,7 @@ class UserService:
                 "status": status.HTTP_404_NOT_FOUND
             }
         new_password = request.data.get("new_password")
+        print(request.data, '-------new_password----------')
         user.set_password(new_password)
         user.save()
         return {

@@ -28,18 +28,19 @@ def generate_otp():
     otp = "1234"
     return otp
 
-class SendOtpToMail(threading.Thread):
-    def __init__(self, otp_or_password, email):
-        self.otp_or_password = otp_or_password
-        self.email = email
-        threading.Thread.__init__(self)
-    def run(self):
-        context = {"otp_or_password": self.otp_or_password}
-        temp = render_to_string("email_otp.html", context)
-        msg = EmailMultiAlternatives("Dont Reply!", temp, settings.DEFAULT_FROM_EMAIL, self.email)
-        msg.content_subtype = "html"
-        msg.send()
-        return
+# class SendOtpToMail(threading.Thread):
+#     def __init__(self, otp_or_password, email, name="User"):
+#         self.otp_or_password = otp_or_password
+#         self.email = email
+#         self.name = name
+#         threading.Thread.__init__(self)
+def SendOtpToMail(otp_or_password, email, name="User"):
+    context = {"otp_or_password": otp_or_password, "email": email[0], "name": name}
+    temp = render_to_string("email_otp.html", context)
+    msg = EmailMultiAlternatives("Dont Reply!", temp, settings.DEFAULT_FROM_EMAIL, email)
+    msg.content_subtype = "html"
+    msg.send()
+    return
     
 # def SendOtpToMail( otp, email):    
 #     context = {"otp": otp}
