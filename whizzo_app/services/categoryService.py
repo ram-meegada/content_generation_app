@@ -354,6 +354,9 @@ class CategoryService:
                                                         final_response),
                                                     sub_category_type=sub_category
                                                     )
+            print(final_response, '-----final_response-----final_response----')                                        
+            if not final_response:
+                return {"data": None, "message": "Please upload again", "status": 400}
             return {"data": final_response, "record_id": save_data.id, "message": "Result generated successfully", "status": 200}
         except Exception as error:
             print(error, '-----error--------')
@@ -1576,7 +1579,7 @@ class CategoryService:
         if api_type == 1:
             QUERY = f"You are research generator. Generate some theory on the topics which I provide you. Whole research should be of approximately {min_pages} to {max_pages} words with voice of tone as {tone} and take reference from {reference} with reduce citations as {reduce_citations}. Format should be descriptive. Keep the same name as topic heading which I provide you and also in same order of topics. Strictly keep Heading(numbered as 1,2,3) and side headings(numbered as i, ii, iii)."
         elif api_type == 2:
-            QUERY = f"You are research generator. Generate some theory on the topics which I provide you. Whole research should be of approximately 400 to 800 words along with reduce citations as {reduce_citations}. Format should be descriptive. Keep the same name as topic heading which I provide you in list and also in same order of topics. Strictly keep Heading(numbered as 1,2,3) and side headings(numbered as i, ii, iii)."
+            QUERY = f"You are research generator. Generate some theory on the topics which I provide you. Whole research should be of approximately 400 to 800 words along with reduce citations as {reduce_citations}. Format should be descriptive. Keep the same name as topic heading which I provide you in list and also in same order of topics. Strictly keep Headings (strictly numbered as 1,2,3) and side headings(strictly numbered as i, ii, iii)."
         message_content = [
             {
                 "type": "text",
@@ -1596,6 +1599,7 @@ class CategoryService:
         # get_research_record.result = final_response
         # get_research_record.save()
         ##
+        print(final_response, '-------final_response------')
         return {"data": final_response, "message": "Detailed research generated successfully", "status": 200}
 
     def save_research_topic_list(self, request, id):
@@ -1731,6 +1735,10 @@ class CategoryService:
             query = "You are english to arabic translator. Translate the text to arabic which I provide you.Output format should be proper human readable text ."
             result = self.gemini_solution_for_text_translation(text, query)
             final_response = result
+        if isinstance(final_response, list):
+            pass
+        elif isinstance(final_response, dict):
+            final_response = list(final_response.values())[0]
         return {"data": final_response, "message": "Text translated successfully.", "status": 200}
 
     def change_language_chatgpt(self, query, input_data):
@@ -1776,10 +1784,16 @@ class CategoryService:
                 final_response = []
                 language = request.data.get("language", "english")
                 # if request.data.get("language") == "arabic":
+                print(language, '---language----')
                 text_data = assignment_extract_text(file_link)
                 for i in text_data:
                     result = assigment_chatGPT_pdf_processing(i, language)
-                    final_response += result["questions"]
+                    print(result, '-----result----result-----')
+                    if result:
+                        if result.get("questions"):
+                            final_response += result["questions"]
+                        elif not result.get("questions") and isinstance(result, dict):
+                            final_response.append(result)
                 try:
                     for j, i in enumerate(final_response):
                         i["question_no"] = j + 1
@@ -1799,6 +1813,7 @@ class CategoryService:
                     return {"data": None, "message": "Please upload the file again", "status": 200}
                 return {"data": final_response, "record_id": final_data.id, "message": "Assignment solution generated successfully", "status": 200}
             except Exception as e:
+                print(e, '----eeee----eeee-----')
                 return {"data": str(e), "message": "Please upload the file again", "status": 400}
 
         if int(request.data["type"]) == 2:
