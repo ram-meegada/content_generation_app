@@ -34,7 +34,8 @@ def chatGPT_pdf_processing(text_data, query):
         except Exception as err:
             print(err, type(err), '======')            
         return data
-    except:
+    except Exception as err:
+        print(err, '--------chatgpt error--------')
         return []    
 
 def extract_data_from_url(pdf_file):
@@ -44,7 +45,7 @@ def extract_data_from_url(pdf_file):
     pdf_reader = PdfReader(pdf_stream)
     for page in pdf_reader.pages:
         pdf_text += page.extract_text()         
-    chunk_size = 16000
+    chunk_size = 12000
     chunks = [pdf_text[i:i+chunk_size] for i in range(0, len(pdf_text), chunk_size)]
     return chunks
 

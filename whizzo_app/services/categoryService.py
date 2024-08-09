@@ -1,3 +1,4 @@
+import string
 from langdetect import detect
 from datetime import datetime, timedelta
 import ast
@@ -336,15 +337,25 @@ class CategoryService:
                         final_response += result
                 elif api_type == 2:
                     text_data = extract_data_from_url(file_links[0])
+                    non_english_chars = 0
+                    for i in text_data[0][:100]:
+                        if i not in string.ascii_letters+string.digits+string.punctuation:
+                            non_english_chars += 1
+                    if non_english_chars > 50:
+                        input_language = "arabic"
+                    else:
+                        input_language = "english"            
                     number_of_questions = int(
                         settings.NUMBER_OF_QUESTIONS)//len(text_data)
-                    query = f"First find the language of input and Generate {number_of_questions} flashcards for this input in same language. Format should be in python json list. Keys should be 'question', 'answer'. if the question has multiple answers give them in list."
+                    query = f"Generate {number_of_questions} flashcards for this input in {input_language} language. Format should be in list. Keys should be 'question', 'answer'. if the question has multiple answers give them in list. Make sure to generate every question and every answer in {input_language} language only. Proper names should also be in {input_language} language"
                     for i in text_data:
+                        start_time = datetime.now()
                         result = chatGPT_pdf_processing(i, query)
+                        print(result, datetime.now() - start_time, '99999999999999922222222222222039944843303')
                         for i in result:
                             final_response.append(i)
                 for i in final_response:
-                    if isinstance(i["answer"], str):
+                    if isinstance(i, dict) and isinstance(i["answer"], str):
                         i["answer"] = [i["answer"]]
             final_response = [i for i in final_response if isinstance(i, dict)]
             save_data = TestingModel.objects.create(user_id=request.user.id,
@@ -354,7 +365,6 @@ class CategoryService:
                                                         final_response),
                                                     sub_category_type=sub_category
                                                     )
-            print(final_response, '-----final_response-----final_response----')                                        
             if not final_response:
                 return {"data": None, "message": "Please upload again", "status": 400}
             return {"data": final_response, "record_id": save_data.id, "message": "Result generated successfully", "status": 200}
@@ -1709,12 +1719,11 @@ class CategoryService:
 # assignment solution
     def text_translation(self, request):
         text = request.data.get("text")
-        print(text, '--------')
         if isinstance(text, list):
             # query = "You are english to arabic translator. Translate all the words to arabic wherever you find which I provide you and don't translate the key names. Format should be python json list."
             query = f"""
                         First find the language of input and Translate to arabic if it is english or translate to english if it is arabic:
-                        {text}. Strictly follow the format. Translate every question, every option and every answer.
+                        {text}. Strictly follow the format. Translate every question, every option and every answer. Translate proper names also.
                     """
             text = json.dumps(text)
             try:
@@ -1735,10 +1744,14 @@ class CategoryService:
             query = "You are english to arabic translator. Translate the text to arabic which I provide you.Output format should be proper human readable text ."
             result = self.gemini_solution_for_text_translation(text, query)
             final_response = result
+        print(final_response, '-------final -----')    
         if isinstance(final_response, list):
             pass
         elif isinstance(final_response, dict):
-            final_response = list(final_response.values())[0]
+            if "question_no" in final_response and "correct_answer" in final_response:
+                final_response = [final_response]
+            else:    
+                final_response = list(final_response.values())[0]
         return {"data": final_response, "message": "Text translated successfully.", "status": 200}
 
     def change_language_chatgpt(self, query, input_data):
