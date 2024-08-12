@@ -283,12 +283,12 @@ class CategoryService:
     def generate_testing_category_result(self, request):
         try:
             file_links = []
-            files = dict(request.data)["file"]
-            for i in files:
-                file_links.append(save_image(i)[0])
-            print(file_links, '--------')    
-            sub_category = int(request.data["sub_category"])
             api_type = int(request.data["type"])
+            files = dict(request.data)["file"]
+            if api_type == 1:
+                for i in files:
+                    file_links.append(save_image(i)[0])
+            sub_category = int(request.data["sub_category"])
             final_response = []
             if sub_category == 1:
                 if api_type == 1:
@@ -311,7 +311,6 @@ class CategoryService:
                         result = chatGPT_pdf_processing(i, query)
                         for j in result:
                             final_response.append(j)
-                    print(final_response, '-----final response-----')
                     for index, body in enumerate(final_response):
                         if "answer_options" in body:
                             body["answer_option"] = body.pop("answer_options")
@@ -332,11 +331,13 @@ class CategoryService:
                     number_of_questions = int(
                         settings.NUMBER_OF_QUESTIONS)//len(file_links)
                     for file in file_links:
-                        query = f"Generate {number_of_questions} flashcards for this input. Format should be in python json list. Keys should be 'question', 'answer'. 'question' and 'answer' should be different. if the question has multiple answers give them in list."
+                        query = f"Generate ten flashcards for this input. Format should be in python json list. Keys should be 'question', 'answer'. 'question' and 'answer' should be different. if the question has multiple answers give them in list."
+                        start_time = datetime.now()
                         result = chatGPT_image_processing(file, query)
+                        print(result, datetime.now() - start_time, '------------- time taken ------------')
                         final_response += result
                 elif api_type == 2:
-                    text_data = extract_data_from_url(file_links[0])
+                    text_data = assignment_extract_text(files[0])
                     non_english_chars = 0
                     for i in text_data[0][:100]:
                         if i not in string.ascii_letters+string.digits+string.punctuation:
@@ -344,16 +345,17 @@ class CategoryService:
                     if non_english_chars > 50:
                         input_language = "arabic"
                     else:
-                        input_language = "english"            
+                        input_language = "english"
                     number_of_questions = int(
                         settings.NUMBER_OF_QUESTIONS)//len(text_data)
-                    query = f"Generate {number_of_questions} flashcards for this input in {input_language} language. Format should be in list. Keys should be 'question', 'answer'. if the question has multiple answers give them in list. Make sure to generate every question and every answer in {input_language} language only. Proper names should also be in {input_language} language"
+                    query = f"Generate ten flashcards for this input in {input_language} language. Format should be in list. Keys should be 'question', 'answer'. if the question has multiple answers give them in list. Make sure to generate every question and every answer in {input_language} language only. Proper names should also be in {input_language} language"
                     for i in text_data:
                         start_time = datetime.now()
                         result = chatGPT_pdf_processing(i, query)
-                        print(result, datetime.now() - start_time, '99999999999999922222222222222039944843303')
+                        print(result, datetime.now() - start_time, '------------- time taken ------------')
                         for i in result:
                             final_response.append(i)
+
                 for i in final_response:
                     if isinstance(i, dict) and isinstance(i["answer"], str):
                         i["answer"] = [i["answer"]]
@@ -477,23 +479,6 @@ class CategoryService:
                 )
                 response = llm.invoke([message])
                 result = to_markdown(response.content)
-                # message=[
-                #             {"role": "system", "content": "You are a helpful assistant designed to output JSON."},
-                #             {"role": "user", "content": [
-                #                     {"type": "text", "text": "Generate a summary of the input I provide you and the length of the summary should be strictly atleast 2000 words. Please maintain line breaks and intendations."},
-                #                     {"type": "text", "text": f"Input data: {text_data}"}
-                #                 ]}
-                #             ]
-                # chatbot = openai.ChatCompletion.create(
-                #     model="gpt-3.5-turbo", messages=message,response_format={ "type": "json_object" },temperature = 0.0,
-                # )
-                # reply = chatbot.choices[0].message.content
-                # try:
-                #     final_data = json.loads(reply)
-                # except:
-                #     final_data = ast.literal_eval(reply)    
-                # print(final_data, '----- text data ----------- text data ------')
-                # result = list(final_data.values())[0]
                 save_file_summary_record = FileSumarizationModel.objects.create(
                     user_id=request.user.id,
                     sub_category=5,

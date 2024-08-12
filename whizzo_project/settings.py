@@ -33,6 +33,8 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'channels',
+    'daphne',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -73,7 +75,8 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'whizzo_project.wsgi.application'
+# WSGI_APPLICATION = 'whizzo_project.wsgi.application'
+ASGI_APPLICATION = 'whizzo_project.asgi.application'
 
 CORS_ALLOW_HEADERS = ["*"
     # 'Content-Type',
@@ -194,3 +197,12 @@ DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
 EMAIL_USE_TLS = True
 
 CORS_ORIGIN_ALLOW_ALL = True
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)], 
+        },
+    },
+}

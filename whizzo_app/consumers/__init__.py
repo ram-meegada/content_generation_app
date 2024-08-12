@@ -1,0 +1,1 @@
+from whizzo_app.consumers.fileSummarizationConsumer import FileSummarizationConsumer

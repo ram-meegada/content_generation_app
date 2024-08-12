@@ -72,3 +72,20 @@ def chatGPT_image_processing(img_file, query):
         return data
     except:
         return []
+    
+def testing_extract_text(file):
+    text_data = []
+    temp = {1: [2000, 8], 2: [4000, 5], 3: [8000, 4], 4: [12000, 3]}
+    with file.open() as f:
+        pdf_stream = BytesIO(f.read())
+        data = PdfReader(pdf_stream)
+    i, j = 0, 0
+    while i < len(data):
+        end = i+temp[j+1][0]
+        if end > len(data)-1:
+            text_data.append(data[i:])
+        else: 
+            text_data.append(data[i: end])    
+        i += temp[j+1][0]
+        j += 1
+    return text_data
