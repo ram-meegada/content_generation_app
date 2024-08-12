@@ -1,1 +1,4 @@
 from whizzo_app.consumers.fileSummarizationConsumer import FileSummarizationConsumer
+from whizzo_app.consumers.testingConsumer import TestingConsumer
+from whizzo_app.consumers.assignmentSolutionsConsumer import AssignmentSolutionsConsumer
+from whizzo_app.consumers.articleConsumer import ArticleConsumer 
