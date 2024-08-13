@@ -160,15 +160,21 @@ class UpdateAdminSerializer(serializers.ModelSerializer):
 
 class GetAdminManageUserSerializer(serializers.ModelSerializer):
     profile_picture = CreateUpdateUploadMediaSerializer()
+    purpose = serializers.SerializerMethodField()
     class Meta:
         model = UserModel
-        fields = ("id", "first_name", "last_name", "phone_no", "email", "profile_picture","country_code", 'is_active')
+        fields = ("id", "first_name", "last_name", "phone_no", "email", "profile_picture","country_code", 'is_active', 'purpose')
+    def get_purpose(self, obj):
+        try:
+            return {"id": obj.purpose.id, "name": obj.purpose.name}
+        except:
+            return ""  
 
 
 class UpdateAdminManageUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserModel
-        fields = ("id", "first_name", "last_name", "phone_no", "country_code","profile_picture")
+        fields = ("id", "first_name", "last_name","profile_picture", "purpose")
 
 class EditManageUserStatusSerializer(serializers.ModelSerializer):
     class Meta:

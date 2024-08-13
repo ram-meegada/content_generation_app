@@ -177,7 +177,7 @@ class AdminService:
 # manage user
 
     def get_all_user_admin(self, request):
-        sub_obj = UserModel.objects.filter(role=2).order_by("-created_at")
+        sub_obj = UserModel.objects.filter(role=2, is_deleted=False).order_by("-created_at")
         pagination_obj = CustomPagination()
         search_keys = ["first_name__icontains", "email__icontains"]
         result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.GetAdminManageUserSerializer, sub_obj)
@@ -197,10 +197,14 @@ class AdminService:
             user = UserModel.objects.get(pk=user_id)
         except UserModel.DoesNotExist:
             return {"data":None,"message": messages.USER_NOT_FOUND, "status": 400}
-        serializer = adminSerializer.UpdateAdminManageUserSerializer(user, data=request.data )
+        serializer = adminSerializer.UpdateAdminManageUserSerializer(user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-        return {"data": serializer.data,"message": messages.USER_UPDATED, "status": 200}
+            return {"data": serializer.data,"message": messages.USER_UPDATED, "status": 200}
+        else:
+            print(serializer.errors, '--errors-----')
+            return {"data": None, "message": messages.WENT_WRONG, "status": 400}
+
     
     def edit_manage_user_status(self, request, id):
         try:   
