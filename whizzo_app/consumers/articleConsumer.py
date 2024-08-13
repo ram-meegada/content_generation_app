@@ -1,3 +1,5 @@
+import openai
+import os
 from channels.consumer import SyncConsumer
 from channels.exceptions import StopConsumer
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -60,15 +62,24 @@ class ArticleConsumer(SyncConsumer):
                     'text': json.dumps({"data": stream_chunk, "signal": 1})
                     })    
             elif language == "arabic":
-                result = generate_article_util(topic, tone, pov, region, words)
-                final_response = ""
-                print(result, '----result-----result----')
-                try:
-                    for i, j in result["content"].items():
-                        final_response += i + ". " + \
-                            j["heading"] + "\n\n" + j["content"] + "\n\n"
-                except:
-                    return {"data": None, "message": "Please try again", "status": 400}
+                # result = generate_article_util(topic, tone, pov, region, words)
+                QUERY = f"You are article generator. Generate an article on {topic} in the point of view of {pov} which I provide you. Whole Article should be in {language} and of approximately {words} words with voice of tone as {tone} and article should belongs to {region} region. Format should be descriptive. Strictly keep Headings(numbered as 1,2,3)."
+                message_content = [
+                    {
+                        "type": "text",
+                        "text": QUERY
+                    }
+                ]
+                message = HumanMessage(content=message_content)
+                # response = llm.invoke([message])
+                # final_response = response.content.replace(
+                #     "*", "").replace("#", "").replace("-", "")
+                for chunk in llm.stream([message]):
+                    stream_chunk = chunk.content
+                    self.send({
+                    'type': 'websocket.send',
+                    'text': json.dumps({"data": stream_chunk, "signal": 1})
+                    })
             # save record
             # if "record_id" not in payload:
             #     get_article_record = AbilityModel.objects.create(
@@ -88,10 +99,11 @@ class ArticleConsumer(SyncConsumer):
                         'type': 'websocket.send',
                         'text': json.dumps({"data": "", "signal": 0})
                     })    
-        except:
+        except Exception as err:
+            print(err, '-------errr---------')
             self.send({
                         "type": "websocket.send",
-                        "text": json.dumps({"data": "", "signal": 0, "message": "Something went wrong", "status": 400})
+                        "text": json.dumps({"data": str(err), "signal": 0, "message": "Something went wrong", "status": 400})
                     })
             self.send({
                 "type": "websocket.close"
@@ -100,3 +112,33 @@ class ArticleConsumer(SyncConsumer):
     def websocket_disconnect(self, event):
         print('websocket disconnected.....', event)
         raise StopConsumer()
+
+
+def generate_article_util(topic, tone, pov, region, words):
+    query = f"""
+        You are article generator. Generate an article on {topic} in the point of view of {pov} which I provide you. Whole Article should be in arabic language and of approximately {words} words with voice of tone as {tone} and article should belongs to {region} region. Format should be descriptive. Strictly keep Headings for article topics as(numbered as 1,2,3) and a small descriptive paragraph for each heading.
+
+        Additionally, ensure the response is formatted as a JSON object with the following structure:
+        {{
+            "title": "string",
+            "content": {{
+                "1": {{
+                    "heading": "string of minimum 10 letters",
+                    "content": "string"
+                }}
+            }}
+        }}
+        """
+    messages=[
+                {"role": "system", "content": "You are a helpful assistant designed to output articles in JSON string based on prompt. The output should be strictly in arabic language."},
+                {"role": "user", "content":[
+                    {"type": "text", "text": query}
+                ]}
+            ]
+    chatbot = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo", messages=messages, response_format={ "type": "json_object" }, temperature = 0.0,
+    )
+    for chunk in chatbot:
+        if 'choices' in chunk:
+            text = chunk['choices'][0]['text']
+            print(text, end='')

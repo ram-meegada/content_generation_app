@@ -282,12 +282,16 @@ def pdf_processing(pdf_file, query):
 class CategoryService:
     def generate_testing_category_result(self, request):
         try:
+            print(request.data, '------request-----')
+            api_type = int(request.data["type"])
+            input_language = ""
             file_links = []
             api_type = int(request.data["type"])
             files = dict(request.data)["file"]
             if api_type == 1:
                 for i in files:
                     file_links.append(save_image(i)[0])
+            print(file_links, '--------')    
             sub_category = int(request.data["sub_category"])
             final_response = []
             if sub_category == 1:
@@ -299,11 +303,8 @@ class CategoryService:
                         result = chatGPT_image_processing(file, query)
                         final_response += result
                 elif api_type == 2:
-                    text_data = extract_data_from_url(file_links[0])
-                    if "ar" in detect(text_data[0]):
-                        input_language = "arabic"
-                    else:
-                        input_language = "english"
+                    text_data = assignment_extract_text(files[0])
+                    input_language = self.check_the_input_language((text_data[0][:200]).strip())
                     number_of_questions = int(
                         settings.NUMBER_OF_QUESTIONS)//len(text_data)
                     query = f"Generate minimum of {number_of_questions} mcqs with options and answers for the input in {input_language} language. Format should be in python json list of objects(key-value pair). Key names of objects should be strictly 'question_no', 'question', 'answer_option' and 'correct_answer'."
@@ -311,6 +312,7 @@ class CategoryService:
                         result = chatGPT_pdf_processing(i, query)
                         for j in result:
                             final_response.append(j)
+                    print(final_response, '-----final response-----')
                     for index, body in enumerate(final_response):
                         if "answer_options" in body:
                             body["answer_option"] = body.pop("answer_options")
@@ -331,35 +333,27 @@ class CategoryService:
                     number_of_questions = int(
                         settings.NUMBER_OF_QUESTIONS)//len(file_links)
                     for file in file_links:
-                        query = f"Generate ten flashcards for this input. Format should be in python json list. Keys should be 'question', 'answer'. 'question' and 'answer' should be different. if the question has multiple answers give them in list."
-                        start_time = datetime.now()
+                        query = f"Generate {number_of_questions} flashcards for this input. Format should be in python json list. Keys should be 'question', 'answer'. 'question' and 'answer' should be different. if the question has multiple answers give them in list."
                         result = chatGPT_image_processing(file, query)
-                        print(result, datetime.now() - start_time, '------------- time taken ------------')
                         final_response += result
                 elif api_type == 2:
                     text_data = assignment_extract_text(files[0])
-                    non_english_chars = 0
-                    for i in text_data[0][:100]:
-                        if i not in string.ascii_letters+string.digits+string.punctuation:
-                            non_english_chars += 1
-                    if non_english_chars > 50:
-                        input_language = "arabic"
-                    else:
-                        input_language = "english"
+                    input_language = self.check_the_input_language(text_data[0][:200])
                     number_of_questions = int(
                         settings.NUMBER_OF_QUESTIONS)//len(text_data)
-                    query = f"Generate ten flashcards for this input in {input_language} language. Format should be in list. Keys should be 'question', 'answer'. if the question has multiple answers give them in list. Make sure to generate every question and every answer in {input_language} language only. Proper names should also be in {input_language} language"
+                    query = f"Generate {number_of_questions} queestion and answers based on the input I provide you in {input_language} language. Format should be in list. Keys should be 'question', 'answer'. if the question has multiple answers give them in list. Make sure to generate every question and every answer in {input_language} language only. Proper names should also be in {input_language} language. Question and answer should not be same."
                     for i in text_data:
-                        start_time = datetime.now()
                         result = chatGPT_pdf_processing(i, query)
-                        print(result, datetime.now() - start_time, '------------- time taken ------------')
+                        print(result, "--------result-------result")
                         for i in result:
                             final_response.append(i)
-
                 for i in final_response:
                     if isinstance(i, dict) and isinstance(i["answer"], str):
                         i["answer"] = [i["answer"]]
+                    i["input_language"] = self.check_the_input_language(i["question"])
             final_response = [i for i in final_response if isinstance(i, dict)]
+            for i in final_response:
+                i["input_language"] = self.check_the_input_language(i["question"])    
             save_data = TestingModel.objects.create(user_id=request.user.id,
                                                     sub_category=request.data["sub_category"],
                                                     result=final_response,
@@ -369,10 +363,24 @@ class CategoryService:
                                                     )
             if not final_response:
                 return {"data": None, "message": "Please upload again", "status": 400}
+            print(final_response, '-------testing final_response-------')
             return {"data": final_response, "record_id": save_data.id, "message": "Result generated successfully", "status": 200}
         except Exception as error:
             print(error, '-----error--------')
             return {"data": str(error), "message": "Something went wrong", "status": 400}
+        
+    def check_the_input_language(self, text_data):
+        import string
+        LENGTH = len(text_data)
+        non_english_chars = 0
+        text_data = text_data.replace(" ", "")
+        for i in text_data:
+            if i not in string.ascii_letters+string.digits+string.punctuation:
+                non_english_chars += 1
+        if non_english_chars > LENGTH//2:
+            return "arabic"
+        else:
+            return "english"    
 
     def generate_testing_category_result_pdf(self, request):
         file_link = request.data["file_link"]
@@ -1716,7 +1724,12 @@ class CategoryService:
                     "questions"]
             except:
                 final_response = self.change_language_chatgpt(query, text)
-
+            try:
+                for i in final_response:
+                    if "question" in i:
+                        i["input_language"] = self.check_the_input_language(i["question"])
+            except:
+                pass               
             # result = self.gemini_solution_for_text_translation(text, query)
             # try:
             #     final_response = json.loads(result)
@@ -1726,7 +1739,8 @@ class CategoryService:
             #     return {"data": None, "message": "Please try again", "status": 400}
             # print(final_response, '-----------final------')
         else:
-            query = "You are english to arabic translator. Translate the text to arabic which I provide you.Output format should be proper human readable text ."
+            query = f"""First find the language of input and Translate to arabic if it is english or translate to english if it is arabic: {text}. 
+                    Output format should be proper human readable text ."""
             result = self.gemini_solution_for_text_translation(text, query)
             final_response = result
         print(final_response, '-------final -----')    
@@ -2338,6 +2352,7 @@ class CategoryService:
         try:
             file = request.FILES.get("word_file")
             generate_name = generate_file_name(file.name)
+            print(file.name)
             FILE_NAME = generate_name[0]
             OUTPUT_FILE_NAME = generate_name[0] + ".pdf"
             name = f"{random.randint(1000, 9999)}_{FILE_NAME}"
@@ -2377,15 +2392,15 @@ class CategoryService:
         try:
             api_type = True if request.GET.get("type") == "1" else False
             count = AbilityModel.objects.filter(
-                is_arabic=False, is_mcq=api_type).count()
+                is_arabic=False, is_mcq=api_type, is_active=True).count()
             if count <= 20:
                 questions = AbilityModel.objects.filter(
-                    is_arabic=False, is_mcq=api_type).order_by('?')
+                    is_arabic=False, is_mcq=api_type, is_active=True).order_by('?')
             else:
                 random_ids = random.sample(list(AbilityModel.objects.filter(
-                    is_arabic=False, is_mcq=api_type).values_list('id', flat=True)), 20)
+                    is_arabic=False, is_mcq=api_type, is_active=True).values_list('id', flat=True)), 20)
                 questions = AbilityModel.objects.filter(
-                    id__in=random_ids, is_arabic=False, is_mcq=api_type)
+                    id__in=random_ids, is_arabic=False, is_mcq=api_type, is_active=True)
             serialized_questions = [
                 {
                     "question_no": idx + 1,
@@ -2570,9 +2585,11 @@ class CategoryService:
                         notes_dict = {"title": datetime.strftime(
                             today_date, "%Y-%m-%d"), "count": len(date_wise_notes)}
                         today_date -= timedelta(days=1)
-                        recent_notes.append(notes_dict)
+                        if notes_dict["count"] != 0:
+                            recent_notes.append(notes_dict)
             except Exception as err:
                 print(err)
+            print(recent_notes, '----result-----')    
             return {"data": result, "recent_notes": recent_notes, "message": messages.NOTES_HISTORY, "status": 200}
         except Exception as err:
             return {"data": str(err), "message": messages.TRY_AGAIN, "status": 400}
