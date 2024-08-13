@@ -2368,6 +2368,7 @@ class CategoryService:
         try:
             file = request.FILES.get("word_file")
             generate_name = generate_file_name(file.name)
+            print(file.name)
             FILE_NAME = generate_name[0]
             OUTPUT_FILE_NAME = generate_name[0] + ".pdf"
             name = f"{random.randint(1000, 9999)}_{FILE_NAME}"

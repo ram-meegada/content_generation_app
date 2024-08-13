@@ -42,6 +42,31 @@ def SendOtpToMail(otp_or_password, email, name="User"):
     msg.send()
     return
     
+def SubadminCreated(otp_or_password, email, link):
+    context = {"password": otp_or_password, "email": email, "link": link}
+    print(context)
+    temp = render_to_string("account-created.html", context)
+    msg = EmailMultiAlternatives("Dont Reply!", temp, settings.DEFAULT_FROM_EMAIL, [email])
+    msg.content_subtype = "html"
+    msg.send()
+    return
+
+def SubadminUpdated(name, email, link):
+    context = {"name": name, "email": email, "link": link}
+    print(context)
+    temp = render_to_string("account-updated.html", context)
+    msg = EmailMultiAlternatives("Dont Reply!", temp, settings.DEFAULT_FROM_EMAIL, [email])
+    msg.content_subtype = "html"
+    msg.send()
+    return
+
+def DeleteUserNotification(email, name="User"):
+    context = { "email": email[0], "name": name}
+    temp = render_to_string("delete-user-notification.html", context)
+    msg = EmailMultiAlternatives("Dont Reply!", temp, settings.DEFAULT_FROM_EMAIL, email)
+    msg.content_subtype = "html"
+    msg.send()
+    return
 # def SendOtpToMail( otp, email):    
 #     context = {"otp": otp}
 #     temp = render_to_string("email_otp.html", context)

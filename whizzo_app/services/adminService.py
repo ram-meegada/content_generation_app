@@ -5,7 +5,7 @@ from whizzo_app.models import AbilityModel, AchievementModel, SubjectModel,Notif
     SubscriptionModel, FaqModel, CmsModel, TestimonialModel,CategoryModel
 from whizzo_app.utils.customPagination import CustomPagination
 from whizzo_app.utils.otp import generate_password
-from whizzo_app.utils.sendMail import SendOtpToMail
+from whizzo_app.utils.sendMail import SendOtpToMail,DeleteUserNotification,SubadminCreated,SubadminUpdated
 from django.contrib.auth.hashers import check_password
 from django.utils import timezone
 import pytz
@@ -32,6 +32,9 @@ import pandas as pd
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from whizzo_app.services.uploadMediaService import UploadMediaService
 from threading import Thread
+from decouple import config
+
+BASE_URL = config("BASE_URL")
 
 class AdminService:
 # onboarding
@@ -222,6 +225,7 @@ class AdminService:
             user_obj = UserModel.objects.get(pk=user_id)
         except UserModel.DoesNotExist:
             return {"data": None,"message": messages.USER_NOT_FOUND, "status": 404}
+        Thread(target=DeleteUserNotification, args=( [user_obj.email], user_obj.name)).start()
         user_obj.is_deleted = True
         user_obj.save()
         return {"data": None,"message": messages.USER_DELETED, "status": 200}
@@ -419,7 +423,7 @@ class AdminService:
 
     def get_all_ability(self, request):
         try:
-            data = AbilityModel.objects.all().order_by("-created_at")
+            data = AbilityModel.objects.filter(is_active=True, is_deleted =False).order_by("-created_at")
             pagination_obj = CustomPagination()
             search_keys = ["question__icontains", "answer_option__icontains"]
             result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.CreateAbilitySerializer, data)
@@ -586,7 +590,7 @@ class AdminService:
     
     def get_all_achievement(self, request):
         try:
-            data = AchievementModel.objects.all().order_by("-created_at")
+            data = AchievementModel.objects.filter(is_active=True, is_deleted =False).order_by("-created_at")
             pagination_obj = CustomPagination()
             search_keys = [ "question__icontains","corect_answer__icontains"]
             result = pagination_obj.custom_pagination(request, search_keys, adminSerializer.CreateAcheivementSerializer, data)
@@ -676,11 +680,12 @@ class AdminService:
 
             if user_serializer.is_valid():
                 user_data = user_serializer.save()
+                print(user_data.email,"--------------------",user_data.name)
                 # password=generate_password()
                 password="Test@123"
                 user_data.set_password(password)
                 user_data.save()
-                Thread(target=SendOtpToMail, args=(password, [user_data.email], user_data.name)).start()
+                Thread(target=SubadminCreated, args=(password,user_data.email,BASE_URL)).start()
                 for i in request.data['role_permission']:
                     role_serializer = adminSerializer.CreateRolePermissionSubAdminSerializer(data=i)
                     if role_serializer.is_valid():
@@ -716,6 +721,8 @@ class AdminService:
                         save_role_permission = role_serializer.save(user_id = user.id)
                     else:
                         return {'data':role_serializer.errors, 'status':400}    
+                Thread(target=SubadminUpdated, args=(user_data.name,user_data.email,BASE_URL)).start()
+
                 return {'data':request.data, 'message': messages.SUB_ADMIN_UPDATED,'status':200}
             return {'data':user_serializer.errors,"message": messages.WENT_WRONG,'status':400}
         except Exception as e:
@@ -756,6 +763,7 @@ class AdminService:
             sub_obj = UserModel.objects.get(pk=sub_admin_id)
         except UserModel.DoesNotExist:
             return {"data":None,"message": messages.RECORD_NOT_FOUND, "status": 404}
+        Thread(target=DeleteUserNotification, args=( [sub_obj.email], sub_obj.name)).start()
         sub_obj.delete()
         return {"data": None,"message": messages.SUB_ADMIN_DELETED, "status": 200}
     
