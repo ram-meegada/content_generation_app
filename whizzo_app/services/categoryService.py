@@ -473,11 +473,11 @@ class CategoryService:
 
     def generate_file_summary(self, request):
         llm = ChatGoogleGenerativeAI(model="gemini-pro")
+        print("---------------api hit------------------------")
         if int(request.data["type"]) == 1:
             file_link = request.FILES.get("file_link")
             try:
                 text_data = self.extract_text(file_link)
-                print(text_data, '------ text data --------')
                 message = HumanMessage(
                     content=[
                         {"type": "text",
@@ -1751,6 +1751,14 @@ class CategoryService:
                 final_response = [final_response]
             else:    
                 final_response = list(final_response.values())[0]
+        return {"data": final_response, "message": "Text translated successfully.", "status": 200}
+
+    def text_translation_for_file_summary(self, request):
+        text = request.data.get("text")
+        query = f"""First find the language of input HTML content and Translate to arabic if it is english or translate to english if it is arabic: {text}. 
+                Output format should be proper HTML."""
+        result = self.gemini_solution_for_text_translation(text, query)
+        final_response = result
         return {"data": final_response, "message": "Text translated successfully.", "status": 200}
 
     def change_language_chatgpt(self, query, input_data):

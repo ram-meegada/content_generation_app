@@ -188,6 +188,11 @@ class TextTranslationView(APIView):
     def post(self, request):
         result = category_obj.text_translation(request)
         return Response(result, status = result["status"])
+
+class TextTranslationForFileSummaryView(APIView):
+    def post(self, request):
+        result = category_obj.text_translation_for_file_summary(request)
+        return Response(result, status = result["status"])
     
 class GetAssignmentSolutionReviewView(APIView):
     def post(self, request, id):

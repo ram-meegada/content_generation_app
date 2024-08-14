@@ -206,3 +206,11 @@ CHANNEL_LAYERS = {
         },
     },
 }
+
+
+CHANNELS = {
+    'websocket': {
+        'ping_interval': 20,  # Interval in seconds to send ping messages
+        'ping_timeout': 10,   # Timeout in seconds for receiving pong responses
+    }
+}

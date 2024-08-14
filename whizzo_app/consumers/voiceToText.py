@@ -133,8 +133,10 @@ class AudioConsumer(SyncConsumer):
 
     def websocket_receive(self, event):
         client = speech.SpeechClient.from_service_account_file("C:/Users/PC/Downloads/apptunix-food-customer-9b7b1e98835c.json")
-        payload = json.loads(event["text"])
-        audio_data = base64.b64decode(payload["audio"])
+        # print(event, type(event), '------payload------')
+        audio_data = event["bytes"]
+        # audio_data = base64.b64decode(payload["audio"])
+        # print(payload["audio"], '----payload=====')
 
         random_file_name = f"{random.randint(1000, 9999)}_temp_audio.wav"
 
