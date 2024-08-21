@@ -7,5 +7,6 @@ websocket_urlpatterns = [
     path('assignment-solutions/', AssignmentSolutionsConsumer.as_asgi()),
     path('generate-article/', ArticleConsumer.as_asgi()),
     path('audio-to-text/', AudioConsumer.as_asgi()),
-
+    path('research-topics/', ResearchTopicsConsumer.as_asgi()),
+ 
 ]

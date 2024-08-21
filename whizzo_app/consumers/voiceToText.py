@@ -121,56 +121,75 @@ from django.core.files.storage import FileSystemStorage
 credential_path = "C:/Users/PC/Downloads/apptunix-food-customer-9b7b1e98835c.json"
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = credential_path
 
-class AudioConsumer(SyncConsumer):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.audio_buffer = BytesIO()
-        self.transcript = ""
+from channels.generic.websocket import AsyncWebsocketConsumer
+from google.cloud import speech_v1p1beta1 as speech
+from google.api_core.exceptions import GoogleAPICallError
+import json
 
-    def websocket_connect(self, event):
-        self.terminate_process = False
-        self.send({'type': 'websocket.accept'})
+class AudioConsumer(AsyncWebsocketConsumer):
+    recognize_stream = None
+    speech_client = None
+    requests = None
+    responses = None
 
-    def websocket_receive(self, event):
-        client = speech.SpeechClient.from_service_account_file("C:/Users/PC/Downloads/apptunix-food-customer-9b7b1e98835c.json")
-        # print(event, type(event), '------payload------')
-        audio_data = event["bytes"]
-        # audio_data = base64.b64decode(payload["audio"])
-        # print(payload["audio"], '----payload=====')
+    async def connect(self):
+        await self.accept()
 
-        random_file_name = f"{random.randint(1000, 9999)}_temp_audio.wav"
+    async def disconnect(self, close_code):
+        if self.speech_client:
+            self.speech_client.transport.channel.close()
 
-        with open(random_file_name, 'wb') as audio_file:
-            audio_file.write(audio_data)
+    async def receive(self, text_data=None, bytes_data=None):
+        if bytes_data:
+            if self.recognize_stream:
+                try:
+                    # Append the bytes data to the requests generator
+                    await self.recognize_stream.write(bytes_data)
+                except GoogleAPICallError as e:
+                    print(f"Error calling Google API: {e}")
+            else:
+                print("Stream not initialized")
+        else:
+            print("Received non-bytes data")
 
-        with open(random_file_name, "rb") as f:
-            audio_stream = f.read()
-
-        audio_file = speech.RecognitionAudio(content=audio_stream)
-
+    async def start_recognition_stream(self, data):
+        # Initialize the Google Cloud Speech-to-Text client
+        self.speech_client = speech.SpeechClient()
+        
         config = speech.RecognitionConfig(
-            encoding=speech.RecognitionConfig.AudioEncoding.MP3,
-            sample_rate_hertz=44100,
-            enable_automatic_punctuation=True,
-            language_code='en-US'
+            encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
+            sample_rate_hertz=16000,
+            language_code='en-US',
+            # ... other settings ...
         )
+        streaming_config = speech.StreamingRecognitionConfig(config=config, interim_results=True)
 
-        responses = client.recognize(
-            config=config,
-            audio=audio_file
-        )
-        print(responses, type(responses), '---response----')
-        transcript = ""
-        for response in responses.results:
-            for alternative in response.alternatives:
-                transcript += alternative.transcript + " "
-        self.send({
-            'type': 'websocket.send',
-            'text': json.dumps({"data": json.dumps(transcript), "signal": 1})
-        })
-        if os.path.exists(random_file_name):
-            os.remove(random_file_name)
+        self.requests = []
+        self.responses = []
+        
+        def request_generator():
+            for request in self.requests:
+                yield request
+            while True:
+                if self.requests:
+                    yield self.requests.pop(0)
+                else:
+                    break
 
-    def websocket_disconnect(self, event):
-        print('websocket disconnected.....', event)
-        raise StopConsumer()
+        self.recognize_stream = self.speech_client.streaming_recognize(streaming_config, request_generator())
+        
+        async for response in self.recognize_stream:
+            for result in response.results:
+                # Send the results to the client
+                await self.send(text_data=json.dumps({'type': 'result', 'transcript': result.alternatives[0].transcript}))
+
+        await self.send(text_data=json.dumps({'type': 'stream_started'}))
+
+    async def stop_recognition_stream(self):
+        if self.recognize_stream:
+            self.recognize_stream = None
+            await self.send(text_data=json.dumps({'type': 'stream_stopped'}))
+
+    async def send_message(self, message):
+        await self.send(text_data=json.dumps({'type': 'message', 'message': message}))
+

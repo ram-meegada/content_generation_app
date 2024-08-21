@@ -1,5 +1,3 @@
-from channels.consumer import SyncConsumer
-from channels.exceptions import StopConsumer
 from langchain_google_genai import ChatGoogleGenerativeAI
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.core.files.base import ContentFile
@@ -13,20 +11,18 @@ from whizzo_app.utils.saveImage import save_image
 from whizzo_app.utils.Modules.fileSummaryModule import image_processing_assignment_solution, to_markdown
 from time import sleep
 from whizzo_app.models.fileSumarizationModel import FileSumarizationModel
-
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
-
+from channels.generic.websocket import AsyncWebsocketConsumer
+from channels.db import database_sync_to_async
     
 
-class FileSummarizationConsumer(SyncConsumer):
-    def websocket_connect(self, event):
-        self.send({
-            'type': 'websocket.accept'
-        })
+class FileSummarizationConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        return await super().connect()
 
-    def websocket_receive(self, event):
-        payload = json.loads(event["text"])
+    async def receive(self, text_data=None, bytes_data=None):
+        payload = json.loads(text_data)
         try:
             access_token = AccessToken(payload["token"])
             token_payload = access_token.payload
@@ -54,15 +50,11 @@ class FileSummarizationConsumer(SyncConsumer):
                     for page in pdf_reader.pages:
                         pdf_text += page.extract_text()
                 if not pdf_text.strip():
-                    self.send({
-                        "type": "websocket.send",
-                        "text": json.dumps({"data": None, "signal": 400, "message": "No extractable text"})
-                    })
-                    self.send({
-                        "type": "websocket.close"
-                        })
+                    await self.send(text_data=json.dumps({"data": None, "signal": 400, "message": "No extractable text"}))
+                    await self.close()
                 temp = {1: 2000, 2: 4000, 3: 8000, 4: 12000}
                 i, j = 0, 0
+                result = ""
                 while i < len(pdf_text):
                     end = i+temp[j+1]
                     if end > len(pdf_text)-1:
@@ -84,21 +76,13 @@ class FileSummarizationConsumer(SyncConsumer):
                         ]
                     )
                     try:
-                        for chunk in llm.stream([message]):
+                        async for chunk in llm.astream([message]):
                             stream_chunk = chunk.content
                             stream_chunk = stream_chunk.replace("*", "").replace("<body>", "").replace("</body>", "")
-                            print(stream_chunk, '----stream_chunkstream_chunkstream_chunkstream_chunk------')
-                            for tok in stream_chunk.split(" "):
-                                result += " " + tok
-                                # sleep(0.1)
-                                self.send({
-                                'type': 'websocket.send',
-                                # 'text': f'{{"data": "{str(result)}", "signal": "1"}}'
-                                'text': json.dumps({"data": result, "signal": "1"})
-                                })
+                            result += stream_chunk
+                            await self.send(text_data=json.dumps({"data": result, "signal": 1}))
                     except:
-                        pass            
-                        
+                        pass
             elif payload["type"] == 2:
                 for bin_data in payload["binary_data"]:
                     binary_data = base64.b64decode(bin_data)
@@ -111,47 +95,28 @@ class FileSummarizationConsumer(SyncConsumer):
                         len(binary_data),
                         None
                     )
-                    query = "You are summary provider. Generate a summary of images I provide you through links as soon as possible and the length of the summary should be atleast five hundred words and give me only text no * and extra symbols"
+                    query = f"Generate a summary of the input I provide you in strictly HTML format in atleast five hundred words. Only provide the content of the body tag of html output and give headings in h4 tag only. And continue with previous response.(if previous response present)"
                     img = save_image(uploaded_file)
-                    print(img, '----img------')
+                    # print(img, '----img------')
                     result = image_processing_assignment_solution(
                             img[0], query)
-                    self.send({
-                                'type': 'websocket.send',
-                                'text': json.dumps({"data": result, "signal": "1"})
-                            })
-            save_file_summary_record = FileSumarizationModel.objects.create(
+                    await self.send(text_data=json.dumps({"data": result, "signal": 1}))
+            save_file_summary_record = await database_sync_to_async(FileSumarizationModel.objects.create)(
                     user_id=USER_ID,
                     sub_category=5,
                     result=result
-                )        
-            self.send({
-                'type': 'websocket.send',
-                'text': json.dumps({"data": "", "signal": 0, "record_id": save_file_summary_record.id, "message": "Summary generated successfully."})
-            })
+                )                
+            await self.send(text_data=json.dumps({"data": "", "signal": 0, "record_id": save_file_summary_record.id, "message": "Summary generated successfully."}))
         except TokenError or InvalidToken:
-            self.send({
-                        "type": "websocket.send",
-                        "text": json.dumps({"data": "", "signal": 401, "message": "Invalid token"})
-                    })
-            self.send({
-                "type": "websocket.close"
-                })
+            await self.send(text_data=json.dumps({"data": "", "message": "Invalid token", "signal": 401}))
+            await self.close()
         except Exception as err:
             print(err, '-------errr---------')
-            self.send({
-                        "type": "websocket.send",
-                        "text": json.dumps({"data": str(err), "signal": -1, "message": "Something went wrong", "status": 400})
-                    })
-            self.send({
-                "type": "websocket.close"
-                })  
+            await self.send(text_data=json.dumps({"data": str(err), "signal": -1, "message": "Something went wrong", "status": 400}))
+            await self.close()
 
-
-    def websocket_disconnect(self, event):
-        print('websocket disconnected.....', event)
-        raise StopConsumer()
-
+    async def disconnect(self, code):
+        return await super().disconnect(code)
 
 def check_the_input_language(text_data):
     import string

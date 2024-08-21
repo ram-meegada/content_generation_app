@@ -15,17 +15,18 @@ from whizzo_app.utils.saveImage import save_image
 from whizzo_app.utils.Modules.fileSummaryModule import image_processing_assignment_solution, to_markdown
 from whizzo_app.models.abilityModel import AbilityModel
 from whizzo_app.utils.Modules.articlesModule import generate_article_util
+from channels.generic.websocket import AsyncWebsocketConsumer
+from channels.db import database_sync_to_async
 
-class ArticleConsumer(SyncConsumer):
-    def websocket_connect(self, event):
-        self.send({
-            'type': 'websocket.accept'
-        })
+class ArticleConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        return await super().connect()
 
-    def websocket_receive(self, event):
+    async def receive(self, text_data=None, bytes_data=None):
+        payload = json.loads(text_data)
+        result = ""
         try:
             llm = ChatGoogleGenerativeAI(model="gemini-pro")
-            payload = json.loads(event["text"])
             if "record_id" not in payload:
                 topic = payload.get("topic")
                 words = payload.get("words")
@@ -44,7 +45,7 @@ class ArticleConsumer(SyncConsumer):
                 words = get_article_record.words
             ####
             if language == "english":
-                QUERY = f"You are article generator. Generate an article on {topic} in the point of view of {pov} which I provide you. Whole Article should be in {language} and of approximately {words} words with voice of tone as {tone} and article should belongs to {region} region. Format should be descriptive. Strictly keep Headings(numbered as 1,2,3)."
+                QUERY = f"You are article generator. Generate an article on {topic} in the point of view of {pov} which I provide you. Whole Article should be in {language} and of approximately {words} words with voice of tone as {tone} and article should belongs to {region} region. Format should be in strictly HTML format. Only provide the content of the body tag of html output and give headings in h4 tag only. Strictly keep Headings(numbered as 1,2,3)."
                 message_content = [
                     {
                         "type": "text",
@@ -52,15 +53,14 @@ class ArticleConsumer(SyncConsumer):
                     }
                 ]
                 message = HumanMessage(content=message_content)
-                # response = llm.invoke([message])
-                # final_response = response.content.replace(
-                #     "*", "").replace("#", "").replace("-", "")
-                for chunk in llm.stream([message]):
-                    stream_chunk = chunk.content
-                    self.send({
-                    'type': 'websocket.send',
-                    'text': json.dumps({"data": stream_chunk, "signal": 1})
-                    })    
+                try:
+                    async for chunk in llm.astream([message]):
+                        stream_chunk = chunk.content
+                        # stream_chunk = stream_chunk.replace("*", "").replace("<body>", "").replace("</body>", "")
+                        result += stream_chunk
+                        await self.send(text_data=json.dumps({"data": result, "signal": 1}))
+                except:
+                    pass    
             elif language == "arabic":
                 # result = generate_article_util(topic, tone, pov, region, words)
                 QUERY = f"You are article generator. Generate an article on {topic} in the point of view of {pov} which I provide you. Whole Article should be in {language} and of approximately {words} words with voice of tone as {tone} and article should belongs to {region} region. Format should be descriptive. Strictly keep Headings(numbered as 1,2,3)."
@@ -71,15 +71,14 @@ class ArticleConsumer(SyncConsumer):
                     }
                 ]
                 message = HumanMessage(content=message_content)
-                # response = llm.invoke([message])
-                # final_response = response.content.replace(
-                #     "*", "").replace("#", "").replace("-", "")
-                for chunk in llm.stream([message]):
-                    stream_chunk = chunk.content
-                    self.send({
-                    'type': 'websocket.send',
-                    'text': json.dumps({"data": stream_chunk, "signal": 1})
-                    })
+                try:
+                    async for chunk in llm.astream([message]):
+                        stream_chunk = chunk.content
+                        stream_chunk = stream_chunk.replace("*", "").replace("<body>", "").replace("</body>", "")
+                        result += stream_chunk
+                        await self.send(text_data=json.dumps({"data": result, "signal": 1}))
+                except:
+                    pass
             # save record
             # if "record_id" not in payload:
             #     get_article_record = AbilityModel.objects.create(
@@ -95,23 +94,16 @@ class ArticleConsumer(SyncConsumer):
             # elif "record_id" in payload:
             #     get_article_record.result = final_response
             #     get_article_record.save()
-            self.send({
-                        'type': 'websocket.send',
-                        'text': json.dumps({"data": "", "signal": 0})
-                    })    
+            await self.send(text_data=json.dumps({"data": "", "signal": 0}))
         except Exception as err:
             print(err, '-------errr---------')
-            self.send({
-                        "type": "websocket.send",
+            await self.send(text_data=json.dumps({
                         "text": json.dumps({"data": str(err), "signal": 0, "message": "Something went wrong", "status": 400})
-                    })
-            self.send({
-                "type": "websocket.close"
-                })  
+                    }))
+            await self.close()
 
-    def websocket_disconnect(self, event):
-        print('websocket disconnected.....', event)
-        raise StopConsumer()
+    async def disconnect(self, code):
+        return await super().disconnect(code)
 
 
 def generate_article_util(topic, tone, pov, region, words):

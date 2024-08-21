@@ -1756,9 +1756,16 @@ class CategoryService:
     def text_translation_for_file_summary(self, request):
         text = request.data.get("text")
         query = f"""First find the language of input HTML content and Translate to arabic if it is english or translate to english if it is arabic: {text}. 
-                Output format should be proper HTML."""
-        result = self.gemini_solution_for_text_translation(text, query)
-        final_response = result
+                Output format should be proper HTML and give translation in 'translated_html' key only."""
+        final_response = self.change_language_chatgpt(query, text)
+        print(final_response, '-----final_response----')
+        try:
+            final_response = final_response["translated_html"]
+        except:
+            result = ""
+            for i in final_response.values():
+                result += i
+            final_response = result    
         return {"data": final_response, "message": "Text translated successfully.", "status": 200}
 
     def change_language_chatgpt(self, query, input_data):
@@ -2025,6 +2032,7 @@ class CategoryService:
             return {"data": str(e), "message": messages.WENT_WRONG, "status": 400}
 
     def file_summary_download(self, request, id):
+        print(request.data, '----payload------')
         try:
             file_summary = FileSumarizationModel.objects.get(id=id)
             if request.data["type"] == 2:
@@ -2039,12 +2047,9 @@ class CategoryService:
                     file_summary.download_file = file
                     file_summary.save()
             elif request.data["type"] == 3:
-                if file_summary.download_highlighted_file:
-                    return {"data": file_summary.download_highlighted_file, "message": messages.UPDATED, "status": 200}
-                else:
-                    file = self.html_to_pdf(request)
-                    file_summary.download_highlighted_file = file
-                    file_summary.save()
+                file = self.html_to_pdf(request)
+                file_summary.download_highlighted_file = file
+                file_summary.save()
             return {"data": file, "message": messages.UPDATED, "status": 200}
         except Exception as err:
             print(err, '========file error=========')
@@ -2055,9 +2060,16 @@ class CategoryService:
             html_text = request.data["html_text"]
             # Update this path as necessary
             path_to_wkhtmltopdf = 'C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe'
+            options = {
+                    'page-size': 'A4',
+                    'margin-top': '10mm',
+                    'margin-right': '10mm',
+                    'margin-bottom': '10mm',
+                    'margin-left': '10mm',
+                }
             config = pdfkit.configuration(wkhtmltopdf=path_to_wkhtmltopdf)
             file_name = f'{random.randint(10000, 99999)}_file.pdf'
-            pdfkit.from_string(html_text, file_name, configuration=config)
+            pdfkit.from_string(html_text, file_name, configuration=config, options=options)
             saved_file = saveFile(file_name, "application/pdf")
             if os.path.exists(file_name):
                 os.remove(file_name)
