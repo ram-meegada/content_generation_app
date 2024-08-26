@@ -8,5 +8,6 @@ websocket_urlpatterns = [
     path('generate-article/', ArticleConsumer.as_asgi()),
     path('audio-to-text/', AudioConsumer.as_asgi()),
     path('research-topics/', ResearchTopicsConsumer.as_asgi()),
- 
+    path('detailed-research/', DetailedResearchConsumer.as_asgi()), 
+    path('research-topics-based-on-reference/', ResearchTopicsByReferenceConsumer.as_asgi()), 
 ]
