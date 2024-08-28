@@ -6,3 +6,4 @@ from whizzo_app.consumers.voiceToText import AudioConsumer
 from whizzo_app.consumers.researchTopicsConsumers import ResearchTopicsConsumer
 from whizzo_app.consumers.detailedResearchConsumer import DetailedResearchConsumer
 from whizzo_app.consumers.researchTopicsByUploadReference import ResearchTopicsByReferenceConsumer
+from whizzo_app.consumers.chatbotConsumer import ChatBotConsumer

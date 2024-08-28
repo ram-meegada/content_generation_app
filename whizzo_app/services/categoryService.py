@@ -75,7 +75,7 @@ from pptx.enum.shapes import MSO_SHAPE_TYPE
 from pptx.util import Inches
 from PIL import Image
 from PIL import Image, ImageDraw
-from googletrans import Translator
+# from googletrans import Translator
 from django.core.files.uploadedfile import UploadedFile
 # from spire.presentation.common import *
 # from spire.presentation import *
@@ -588,6 +588,13 @@ class CategoryService:
         text_data = request.data.get('text_data')
 
         try:
+            # message=[
+            #             {"role": "system", "content": "You are a helpful assistant designed to output JSON."},
+            #             {"role": "user", "content": [
+            #                     {"type": "text", "text": "Generate only important vocabulary words you found in the input which you consider to be important as a reference point. Format should be python list of words. If there are no important vocabulary just return 'Cannot find vocabulary'"},
+            #                     {"type": "text", "text": f"Input data: {text_data}"}
+            #                 ]}
+            #         ]
             message=[
                         {"role": "system", "content": "You are a helpful assistant designed to output JSON."},
                         {"role": "user", "content": [
@@ -2407,8 +2414,6 @@ class CategoryService:
             return {"data": str(err), "message": "Please upload the file again.", "status": 400}
 
     def ability(self, request):
-        print(request.GET.get("type"),
-              '---------------request.GET.get("type")-0------')
         try:
             api_type = True if request.GET.get("type") == "1" else False
             count = AbilityModel.objects.filter(
@@ -2433,10 +2438,11 @@ class CategoryService:
                 for idx, question in enumerate(questions)
             ]
             if not serialized_questions:
-                print(api_type is True, api_type is False)
                 if api_type is True:
+                    print({"data": messages.NO_QUESTIONS, "message": messages.NO_QUESTIONS, "status": 400})
                     return {"data": messages.NO_QUESTIONS, "message": messages.NO_QUESTIONS, "status": 400}
                 elif api_type is False:
+                    print("22222222222222222")
                     return {"data": messages.NO_FLASHCARDS, "message": messages.NO_FLASHCARDS, "status": 400}
             save_record = TestingModel.objects.create(user_id=request.user.id,
                                                       sub_category=3,
@@ -2446,6 +2452,7 @@ class CategoryService:
                                                       remaining_answers=len(serialized_questions))
             return {"data": serialized_questions, "record_id": save_record.id, "message": messages.FETCH, "status": 200}
         except Exception as e:
+            print(e, '---ee-e-eeeeeeeeeeeeee---')
             return {"data": None, "message": messages.WENT_WRONG, "status": 400}
 
     def achievement(self, request, id):
@@ -2545,7 +2552,12 @@ class CategoryService:
     def update_presentation_by_id(self, request, id):
         try:
             presentation_obj = PresentationModel.objects.get(id=id)
-            presentation_obj.binary_data = request.data.get("binary_data")
+            try:
+                presentation_obj.binary_data = request.data.get("binary_data")
+                print(request.data.get("binary_data"),"12345678")
+            except:
+                pass
+
             presentation_obj.template_id = request.data.get("template_id")
             presentation_obj.save()
             return {"data": [], "message": "Presentation updated successfully", "status": 200}
