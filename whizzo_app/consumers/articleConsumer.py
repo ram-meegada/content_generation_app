@@ -70,7 +70,7 @@ class ArticleConsumer(AsyncWebsocketConsumer):
                     pass    
             elif language == "arabic":
                 # result = generate_article_util(topic, tone, pov, region, words)
-                QUERY = f"You are article generator Whole Article should be in {language} language strictly. Generate an article on {topic} in the point of view of {pov} which I provide you. Whole Article should be  of approximately {words} words with voice of tone as {tone} and article should be from the perspective of a person from {region} . Format should be descriptive. Strictly keep Headings(numbered as 1,2,3).Dont stop in middle at least complete the contents in a heading and then stop "
+                QUERY = f"You are article generator Whole Article should be in {language} language strictly. Generate an article on {topic} in the point of view of {pov} which I provide you. Whole Article should be  of approximately {words} words with voice of tone as {tone} and article should be from the perspective of a person from {region} . Format should be in strictly HTML format. Only provide the content of the body tag of html output and give headings in h4 tag only. Strictly keep Headings(numbered as 1,2,3).Dont stop in middle at least complete the contents in a heading and then stop "
                 message_content = [
                     {
                         "type": "text",
@@ -96,7 +96,8 @@ class ArticleConsumer(AsyncWebsocketConsumer):
                     pov=pov,
                     words=words,
                     tone=tone,
-                    result=result
+                    result=result,
+                    file_name=payload.get("file_name")
                 )
             elif "record_id" in payload:
                 get_article_record.result = result

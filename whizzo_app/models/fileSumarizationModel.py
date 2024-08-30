@@ -9,7 +9,7 @@ class FileSumarizationModel(BaseModel):
     #foreinkey fields
     user = models.ForeignKey(UserModel, on_delete=models.CASCADE)
     media = models.ForeignKey(UploadMediaModel, on_delete=models.CASCADE, null=True)
-
+    file_name = models.CharField(max_length=100, blank=True, null=True)
     #integer fields
     sub_category = models.IntegerField(choices=SUB_CATEGORY_CHOICES, default=0)
     # correct_answers = models.IntegerField(blank=True, null=True)

@@ -17,6 +17,8 @@ urlpatterns = [
     path("change-language-file-summary/", categoryView.TextTranslationForFileSummaryView.as_view()),
     path("file/summarization-vocab/", categoryView.FileSummarizationVocabView.as_view()),
     path("file/history/", categoryView.FileSummaryHistoryView.as_view()),
+    path("file/edit/<int:id>/", categoryView.FileSummaryUpdationView.as_view()),
+    path("file/delete/<int:id>/", categoryView.FileSummaryDeleteView.as_view()),
     path("file/<int:file_id>/", categoryView.GetSummaryByIdView.as_view()),
     path("download-file-summary/<int:id>/", categoryView.DownloadFileSummaryView.as_view()),
 
@@ -54,6 +56,8 @@ urlpatterns = [
     path("get-all-listing-research/", categoryView.GetAllResearchView.as_view()),
     path("get-research-by-id/<int:id>/", categoryView.GetResearchByIdView.as_view()),
     path("download-research-file/<int:id>/", categoryView.DownloadResearchView.as_view()),
+    path("research-file/edit/<int:id>/", categoryView.ResearchTopicUpdationView.as_view()),
+    path("research-file/delete/<int:id>/", categoryView.ResearchTopicDeleteView.as_view()),
  
     #### assignment ####
     path("get-assignmnet-answer/", categoryView.GetAssignmentSolutionView.as_view()),
@@ -76,6 +80,8 @@ urlpatterns = [
     path("articles/", categoryView.ArticlesListingView.as_view()),
     path("article/<int:id>/", categoryView.GetArticleByIdView.as_view()),
     path("download-article/", categoryView.DownloadArticleView.as_view()),
+    path("article/edit/<int:id>/", categoryView.ArticleUpdationView.as_view()),
+    path("article/delete/<int:id>/", categoryView.ArticleDeleteView.as_view()),
 
     ####common for all #####
     path("send-file-to-mail/",categoryView.SendFileToMailByToken.as_view()),

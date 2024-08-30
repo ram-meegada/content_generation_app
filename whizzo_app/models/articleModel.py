@@ -14,6 +14,7 @@ class ArticleModel(BaseModel):
     pov = models.CharField(max_length=100, default="")
     words = models.IntegerField(default=0)
     tone = models.CharField(max_length=100, default="")
+    file_name = models.CharField(max_length=100, blank=True, null=True)
 
     all_topics = models.JSONField(default=list)
 

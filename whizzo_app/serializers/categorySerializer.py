@@ -81,7 +81,7 @@ class GetArticlesListSerializer(serializers.ModelSerializer):
 class GetFileSumarizationSerializer(serializers.ModelSerializer):
     class Meta:
         model = FileSumarizationModel
-        fields = ["id", "created_at", "result"]    
+        fields = ["id", "created_at", "result", "file_name"]    
 
 
 class GetFileSummarizationIdSerializer(serializers.ModelSerializer):

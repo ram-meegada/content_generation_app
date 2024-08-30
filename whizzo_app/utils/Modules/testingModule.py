@@ -24,16 +24,7 @@ def chatGPT_pdf_processing(text_data, query):
         )
         reply = chatbot.choices[0].message.content
         final_data = json.loads(reply)
-        data =[]
-        try:
-            for i in final_data:
-                for j in final_data[i]:
-                    data.append(j)
-        except TypeError:
-            data.append(final_data)            
-        except Exception as err:
-            print(err, type(err), '======')            
-        return data
+        return final_data
     except Exception as err:
         print(err, '--------chatgpt error--------')
         return []    

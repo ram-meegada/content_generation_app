@@ -15,7 +15,10 @@ class ChatBotConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data=None, bytes_data=None):
         payload = json.loads(text_data)
-        context ="""You are a helpful assistant Please provide the answer in JSON format with fields "question", "answer", like this: {"question": "What is the capital of France?", "answer": "Paris"."""
+        context ="""You are a helpful assistant Please provide the answer in JSON format with fields "question", "answer" like this {
+  "question": "{payload['query']}",
+  "answer": "The answer should be based on the given question."
+} """
         messages=[
                     {"role": "system", "content": context},
                     {"role": "user", "content":[

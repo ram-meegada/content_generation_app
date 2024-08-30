@@ -253,6 +253,7 @@ def pdf_processing(pdf_file, query):
         pdf_reader = PdfReader(pdf_stream)
         for page in pdf_reader.pages:
             pdf_text += page.extract_text()
+            # pdf_text = pdf_text.replace("\n", "")    
         print(pdf_text, '------pdf oodfsd')
         return pdf_text
 
@@ -569,6 +570,42 @@ class CategoryService:
         result = pagination_obj.custom_pagination(
             request, search_keys, categorySerializer.GetFileSumarizationSerializer, summary_history_objects)
         return {"data": result, "message": messages.FETCH, "status": 200}
+    
+    def file_summary_edit(self, request, id):
+        object = FileSumarizationModel.objects.get(id=id)
+        object.file_name = request.data.get("file_name")
+        object.save()
+        return {"data": None, "message": "File name updated successfully", "status": 200}
+
+    def file_summary_delete(self, request, id):
+        object = FileSumarizationModel.objects.get(id=id)
+        object.delete()
+        return {"data": None, "message": "File summary deleted successfully", "status": 200}
+
+    
+    def research_title_edit(self, request, id):
+        object = CategoryModel.objects.get(id=id)
+        object.file_name = request.data.get("file_name")
+        object.save()
+        return {"data": None, "message": "Research Topic updated successfully", "status": 200}
+
+    def research_title_delete(self, request, id):
+        object = CategoryModel.objects.get(id=id)
+        object.delete()
+        return {"data": None, "message": "Research Topic deleted successfully", "status": 200}
+
+    def article_edit(self, request, id):
+        object = ArticleModel.objects.get(id=id)
+        object.file_name = request.data.get("file_name")
+        object.save()
+        return {"data": None, "message": "Article updated successfully", "status": 200}
+
+    def article_delete(self, request, id):
+        object = ArticleModel.objects.get(id=id)
+        object.delete()
+        return {"data": None, "message": "Article deleted successfully", "status": 200}
+
+
 
     def get_file_summary_by_id(self, request, file_id):
         try:
@@ -1649,12 +1686,16 @@ class CategoryService:
 
     def download_research_file(self, request, id):
         try:
+
             if not request.data.get("html_text").strip():
                 return {"data": None, "message": "You cannot download empty file", "status": 400}
             assignment = CategoryModel.objects.get(id=id)
             if request.data["type"] == 1:
+                print("44444444444444444444")
                 if request.data["new"] is True:
+                    print("111111111111111")
                     file = self.html_to_pdf(request)
+                    print("222222222222222222")
                     return {"data": file, "message": "pdf generated successfully", "status": 200}
                 if assignment.download_file:
                     return {"data": assignment.download_file, "message": messages.UPDATED, "status": 200}
@@ -1719,6 +1760,7 @@ class CategoryService:
 # assignment solution
     def text_translation(self, request):
         text = request.data.get("text")
+        print(request.data,"---------string----------------")
         if isinstance(text, list):
             # query = "You are english to arabic translator. Translate all the words to arabic wherever you find which I provide you and don't translate the key names. Format should be python json list."
             query = f"""
@@ -1762,40 +1804,86 @@ class CategoryService:
 
     def text_translation_for_file_summary(self, request):
         text = request.data.get("text")
+        format_text = text.replace("\n", " ")
         query = f"""First find the language of input HTML content and Translate to arabic if it is english or translate to english if it is arabic: {text}. 
                 Output format should be proper HTML and give translation in 'translated_html' key only."""
-        final_response = self.change_language_chatgpt(query, text)
-        print(final_response, '-----final_response----')
-        try:
-            final_response = final_response["translated_html"]
-        except:
-            result = ""
-            for i in final_response.values():
-                result += i
-            final_response = result    
+        threshold_num = len(format_text)//3
+        first_thread = CustomThread(query, format_text[:threshold_num])
+        second_thread = CustomThread(query, format_text[threshold_num:2*threshold_num])
+        third_thread = CustomThread(query, format_text[2*threshold_num:])
+        first_thread.start()
+        second_thread.start()
+        third_thread.start()
+        first_thread.join()
+        second_thread.join()
+        third_thread.join()
+
+        final_response = ""
+        if first_thread.return_value:
+            if isinstance(first_thread.return_value, dict):
+                try:
+                    final_response += first_thread.return_value["translated_html"]
+                except KeyError:
+                    final_response += list(first_thread.return_value.values())[0]    
+            elif isinstance(first_thread.return_value, str):
+                    final_response += first_thread.return_value
+        if second_thread.return_value:
+            if isinstance(second_thread.return_value, dict):
+                try:
+                    final_response += second_thread.return_value["translated_html"]
+                except KeyError:
+                    final_response += list(second_thread.return_value.values())[0]    
+            elif isinstance(second_thread.return_value, str):
+                    final_response += second_thread.return_value
+        if third_thread.return_value:
+            if isinstance(third_thread.return_value, dict):
+                try:
+                    final_response += third_thread.return_value["translated_html"]
+                except KeyError:
+                    final_response += list(third_thread.return_value.values())[0]    
+            elif isinstance(third_thread.return_value, str):
+                    final_response += third_thread.return_value
         return {"data": final_response, "message": "Text translated successfully.", "status": 200}
 
-    def change_language_chatgpt(self, query, input_data):
-        from decouple import config
-        import openai
-        openai.api_key = config("OPENAI_KEY")
-        try:
-            messages = [
-                {"role": "system",
-                    "content": "You are a helpful assistant designed to output JSON."},
-                {"role": "user", "content": [
-                    {"type": "text", "text": query},
-                    {"type": "text", "text": input_data},
-                ]}
-            ]
-            chatbot = openai.ChatCompletion.create(
-                model="gpt-4o", messages=messages, response_format={"type": "json_object"}, temperature=0.0,
-            )
-            reply = chatbot.choices[0].message.content
-            final_data = json.loads(reply)
-            return final_data
-        except:
-            return []
+        final_response = self.change_language_chatgpt(query, text)
+        print(final_response, type(final_response), '-----final_response----')
+        if not final_response:
+            return {"data": None, "message": "Please try again", "status": 400}
+        if isinstance(final_response, dict):    
+            try:
+                final_response = final_response["translated_html"]
+            except:
+                result = ""
+                for i in final_response.values():
+                    result += i
+                final_response = result    
+        elif isinstance(final_response, str):
+            final_response = final_response
+        return {"data": final_response, "message": "Text translated successfully.", "status": 200}
+    
+    # def change_language_chatgpt(self, query, input_data):
+    #     from decouple import config
+    #     import openai
+    #     openai.api_key = config("OPENAI_KEY")
+    #     try:
+    #         messages = [
+    #             {"role": "system",
+    #                 "content": "You are a helpful assistant designed to output JSON."},
+    #             {"role": "user", "content": [
+    #                 {"type": "text", "text": query},
+    #                 {"type": "text", "text": input_data},
+    #             ]}
+    #         ]
+    #         chatbot = openai.ChatCompletion.create(
+    #             model="gpt-4o", messages=messages, response_format={"type": "json_object"}, temperature=0.0,
+    #         )
+    #         print(chatbot,"111111111111")
+    #         reply = chatbot.choices[0].message.content
+    #         final_data = json.loads(reply)
+    #         return final_data
+    #     except Exception as err:
+    #         print(err, "sorry---------------------------")
+    #         return []
 
     def gemini_solution_for_text_translation(self, text, query):
         llm = ChatGoogleGenerativeAI(model="gemini-pro")
@@ -2596,13 +2684,34 @@ class CategoryService:
         return {"data": None, "message": messages.NOTES_ADDED, "status": 200}
 
     def notes_history(self, request):
+        print(request.data, '----payload-----')
         try:
             if "filter" not in request.data:
                 all_notes = NoteTakingModel.objects.filter(
                     user=request.user).order_by("-created_at")
             elif "filter" in request.data:
-                all_notes = NoteTakingModel.objects.filter(
-                    user=request.user, created_at__date=request.data["filter"]).order_by("-created_at")
+                if request.data["filter"] == 1:
+                    all_notes = NoteTakingModel.objects.filter(is_favourite=True, user=request.user)
+                if request.data["filter"] == 2:
+                    today_date = datetime.now()
+                    ten_days_last_date = today_date - timedelta(days=10)
+                    all_notes = NoteTakingModel.objects.filter(created_at__date__lte=today_date.date(), created_at__date__gte=ten_days_last_date.date(), user=request.user)
+                else:
+                    all_notes = NoteTakingModel.objects.filter(
+                        user=request.user, created_at__date=request.data["filter"]).order_by("-created_at")
+
+            # if "filter_fav" not in request.data:
+            #     fav_notes = NoteTakingModel.objects.filter(
+            #         user=request.user).filter(is_favourite=True).order_by("-created_at")
+            # elif "filter_fav" in request.data:
+            #     all_notes = NoteTakingModel.objects.filter(
+            #         user=request.user, created_at__date=request.data["filter"]).filter(is_favourite=True).order_by("-created_at")
+            # if "filter_rec" not in request.data:
+            #     all_notes = NoteTakingModel.objects.filter(
+            #         user=request.user).order_by("-created_at")
+            # elif "filter_rec" in request.data:
+            #     all_notes = NoteTakingModel.objects.filter(
+            #         user=request.user, created_at__date=request.data["filter"]).order_by("-created_at")
             pagination_obj = CustomPagination()
             search_keys = []
             result = pagination_obj.custom_pagination(
@@ -2621,8 +2730,11 @@ class CategoryService:
                             recent_notes.append(notes_dict)
             except Exception as err:
                 print(err)
-            print(recent_notes, '----result-----')    
-            return {"data": result, "recent_notes": recent_notes, "message": messages.NOTES_HISTORY, "status": 200}
+            recent_notes_count = 0
+            for i in recent_notes:
+                recent_notes_count += i["count"] 
+            favourite_notes_count = all_notes.filter(is_favourite=True).count()    
+            return {"data": result, "recent_notes": recent_notes, "recent_notes_count": recent_notes_count, "favourite_notes_count": favourite_notes_count, "message": messages.NOTES_HISTORY, "status": 200}
         except Exception as err:
             return {"data": str(err), "message": messages.TRY_AGAIN, "status": 400}
 
@@ -2685,3 +2797,39 @@ class CategoryService:
             return {"data": None, "message": message, "status": 200}
         except Exception as err:
             return {"data": str(err), "message": messages.WENT_WRONG, "status": 400}
+
+class CustomThread(Thread):
+    def __init__(self, query, input_data):
+        Thread.__init__(self)
+        self.value = None
+        self.query = query
+        self.input_data = input_data
+        self.return_value = None
+    def run(self):
+        from decouple import config
+        import openai
+        openai.api_key = config("OPENAI_KEY")
+        try:
+            messages = [
+                {"role": "system",
+                    "content": "You are a helpful assistant designed to output JSON."},
+                {"role": "user", "content": [
+                    {"type": "text", "text": self.query},
+                    {"type": "text", "text": self.input_data},
+                ]}
+            ]
+            chatbot = openai.ChatCompletion.create(
+                model="gpt-4o", messages=messages, response_format={"type": "json_object"}, temperature=0.0,
+            )
+            reply = chatbot.choices[0].message.content
+            final_data = reply
+            # print(reply, '---------reply-----------')
+            try:
+                final_data = json.loads(reply)
+            except:
+                final_data = ast.literal_eval(reply)    
+            self.return_value = final_data
+            return final_data
+        except Exception as err:
+            print(err, "sorry---------------------------")
+            return []

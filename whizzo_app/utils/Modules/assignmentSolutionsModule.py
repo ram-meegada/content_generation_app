@@ -11,20 +11,33 @@ API_KEY = config("OPENAI_KEY")
 
 
 def assigment_chatGPT_pdf_processing(text_data, language):
+    # query = f"""
+    #     "You are a teacher. Generate questions and answers based on the data I provide to you and make sure to give output in {language} language only. Format should be proper Python Javascript object notation list of dictionaries where every dictionary contains keys as 'question_no', 'question', 'correct_answer' and 'options'(if available)."
+    #     Additionally, ensure the response is formatted as a JSON object with the following structure:
+    #     {{
+    #         "question_no": "number",
+    #         "question": "string",
+    #         "question_type": "integer 1 for subjective type question and 2 for MCQ type question."
+    #         "options": "list of options. if no options then empty list []",
+    #         "correct_answer": "string",
+    #     }}
+    #     """
     query = f"""
-        "You are a teacher. Generate questions and answers based on the data I provide to you and make sure to give output in {language} language only. Format should be proper Python Javascript object notation list of dictionaries where every dictionary contains keys as 'question_no', 'question', 'correct_answer' and 'options'(if available)."
-        Additionally, ensure the response is formatted as a JSON object with the following structure:
-        {{
-            "question_no": "number",
-            "question": "string",
-            "question_type": "integer 1 for subjective type question and 2 for MCQ type question."
-            "options": "list of options. if no options then empty list []",
-            "correct_answer": "string",
-        }}
+            "You are a teacher. Generate questions and answers based on the data I provide to you and make sure to give output in {language} language only. Format should be proper pretty HTML format."
+            Additionally, ensure the response is formatted as the following structure sample:
+            {{"html_content":
+                    <body>
+                        <p><strong>Question 1:</strong> What is the origin of cricket?</p>
+                        <p><strong>Answer 1:</strong> Cricket originated in England during the 16th century. It evolved from a game played by children in the countryside and became a popular sport by the 18th century. The first international match was played in 1844 between the United States and Canada.</p>
+                        .......
+                        <p><strong>Question n:</strong> who is kane williamson in cricket?</p>
+                        <p><strong>Answer n:</strong> Cricket originated in England during the 16th century. It evolved from a game played by children in the countryside and became a popular sport by the 18th century. The first international match was played in 1844 between the United States and Canada.</p>
+                    <body />    
+            }}
         """
     try:
         messages=[
-                        {"role": "system", "content": "You are a helpful assistant designed to output JSON."},
+                        {"role": "system", "content": "You are a helpful assistant designed to provide HTML content in JSON"},
                         {"role": "user", "content": [
                                 {"type": "text", "text": query},
                                 {"type": "text", "text": f"Input data: {text_data}"}

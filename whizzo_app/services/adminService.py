@@ -290,6 +290,11 @@ class AdminService:
 # purpose
     
     def add_purpose(self, request):
+        purpose_name = request.data.get('name')
+        
+        if PurposeModel.objects.filter(name=purpose_name).exists():
+            return {"data": None, "message": "Purpose with this name already exists.", "status": 400}
+
         serializer = adminSerializer.PurposeSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()

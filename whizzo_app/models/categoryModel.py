@@ -23,6 +23,8 @@ class CategoryModel(BaseModel):
     reduced_citations = models.BooleanField(default=False)
     description = models.TextField(default="")
     research_type = models.IntegerField(default=1)
+    binary_data = models.TextField(default="")
+    file_name = models.CharField(max_length=100, blank=True, null=True)
 
     all_topics = models.JSONField(default=list)
     #others

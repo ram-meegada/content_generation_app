@@ -45,6 +45,37 @@ class FileSummaryHistoryView(APIView):
         result = category_obj.file_summary_history(request)
         return Response(result, status = result["status"])
 
+class FileSummaryUpdationView(APIView):
+    def put(self, request, id):
+        result = category_obj.file_summary_edit(request, id)
+        return Response(result, status = result["status"])
+
+class FileSummaryDeleteView(APIView):
+    def delete(self, request, id):
+        result = category_obj.file_summary_delete(request, id)
+        return Response(result, status = result["status"])
+
+
+class ResearchTopicUpdationView(APIView):
+    def put(self, request, id):
+        result = category_obj.research_title_edit(request, id)
+        return Response(result, status = result["status"])
+
+class ResearchTopicDeleteView(APIView):
+    def delete(self, request, id):
+        result = category_obj.research_title_delete(request, id)
+        return Response(result, status = result["status"])
+    
+class ArticleUpdationView(APIView):
+    def put(self, request, id):
+        result = category_obj.article_edit(request, id)
+        return Response(result, status = result["status"])
+
+class ArticleDeleteView(APIView):
+    def delete(self, request, id):
+        result = category_obj.article_delete(request, id)
+        return Response(result, status = result["status"])
+
 class GetSummaryByIdView(APIView):
     def get(self, request, file_id):
         result = category_obj.get_file_summary_by_id(request, file_id)
