@@ -1898,6 +1898,17 @@ class CategoryService:
         response = llm.invoke([message])
         result = to_markdown(response.content)
         return result
+    
+    def assignment_solution_edit(self, request, id):
+        object = AssignmentModel.objects.get(id=id)
+        object.file_name = request.data.get("file_name")
+        object.save()
+        return {"data": None, "message": "Name updated successfully", "status": 200}
+
+    def assignment_solution_delete(self, request, id):
+        object = AssignmentModel.objects.get(id=id)
+        object.delete()
+        return {"data": None, "message": "Name deleted successfully", "status": 200}
 
     def get_assignment_solution(self, request):
         if int(request.data["type"]) == 1:

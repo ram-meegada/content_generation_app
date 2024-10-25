@@ -61,6 +61,8 @@ urlpatterns = [
  
     #### assignment ####
     path("get-assignmnet-answer/", categoryView.GetAssignmentSolutionView.as_view()),
+    path("assignmnet/edit/<int:id>/", categoryView.AssignmentSolutionEditView.as_view()),
+    path("assignmnet/delete/<int:id>/", categoryView.AssignmentSolutiondeleteView.as_view()),
     path("regenerate-solution/<int:id>/", categoryView.GetAssignmentSolutionReviewView.as_view()),
 
     path("fetch-all-assignment/",categoryView.GetAllAssginmentView.as_view()),

@@ -28,7 +28,6 @@ class FileSummarizationConsumer(AsyncWebsocketConsumer):
             token_payload = access_token.payload
             user_id = token_payload.get('user_id')
             USER_ID = user_id
-            print(user_id, USER_ID, '----------------------------------')
             google_api_key = settings.GOOGLE_API_KEY
             llm = ChatGoogleGenerativeAI(model="gemini-pro", google_api_key=google_api_key)
             result = ""
@@ -56,7 +55,7 @@ class FileSummarizationConsumer(AsyncWebsocketConsumer):
                         await self.close()
                     temp = {1: 2000, 2: 4000, 3: 8000, 4: 12000}
                     i, j = 0, 0
-                    main_result = ""
+                    result = ""
                     while i < len(pdf_text):
                         end = i+temp[j+1]
                         if end > len(pdf_text)-1:
@@ -78,14 +77,11 @@ class FileSummarizationConsumer(AsyncWebsocketConsumer):
                             ]
                         )
                         try:
-                            result = ""
                             async for chunk in llm.astream([message]):
                                 stream_chunk = chunk.content
                                 stream_chunk = stream_chunk.replace("*", "").replace("<body>", "").replace("</body>", "").replace("html", "")
                                 result += stream_chunk
-                            main_result += result    
-                            for i in result.split():
-                                await self.send(text_data=json.dumps({"data": i, "signal": 1}))
+                                await self.send(text_data=json.dumps({"data": result, "signal": 1}))
                         except:
                             pass
                 elif payload["type"] == 2:
@@ -112,7 +108,6 @@ class FileSummarizationConsumer(AsyncWebsocketConsumer):
                         result=result,
                         file_name=payload.get("file_name")
                     )          
-                print(main_result, '----main result------')
                 await self.send(text_data=json.dumps({"data": "", "signal": 0, "record_id": save_file_summary_record.id, "message": "Summary generated successfully."}))
             elif payload.get("change_language"):
                 text = payload.get("text")
@@ -146,17 +141,15 @@ class FileSummarizationConsumer(AsyncWebsocketConsumer):
                         async for chunk in llm.astream([message]):
                             stream_chunk = chunk.content
                             stream_chunk = stream_chunk.replace("*", "").replace("<body>", "").replace("</body>", "").replace("html","").replace("`","")
-                            # for i in stream_chunk.split():
                             result += stream_chunk
-                            await self.send(text_data=json.dumps({"data": i, "signal": 1}))
+                            await self.send(text_data=json.dumps({"data": result, "signal": 1}))
                     except:
                         pass
                 await self.send(text_data=json.dumps({"data": None, "signal": 0, "message": "Translation done"}))
 
         except TokenError or InvalidToken:
-            # await self.send(text_data=json.dumps({"data": "", "message": "Invalid token", "signal": 401}))
-            # await self.close()
-            pass
+            await self.send(text_data=json.dumps({"data": "", "message": "Invalid token", "signal": 401}))
+            await self.close()
         except Exception as err:
             print(err, '-------errr---------')
             await self.send(text_data=json.dumps({"data": str(err), "signal": -1, "message": "Something went wrong", "status": 400}))

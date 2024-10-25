@@ -112,7 +112,7 @@ import json
 from io import BytesIO
 from django.core.files.base import ContentFile
 from channels.generic.websocket import SyncConsumer
-from google.cloud import speech_v1 as speech
+# from google.cloud import speech_v1 as speech
 from google.api_core.exceptions import GoogleAPICallError
 from channels.exceptions import StopConsumer
 import os
@@ -122,7 +122,7 @@ credential_path = "C:/Users/PC/Downloads/apptunix-food-customer-9b7b1e98835c.jso
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = credential_path
 
 from channels.generic.websocket import AsyncWebsocketConsumer
-from google.cloud import speech_v1p1beta1 as speech
+# from google.cloud import speech_v1p1beta1 as speech
 from google.api_core.exceptions import GoogleAPICallError
 import json
 

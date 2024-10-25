@@ -213,6 +213,16 @@ class GetAssignmentSolutionView(APIView):
     def post(self, request):
         result = category_obj.get_assignment_solution(request)
         return Response(result, status = result["status"])
+
+class AssignmentSolutionEditView(APIView):
+    def put(self, request, id):
+        result = category_obj.assignment_solution_edit(request, id)
+        return Response(result, status = result["status"])
+
+class AssignmentSolutiondeleteView(APIView):
+    def delete(self, request, id):
+        result = category_obj.assignment_solution_delete(request, id)
+        return Response(result, status = result["status"])
         
 class TextTranslationView(APIView):
     permission_classes = [AllowAny]
